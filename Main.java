@@ -67,6 +67,8 @@ public class Main {
         JFrame frame2 = new JFrame();
         JScrollPane scrollPane = new JScrollPane();
         scrollPane.setViewportView(EditingPanelFactory.create(instructions.get(0)));
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
         frame2.add(scrollPane);
         frame2.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
         // EditingPanelFactory.recurseAddBorders(frame2.getContentPane());
