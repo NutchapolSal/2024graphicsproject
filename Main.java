@@ -19,12 +19,15 @@ import java.util.Queue;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
+import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
@@ -65,14 +68,72 @@ public class Main {
         frame.setVisible(true);
 
         JFrame frame2 = new JFrame();
-        JScrollPane scrollPane = new JScrollPane();
-        scrollPane.setViewportView(EditingPanelFactory.create(instructions.get(0)));
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-        frame2.add(scrollPane);
         frame2.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
-        // EditingPanelFactory.recurseAddBorders(frame2.getContentPane());
         frame2.setTitle("editor");
+        GroupLayout layout = new GroupLayout(frame2.getContentPane());
+        frame2.getContentPane().setLayout(layout);
+
+        JScrollPane layerScrollPane = new JScrollPane();
+        JPanel layerPane = new JPanel();
+        GroupLayout layerLayout = new GroupLayout(layerPane);
+        layerPane.setLayout(layerLayout);
+        layerScrollPane.setViewportView(layerPane);
+        layerScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        layerScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+
+        var layerVGroup = layerLayout.createSequentialGroup();
+        var layerCheckboxHGroup = layerLayout.createParallelGroup();
+        var layerRadioHGroup = layerLayout.createParallelGroup();
+        layerLayout.setHorizontalGroup(layerLayout.createSequentialGroup()
+                .addGroup(layerCheckboxHGroup)
+                .addGroup(layerRadioHGroup));
+        layerLayout.setVerticalGroup(layerVGroup);
+
+        ButtonGroup layerButtonGroup = new ButtonGroup();
+
+        int layerI = 0;
+        for (GraphicLayer layer : instructions) {
+            var layerVisibleCheckbox = new JCheckBox();
+            layerVisibleCheckbox.setSelected(layer.shown);
+            layerVisibleCheckbox.addActionListener(e -> {
+                layer.shown = layerVisibleCheckbox.isSelected();
+            });
+
+            var layerEditRadio = new JRadioButton(layer.name);
+            if (layerI == 0) {
+                layerEditRadio.setSelected(true);
+            }
+            layerEditRadio.addActionListener(e -> {
+                JScrollPane editorScrollPane = (JScrollPane) frame2.getContentPane().getComponent(1);
+                JPanel editorPane = EditingPanelFactory.create(layer);
+                editorScrollPane.setViewportView(editorPane);
+            });
+            layerButtonGroup.add(layerEditRadio);
+
+            layerVGroup.addGroup(
+                    layerLayout.createParallelGroup(Alignment.CENTER)
+                            .addComponent(layerVisibleCheckbox)
+                            .addComponent(layerEditRadio));
+            layerVGroup.addPreferredGap(ComponentPlacement.RELATED);
+            layerCheckboxHGroup.addComponent(layerVisibleCheckbox);
+            layerRadioHGroup.addComponent(layerEditRadio);
+            layerI++;
+        }
+
+        JScrollPane editorScrollPane = new JScrollPane();
+
+        JPanel editorPane = EditingPanelFactory.create(instructions.get(0));
+        editorScrollPane.setViewportView(editorPane);
+        editorScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        editorScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+
+        layout.setHorizontalGroup(layout.createSequentialGroup()
+                .addComponent(layerScrollPane, GroupLayout.DEFAULT_SIZE, 150, 150)
+                .addComponent(editorScrollPane));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING, false)
+                .addComponent(layerScrollPane, GroupLayout.DEFAULT_SIZE, 600, 600)
+                .addComponent(editorScrollPane, GroupLayout.DEFAULT_SIZE, 600, 600));
+
         frame2.pack();
         frame2.setVisible(true);
 
@@ -689,8 +750,12 @@ class EditingPanelFactory {
         panel.setLayout(layout);
         var vGroup = layout.createSequentialGroup();
         var hGroup = layout.createParallelGroup();
+        layout.setHorizontalGroup(layout.createSequentialGroup()
+                .addGap(10)
+                .addGroup(hGroup)
+                .addGap(10));
+        vGroup.addGap(5);
         layout.setVerticalGroup(vGroup);
-        layout.setHorizontalGroup(hGroup);
 
         var label = new JLabel(layer.name);
         vGroup.addComponent(label);
