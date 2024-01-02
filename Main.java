@@ -7,16 +7,22 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Polygon;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
+import java.util.prefs.Preferences;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -27,6 +33,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -37,6 +44,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.Timer;
 import javax.swing.GroupLayout.Alignment;
@@ -44,8 +52,6 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 
 public class Main {
     public static void main(String[] args) {
-
-        MutableInt currentLayer = new MutableInt(0);
 
         List<GraphicLayer> instructions = new ArrayList<>();
         instructions.add(new GraphicLayer("base sketch", new ArrayList<>())
@@ -74,7 +80,33 @@ public class Main {
         frame.pack();
         frame.setVisible(true);
 
-        JFrame frame2 = new JFrame();
+        new EditorFrame(frame, instructions);
+
+        new Timer(1000 / 60, e -> {
+            panel.repaint();
+        }).start();
+
+    }
+
+}
+
+class EditorFrame {
+
+    static Preferences prefs = Preferences.userRoot().node("2024graphicsprojecteditor");
+
+    private List<GraphicLayer> instructions;
+
+    private MutableInt currentLayer = new MutableInt(0);
+    private MutableString savePath = new MutableString(null);
+
+    private JScrollPane layerScrollPane = new JScrollPane();
+    private JScrollPane editorScrollPane = new JScrollPane();
+
+    private JFrame frame2 = new JFrame();
+
+    EditorFrame(JFrame frame, List<GraphicLayer> instructions) {
+        this.instructions = instructions;
+
         frame2.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
         frame2.setTitle("editor");
         frame2.setSize(600, 600);
@@ -85,23 +117,21 @@ public class Main {
         GroupLayout layout = new GroupLayout(panel2);
         panel2.setLayout(layout);
 
-        JScrollPane layerScrollPane = new JScrollPane();
         layerScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         layerScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+        layerScrollPane.setViewportView(createLayerListPanel());
 
-        layerScrollPane.setViewportView(createLayerListPanel(instructions, frame2, currentLayer));
-
-        JScrollPane editorScrollPane = new JScrollPane();
-
-        JPanel editorPane = EditingPanelFactory.create(instructions.get(currentLayer.value));
-        editorScrollPane.setViewportView(editorPane);
         editorScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         editorScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 
+        JPanel editorPane = EditingPanelFactory.create(this.instructions.get(this.currentLayer.value));
+        editorScrollPane.setViewportView(editorPane);
+
         JButton addLayerButton = new JButton("add layer");
         addLayerButton.addActionListener(e -> {
-            instructions.add(new GraphicLayer("new layer", new ArrayList<>()));
-            layerScrollPane.setViewportView(createLayerListPanel(instructions, frame2, currentLayer));
+            this.instructions.add(new GraphicLayer("new layer", new ArrayList<>()));
+            layerScrollPane
+                    .setViewportView(createLayerListPanel());
         });
 
         layout.setHorizontalGroup(layout.createSequentialGroup()
@@ -125,16 +155,74 @@ public class Main {
         var saveAsMenuItem = fileMenu.add("Save as...");
         var loadMenuItem = fileMenu.add("Load");
 
+        JFileChooser fileChooser = new JFileChooser(prefs.get("lastSavePath", System.getProperty("user.home")));
+
+        saveMenuItem.addActionListener(e -> {
+            if (this.savePath.value == null) {
+                if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
+                    this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+                }
+            }
+            if (this.savePath.value != null) {
+                try {
+                    FileWriter fw = new FileWriter(this.savePath.value);
+                    fw.write(ImportExport.exportString(instructions));
+                    fw.close();
+                    frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
+                            + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
+                    prefs.put("lastSavePath", this.savePath.value);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        saveAsMenuItem.addActionListener(e -> {
+            if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
+                this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+                try {
+                    FileWriter fw = new FileWriter(this.savePath.value);
+                    fw.write(ImportExport.exportString(instructions));
+                    fw.close();
+                    frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
+                            + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
+                    prefs.put("lastSavePath", this.savePath.value);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        loadMenuItem.addActionListener(e -> {
+            if (fileChooser.showOpenDialog(frame2) == JFileChooser.APPROVE_OPTION) {
+                this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+                try {
+                    var file = new File(this.savePath.value);
+                    Scanner scanner = new Scanner(file);
+                    instructions.clear();
+                    var newInstructions = ImportExport.importLayers(scanner);
+                    instructions.addAll(newInstructions);
+                    scanner.close();
+                    prefs.put("lastSavePath", this.savePath.value);
+                    frame2.setTitle("editor - " + file.getName());
+                    layerScrollPane.setViewportView(createLayerListPanel());
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+                InputEvent.CTRL_DOWN_MASK));
+        saveAsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+                InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
+        loadMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,
+                InputEvent.CTRL_DOWN_MASK));
+
         frame2.setVisible(true);
-
-        new Timer(1000 / 60, e -> {
-            panel.repaint();
-        }).start();
-
     }
 
-    private static JPanel createLayerListPanel(List<GraphicLayer> instructions, JFrame frame2,
-            MutableInt currentLayer) {
+    private JPanel createLayerListPanel() {
         JPanel layerPane = new JPanel();
         GroupLayout layerLayout = new GroupLayout(layerPane);
         layerPane.setLayout(layerLayout);
@@ -163,7 +251,6 @@ public class Main {
             }
             final int layerI2 = layerI;
             layerEditRadio.addActionListener(e -> {
-                JScrollPane editorScrollPane = (JScrollPane) frame2.getContentPane().getComponent(2);
                 JPanel editorPane = EditingPanelFactory.create(layer);
                 editorScrollPane.setViewportView(editorPane);
                 currentLayer.value = layerI2;
@@ -1173,11 +1260,16 @@ class ImportExport {
 
     public static List<GraphicLayer> importString(String str) {
         Scanner sc = new Scanner(str);
+        List<GraphicLayer> layers = importLayers(sc);
+        sc.close();
+        return layers;
+    }
+
+    public static List<GraphicLayer> importLayers(Scanner sc) {
         List<GraphicLayer> layers = new ArrayList<>();
         while (sc.hasNext()) {
             layers.add(importLayer(sc));
         }
-        sc.close();
         return layers;
     }
 
