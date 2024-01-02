@@ -413,14 +413,14 @@ class GraphicPolygon extends GraphicPlotter {
 
 class GraphicBezierCurve extends GraphicPlotter {
     private static final int BEZIER_ITERATIONS = 2000;
-    public Point p1, p2, p3, p4;
+    public Point p1, p2;
+    public List<Point> continuedPoints;
 
-    GraphicBezierCurve(String hexColor, Point p1, Point p2, Point p3, Point p4) {
+    GraphicBezierCurve(String hexColor, Point p1, Point p2, List<Point> continuedPoints) {
         this.color = Color.decode(hexColor);
         this.p1 = p1;
         this.p2 = p2;
-        this.p3 = p3;
-        this.p4 = p4;
+        this.continuedPoints = continuedPoints;
     }
 
     @Override
@@ -428,18 +428,31 @@ class GraphicBezierCurve extends GraphicPlotter {
         Graphics g = buffer.createGraphics();
         g.setColor(color);
 
+        plotBezier(g, p1, p2, continuedPoints.get(0), continuedPoints.get(1));
+        for (int i = 3; i < continuedPoints.size(); i += 2) {
+            Point pA = continuedPoints.get(i - 2);
+            Point pBtemp = continuedPoints.get(i - 3);
+            Point pB = new Point(pA.x + (pA.x - pBtemp.x), pA.y + (pA.y - pBtemp.y));
+            Point pC = continuedPoints.get(i - 1);
+            Point pD = continuedPoints.get(i);
+
+            plotBezier(g, pA, pB, pC, pD);
+        }
+    }
+
+    private void plotBezier(Graphics g, Point pA, Point pB, Point pC, Point pD) {
         for (int i = 0; i < BEZIER_ITERATIONS; i++) {
             double t = i / (double) BEZIER_ITERATIONS;
 
-            double x = Math.pow(1 - t, 3) * p1.x +
-                    3 * t * Math.pow(1 - t, 2) * p2.x +
-                    3 * Math.pow(t, 2) * (1 - t) * p3.x
-                    + Math.pow(t, 3) * p4.x;
+            double x = Math.pow(1 - t, 3) * pA.x +
+                    3 * t * Math.pow(1 - t, 2) * pB.x +
+                    3 * Math.pow(t, 2) * (1 - t) * pC.x
+                    + Math.pow(t, 3) * pD.x;
 
-            double y = Math.pow(1 - t, 3) * p1.y +
-                    3 * t * Math.pow(1 - t, 2) * p2.y +
-                    3 * Math.pow(t, 2) * (1 - t) * p3.y
-                    + Math.pow(t, 3) * p4.y;
+            double y = Math.pow(1 - t, 3) * pA.y +
+                    3 * t * Math.pow(1 - t, 2) * pB.y +
+                    3 * Math.pow(t, 2) * (1 - t) * pC.y
+                    + Math.pow(t, 3) * pD.y;
 
             plot(g, (int) Math.round(x), (int) Math.round(y));
         }
@@ -944,11 +957,13 @@ class EditingPanelFactory {
                     layer.add(new GraphicLine("#000000", new Point(0, 0), new Point(50, 50)));
                     break;
                 case "GraphicPolygon":
-                    layer.add(new GraphicPolygon("#000000", List.of(new Point(0, 0), new Point(50, 50))));
+                    layer.add(new GraphicPolygon("#000000",
+                            new ArrayList<>(List.of(new Point(0, 0), new Point(50, 50)))));
                     break;
                 case "GraphicBezierCurve":
-                    layer.add(new GraphicBezierCurve("#000000", new Point(0, 0), new Point(50, 50), new Point(50, 50),
-                            new Point(50, 50)));
+                    layer.add(new GraphicBezierCurve("#000000", new Point(0, 0), new Point(50, 50),
+                            new ArrayList<>(List.of(new Point(50, 50),
+                                    new Point(50, 50)))));
                     break;
                 case "GraphicFloodFill":
                     layer.add(new GraphicFloodFill("#000000", new Point(0, 0)));
@@ -1046,24 +1061,29 @@ class EditingPanelFactory {
         JLabel label = new JLabel("GraphicBezierCurve");
         var p1Panel = create("p1", bezierCurve.p1);
         var p2Panel = create("p2", bezierCurve.p2);
-        var p3Panel = create("p3", bezierCurve.p3);
-        var p4Panel = create("p4", bezierCurve.p4);
 
-        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(label)
+        var hGroup = layout.createParallelGroup(Alignment.LEADING).addComponent(label)
                 .addComponent(p1Panel)
-                .addComponent(p2Panel)
-                .addComponent(p3Panel)
-                .addComponent(p4Panel));
-        layout.setVerticalGroup(layout.createSequentialGroup()
+                .addComponent(p2Panel);
+
+        var vGroup = layout.createSequentialGroup()
                 .addComponent(label)
                 .addComponent(p1Panel)
                 .addGap(2)
                 .addComponent(p2Panel)
-                .addGap(2)
-                .addComponent(p3Panel)
-                .addGap(2)
-                .addComponent(p4Panel));
+                .addGap(2);
+
+        int i = 3;
+        for (Point point : bezierCurve.continuedPoints) {
+            var pointPanel = create("p" + i, point);
+            hGroup.addComponent(pointPanel);
+            vGroup.addGap(2);
+            vGroup.addComponent(pointPanel);
+            i++;
+        }
+
+        layout.setHorizontalGroup(hGroup);
+        layout.setVerticalGroup(vGroup);
 
         return panel;
     }
@@ -1209,10 +1229,11 @@ class ImportExport {
         sb.append(" ");
         sb.append(exportString(bezierCurve.p2));
         sb.append(" ");
-        sb.append(exportString(bezierCurve.p3));
-        sb.append(" ");
-        sb.append(exportString(bezierCurve.p4));
-        sb.append(" ");
+        for (Point point : bezierCurve.continuedPoints) {
+            sb.append(exportString(point));
+            sb.append(" ");
+        }
+        sb.append("END");
         return sb.toString();
     }
 
@@ -1332,9 +1353,15 @@ class ImportExport {
         String hexColor = sc.next();
         Point p1 = importPoint(sc);
         Point p2 = importPoint(sc);
-        Point p3 = importPoint(sc);
-        Point p4 = importPoint(sc);
-        return new GraphicBezierCurve(hexColor, p1, p2, p3, p4);
+        List<Point> points = new ArrayList<>();
+        while (true) {
+            points.add(importPoint(sc));
+            if (sc.hasNext("END")) {
+                sc.next();
+                break;
+            }
+        }
+        return new GraphicBezierCurve(hexColor, p1, p2, points);
     }
 
     public static Point importPoint(Scanner sc) {
