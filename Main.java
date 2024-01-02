@@ -220,6 +220,14 @@ class EditorFrame {
                 InputEvent.CTRL_DOWN_MASK));
 
         frame2.setVisible(true);
+
+        new Timer(250, e -> {
+            if (EditingPanelFactory.needsUpdate) {
+                editorScrollPane
+                        .setViewportView(EditingPanelFactory.create(this.instructions.get(this.currentLayer.value)));
+                EditingPanelFactory.needsUpdate = false;
+            }
+        }).start();
     }
 
     private JPanel createLayerListPanel() {
@@ -469,6 +477,13 @@ class GraphicFloodFill extends GraphicPlotter {
 
     @Override
     public void draw(BufferedImage buffer) {
+        if (!(0 <= point.x &&
+                point.x < buffer.getWidth() &&
+                0 <= point.y &&
+                point.y < buffer.getHeight())) {
+            return;
+        }
+
         Queue<Point> q = new ArrayDeque<>();
         q.add(point);
         Color target_color = new Color(buffer.getRGB(point.x, point.y), true);
@@ -713,6 +728,9 @@ class PannerPanelHListener implements MouseMotionListener, MouseListener {
 }
 
 class EditingPanelFactory {
+    // possibly the most cursed solution
+    public static boolean needsUpdate = false;
+
     private EditingPanelFactory() {
     }
 
@@ -972,6 +990,7 @@ class EditingPanelFactory {
                     layer.add(new GraphicImage("image.png", new Point(0, 0), new Dimension(50, 50), 1.0));
                     break;
             }
+            needsUpdate = true;
         });
 
         vGroup.addPreferredGap(ComponentPlacement.RELATED);
