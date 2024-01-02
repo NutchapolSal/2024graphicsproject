@@ -63,15 +63,15 @@ public class Main {
         List<GraphicLayer> instructions = new ArrayList<>();
         instructions.add(new GraphicLayer("base sketch", new ArrayList<>())
                 .add(new GraphicImage("baseSketch.jpg", new Point(0, 0), new Dimension(600, 600), 1.0)));
-        instructions.add(new GraphicLayer("cross", new ArrayList<>())
-                .add(new GraphicLine("#777700", new Point(50, 50), new Point(550, 550)))
-                .add(new GraphicLine("#777700", new Point(50, 550), new Point(550, 50))));
         instructions.add(new GraphicLayer("third swing", new ArrayList<>())
                 .add(new GraphicLine("#000000", new Point(25, 550), new Point(575, 550)))
                 .add(new GraphicBezierCurve("#FF0000",
-                        new Point(100, 500), new Point(100, 100), new Point(500, 100), new Point(500, 500)))
+                        new Point(100, 500), new Point(100, 100),
+                        new ArrayList<>(List.of(new Point(500, 100), new Point(500, 500)))))
                 .add(new GraphicBezierCurve("#FF7700",
-                        new Point(100, 500), new Point(500, 100), new Point(100, 500), new Point(500, 500)))
+                        new Point(20, 20), new Point(40, 20),
+                        new ArrayList<>(List.of(new Point(20, 40), new Point(40, 40), new Point(60, 60),
+                                new Point(80, 80), new Point(100, 100), new Point(120, 120)))))
                 .add(new GraphicPolygon("#00FF00",
                         List.of(new Point(150, 150), new Point(250, 100), new Point(325, 125), new Point(375, 225),
                                 new Point(400, 325), new Point(275, 375), new Point(100, 300))))
@@ -86,6 +86,10 @@ public class Main {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
+
+        var exx = ImportExport.exportString(instructions);
+        System.out.println(exx);
+        System.out.println(ImportExport.exportString(ImportExport.importString(exx)));
 
         new EditorFrame(frame, instructions);
 
