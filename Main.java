@@ -1,4 +1,5 @@
 import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Cursor;
@@ -326,6 +327,14 @@ class GraphicLayer {
         return buffer;
     }
 
+    void debugDraw(Graphics g) {
+        for (GraphicObject object : objects) {
+            if (object.debugging != -1) {
+                object.debugDraw(g);
+            }
+        }
+    }
+
     GraphicLayer add(GraphicObject object) {
         objects.add(object);
         return this;
@@ -335,6 +344,24 @@ class GraphicLayer {
 
 abstract class GraphicObject {
     abstract public void draw(BufferedImage buffer);
+
+    public int debugging = -1;
+
+    abstract public void debugDraw(Graphics g);
+
+    protected void debugCircle(Graphics g, int x, int y) {
+        debugCircle(g, x, y, false);
+    }
+
+    protected void debugCircle(Graphics g, int x, int y, boolean active) {
+        var g2 = (Graphics2D) g.create();
+        g2.setColor(Color.black);
+        g2.setStroke(new BasicStroke(5));
+        g2.drawOval(x - 6, y - 6, 12, 12);
+        g2.setColor(active ? Color.green : Color.red);
+        g2.setStroke(new BasicStroke(3));
+        g2.drawOval(x - 6, y - 6, 12, 12);
+    }
 }
 
 abstract class GraphicPlotter extends GraphicObject {
@@ -396,6 +423,12 @@ class GraphicLine extends GraphicPlotter {
             D += 2 * dy;
         }
     }
+
+    @Override
+    public void debugDraw(Graphics g) {
+        debugCircle(g, p1.x, p1.y, debugging == 1);
+        debugCircle(g, p2.x, p2.y, debugging == 2);
+    }
 }
 
 class GraphicPolygon extends GraphicPlotter {
@@ -416,6 +449,14 @@ class GraphicPolygon extends GraphicPlotter {
             poly.addPoint(point.x, point.y);
         }
         g.drawPolygon(poly);
+    }
+
+    @Override
+    public void debugDraw(Graphics g) {
+        for (int i = 0; i < points.size(); i++) {
+            Point point = points.get(i);
+            debugCircle(g, point.x, point.y, debugging == i + 1);
+        }
     }
 }
 
@@ -465,6 +506,16 @@ class GraphicBezierCurve extends GraphicPlotter {
             plot(g, (int) Math.round(x), (int) Math.round(y));
         }
     }
+
+    @Override
+    public void debugDraw(Graphics g) {
+        debugCircle(g, p1.x, p1.y, debugging == 1);
+        debugCircle(g, p2.x, p2.y, debugging == 2);
+        for (int i = 0; i < continuedPoints.size(); i++) {
+            Point point = continuedPoints.get(i);
+            debugCircle(g, point.x, point.y, debugging == i + 3);
+        }
+    }
 }
 
 class GraphicFloodFill extends GraphicPlotter {
@@ -504,6 +555,11 @@ class GraphicFloodFill extends GraphicPlotter {
                 q.add(new Point(p.x, p.y - 1));
             }
         }
+    }
+
+    @Override
+    public void debugDraw(Graphics g) {
+        debugCircle(g, point.x, point.y, debugging == 1);
     }
 }
 
@@ -549,6 +605,12 @@ class GraphicImage extends GraphicObject {
         AlphaComposite alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) opacity.value);
         g.setComposite(alphaComposite);
         g.drawImage(image, origin.x, origin.y, size.width, size.height, null);
+    }
+
+    @Override
+    public void debugDraw(Graphics g) {
+        debugCircle(g, origin.x, origin.y, debugging == 1);
+        debugCircle(g, origin.x + size.width, origin.y + size.height, debugging == 2);
     }
 }
 
@@ -727,6 +789,95 @@ class PannerPanelHListener implements MouseMotionListener, MouseListener {
 
 }
 
+class PannerPanelDebuggingHoverListener implements MouseListener {
+    static boolean stop = false;
+    private GraphicObject obj;
+    private int debugValue;
+
+    PannerPanelDebuggingHoverListener(GraphicObject obj, int debugValue) {
+        this.obj = obj;
+        this.debugValue = debugValue;
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+        if (stop) {
+            return;
+        }
+        obj.debugging = debugValue;
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+        if (stop) {
+            return;
+        }
+        obj.debugging = -1;
+
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        obj.debugging = debugValue;
+        DebuggingHoverListener.stop = true;
+        PannerPanelDebuggingHoverListener.stop = true;
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        obj.debugging = -1;
+        DebuggingHoverListener.stop = false;
+        PannerPanelDebuggingHoverListener.stop = false;
+    }
+
+}
+
+class DebuggingHoverListener implements MouseListener {
+    static boolean stop = false;
+
+    private GraphicObject obj;
+    private int debugValue;
+
+    DebuggingHoverListener(GraphicObject obj, int debugValue) {
+        this.obj = obj;
+        this.debugValue = debugValue;
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+        if (stop) {
+            return;
+        }
+        obj.debugging = debugValue;
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+        if (stop) {
+            return;
+        }
+        obj.debugging = -1;
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+}
+
 class EditingPanelFactory {
     // possibly the most cursed solution
     public static boolean needsUpdate = false;
@@ -734,7 +885,7 @@ class EditingPanelFactory {
     private EditingPanelFactory() {
     }
 
-    public static JPanel create(String labelText, Point point) {
+    public static JPanel create(String labelText, Point point, GraphicObject obj, int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
         GroupLayout layout = new GroupLayout(panel);
@@ -759,6 +910,7 @@ class EditingPanelFactory {
         pannerPanel.setMinimumSize(new Dimension(20, 20));
         pannerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+        pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
 
         JPanel pannerXPanel = new JPanel();
         pannerXPanel.setPreferredSize(new Dimension(20, 8));
@@ -766,6 +918,7 @@ class EditingPanelFactory {
         pannerXPanel.setMinimumSize(new Dimension(20, 8));
         pannerXPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
+        pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
 
         JPanel pannerYPanel = new JPanel();
         pannerYPanel.setPreferredSize(new Dimension(8, 20));
@@ -773,6 +926,7 @@ class EditingPanelFactory {
         pannerYPanel.setMinimumSize(new Dimension(8, 20));
         pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
+        pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
 
         var xListener = new PannerPanelXListener(xSpinner, point);
         var yListener = new PannerPanelYListener(ySpinner, point);
@@ -808,7 +962,7 @@ class EditingPanelFactory {
         return panel;
     }
 
-    public static JPanel create(String labelText, Dimension dim) {
+    public static JPanel create(String labelText, Dimension dim, GraphicObject obj, int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
         GroupLayout layout = new GroupLayout(panel);
@@ -835,6 +989,7 @@ class EditingPanelFactory {
         pannerPanel.setMinimumSize(new Dimension(20, 20));
         pannerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
+        pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
 
         JPanel pannerXPanel = new JPanel();
         pannerXPanel.setPreferredSize(new Dimension(20, 8));
@@ -842,6 +997,7 @@ class EditingPanelFactory {
         pannerXPanel.setMinimumSize(new Dimension(20, 8));
         pannerXPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
+        pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
 
         JPanel pannerYPanel = new JPanel();
         pannerYPanel.setPreferredSize(new Dimension(8, 20));
@@ -849,6 +1005,7 @@ class EditingPanelFactory {
         pannerYPanel.setMinimumSize(new Dimension(8, 20));
         pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
+        pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
 
         var xListener = new PannerPanelWListener(wSpinner, dim);
         var yListener = new PannerPanelHListener(hSpinner, dim);
@@ -1025,8 +1182,8 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicLine");
-        var p1Panel = create("p1", line.p1);
-        var p2Panel = create("p2", line.p2);
+        var p1Panel = create("p1", line.p1, line, 1);
+        var p2Panel = create("p2", line.p2, line, 2);
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(label)
@@ -1037,6 +1194,10 @@ class EditingPanelFactory {
                 .addComponent(p1Panel)
                 .addGap(2)
                 .addComponent(p2Panel));
+
+        panel.addMouseListener(new DebuggingHoverListener(line, 0));
+        p1Panel.addMouseListener(new DebuggingHoverListener(line, 1));
+        p2Panel.addMouseListener(new DebuggingHoverListener(line, 2));
 
         return panel;
     }
@@ -1056,10 +1217,11 @@ class EditingPanelFactory {
         pointsLayout.setHorizontalGroup(pointsHGroup);
 
         for (int i = 0; i < polygon.points.size(); i++) {
-            var pointPanel = create("p" + i, polygon.points.get(i));
+            var pointPanel = create("p" + i, polygon.points.get(i), polygon, i + 1);
             pointsVGroup.addPreferredGap(ComponentPlacement.RELATED);
             pointsVGroup.addComponent(pointPanel);
             pointsHGroup.addComponent(pointPanel);
+            pointPanel.addMouseListener(new DebuggingHoverListener(polygon, i + 1));
         }
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
@@ -1068,6 +1230,8 @@ class EditingPanelFactory {
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addComponent(label)
                 .addComponent(pointsPanel));
+
+        panel.addMouseListener(new DebuggingHoverListener(polygon, 0));
 
         return panel;
     }
@@ -1078,8 +1242,8 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicBezierCurve");
-        var p1Panel = create("p1", bezierCurve.p1);
-        var p2Panel = create("p2", bezierCurve.p2);
+        var p1Panel = create("p1", bezierCurve.p1, bezierCurve, 1);
+        var p2Panel = create("p2", bezierCurve.p2, bezierCurve, 2);
 
         var hGroup = layout.createParallelGroup(Alignment.LEADING).addComponent(label)
                 .addComponent(p1Panel)
@@ -1094,15 +1258,21 @@ class EditingPanelFactory {
 
         int i = 3;
         for (Point point : bezierCurve.continuedPoints) {
-            var pointPanel = create("p" + i, point);
+            var pointPanel = create("p" + i, point, bezierCurve, i);
             hGroup.addComponent(pointPanel);
             vGroup.addGap(2);
             vGroup.addComponent(pointPanel);
+            pointPanel.addMouseListener(new DebuggingHoverListener(bezierCurve, i));
+
             i++;
         }
 
         layout.setHorizontalGroup(hGroup);
         layout.setVerticalGroup(vGroup);
+
+        panel.addMouseListener(new DebuggingHoverListener(bezierCurve, 0));
+        p1Panel.addMouseListener(new DebuggingHoverListener(bezierCurve, 1));
+        p2Panel.addMouseListener(new DebuggingHoverListener(bezierCurve, 2));
 
         return panel;
     }
@@ -1113,7 +1283,7 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicFloodFill");
-        var pointPanel = create("point", floodFill.point);
+        var pointPanel = create("point", floodFill.point, floodFill, 1);
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(label)
@@ -1121,6 +1291,9 @@ class EditingPanelFactory {
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addComponent(label)
                 .addComponent(pointPanel));
+
+        panel.addMouseListener(new DebuggingHoverListener(floodFill, 0));
+        pointPanel.addMouseListener(new DebuggingHoverListener(floodFill, 1));
 
         return panel;
     }
@@ -1134,8 +1307,8 @@ class EditingPanelFactory {
 
         var filePathPanel = create("file path", image.filePath);
 
-        var originPanel = create("origin", image.origin);
-        var sizePanel = create("size", image.size);
+        var originPanel = create("origin", image.origin, image, 1);
+        var sizePanel = create("size", image.size, image, 2);
 
         var opacityPanel = create("opacity", image.opacity, 0.0, 1.0, 0.01);
 
@@ -1154,6 +1327,10 @@ class EditingPanelFactory {
                 .addComponent(sizePanel)
                 .addGap(2)
                 .addComponent(opacityPanel));
+
+        panel.addMouseListener(new DebuggingHoverListener(image, 0));
+        originPanel.addMouseListener(new DebuggingHoverListener(image, 1));
+        sizePanel.addMouseListener(new DebuggingHoverListener(image, 2));
 
         return panel;
     }
@@ -1422,13 +1599,17 @@ class GraphicsPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics gOuter) {
         super.paintComponent(gOuter);
+        BufferedImage debugBuffer = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
+        Graphics g = debugBuffer.createGraphics();
 
         for (GraphicLayer layer : instructions) {
             if (layer.shown) {
                 gOuter.drawImage(layer.draw(), 0, 0, null);
             }
+            layer.debugDraw(g);
         }
 
+        gOuter.drawImage(debugBuffer, 0, 0, null);
     }
 
 }
