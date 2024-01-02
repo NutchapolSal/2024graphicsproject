@@ -349,10 +349,6 @@ abstract class GraphicObject {
 
     abstract public void debugDraw(Graphics g);
 
-    protected void debugCircle(Graphics g, int x, int y) {
-        debugCircle(g, x, y, false);
-    }
-
     protected void debugCircle(Graphics g, int x, int y, boolean active) {
         var g2 = (Graphics2D) g.create();
         g2.setColor(Color.black);
@@ -361,6 +357,24 @@ abstract class GraphicObject {
         g2.setColor(active ? Color.green : Color.red);
         g2.setStroke(new BasicStroke(3));
         g2.drawOval(x - 6, y - 6, 12, 12);
+    }
+
+    protected void debugDot(Graphics g, int x, int y, boolean active) {
+        var g2 = (Graphics2D) g.create();
+        g2.setColor(Color.black);
+        g2.fillOval(x - 6, y - 6, 12, 12);
+        g2.setColor(active ? Color.green : Color.red);
+        g2.fillOval(x - 4, y - 4, 8, 8);
+    }
+
+    protected void debugLine(Graphics g, int x1, int y1, int x2, int y2, boolean active) {
+        var g2 = (Graphics2D) g.create();
+        g2.setColor(Color.black);
+        g2.setStroke(new BasicStroke(3));
+        g2.drawLine(x1, y1, x2, y2);
+        g2.setColor(active ? Color.green : Color.red);
+        g2.setStroke(new BasicStroke(1));
+        g2.drawLine(x1, y1, x2, y2);
     }
 }
 
@@ -509,11 +523,19 @@ class GraphicBezierCurve extends GraphicPlotter {
 
     @Override
     public void debugDraw(Graphics g) {
+        debugLine(g, p1.x, p1.y, p2.x, p2.y, debugging == 2);
         debugCircle(g, p1.x, p1.y, debugging == 1);
-        debugCircle(g, p2.x, p2.y, debugging == 2);
-        for (int i = 0; i < continuedPoints.size(); i++) {
-            Point point = continuedPoints.get(i);
-            debugCircle(g, point.x, point.y, debugging == i + 3);
+        debugDot(g, p2.x, p2.y, debugging == 2);
+        for (int i = 1; i < continuedPoints.size(); i += 2) {
+            Point controlP = continuedPoints.get(i - 1);
+            Point endP = continuedPoints.get(i);
+            Point controlEndP = endP;
+            if (i + 2 < continuedPoints.size()) {
+                controlEndP = new Point(endP.x + (endP.x - controlP.x), endP.y + (endP.y - controlP.y));
+            }
+            debugLine(g, controlP.x, controlP.y, controlEndP.x, controlEndP.y, debugging == i + 2);
+            debugDot(g, controlP.x, controlP.y, debugging == i + 2);
+            debugCircle(g, endP.x, endP.y, debugging == i + 3);
         }
     }
 }
