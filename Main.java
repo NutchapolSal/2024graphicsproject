@@ -127,10 +127,6 @@ public class Main {
 
         frame2.setVisible(true);
 
-        var exx = ImportExport.exportString(instructions);
-        System.out.println(exx);
-        System.out.println(ImportExport.exportString(ImportExport.importString(exx)));
-
         new Timer(1000 / 60, e -> {
             panel.repaint();
         }).start();
@@ -1181,17 +1177,16 @@ class ImportExport {
         while (sc.hasNext()) {
             layers.add(importLayer(sc));
         }
+        sc.close();
         return layers;
     }
 
     public static GraphicLayer importLayer(Scanner sc) {
-        sc.useDelimiter("\n");
         sc.skip("LAYER ");
         String layerName = sc.nextLine();
         sc.skip("VISIBLE ");
         boolean visible = sc.nextLine().equals("T");
         List<GraphicObject> objects = new ArrayList<>();
-        sc.useDelimiter("[ \n]");
         while (true) {
             String type = sc.next();
             if (type.equals("END")) {
@@ -1215,9 +1210,64 @@ class ImportExport {
                     break;
             }
         }
+        sc.skip("[ \\n]*");
         var layer = new GraphicLayer(layerName, objects);
         layer.shown = visible;
         return layer;
+    }
+
+    public static GraphicLine importLine(Scanner sc) {
+        String hexColor = sc.next();
+        Point p1 = importPoint(sc);
+        Point p2 = importPoint(sc);
+        return new GraphicLine(hexColor, p1, p2);
+    }
+
+    public static GraphicPolygon importPolygon(Scanner sc) {
+        String hexColor = sc.next();
+        List<Point> points = new ArrayList<>();
+        while (true) {
+            points.add(importPoint(sc));
+            if (sc.hasNext("END")) {
+                sc.next();
+                break;
+            }
+        }
+        return new GraphicPolygon(hexColor, points);
+    }
+
+    public static GraphicBezierCurve importBezierCurve(Scanner sc) {
+        String hexColor = sc.next();
+        Point p1 = importPoint(sc);
+        Point p2 = importPoint(sc);
+        Point p3 = importPoint(sc);
+        Point p4 = importPoint(sc);
+        return new GraphicBezierCurve(hexColor, p1, p2, p3, p4);
+    }
+
+    public static Point importPoint(Scanner sc) {
+        String[] coords = sc.next().split(",");
+        return new Point(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
+    }
+
+    public static GraphicFloodFill importFloodFill(Scanner sc) {
+        String hexColor = sc.next();
+        Point point = importPoint(sc);
+        return new GraphicFloodFill(hexColor, point);
+    }
+
+    public static GraphicImage importImage(Scanner sc) {
+        sc.skip(" ");
+        String filePath = sc.nextLine();
+        Point origin = importPoint(sc);
+        Dimension size = importDimension(sc);
+        double opacity = sc.nextDouble();
+        return new GraphicImage(filePath, origin, size, opacity);
+    }
+
+    public static Dimension importDimension(Scanner sc) {
+        String[] coords = sc.next().split(",");
+        return new Dimension(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
     }
 
 }
