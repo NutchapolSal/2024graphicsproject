@@ -127,6 +127,10 @@ public class Main {
 
         frame2.setVisible(true);
 
+        var exx = ImportExport.exportString(instructions);
+        System.out.println(exx);
+        System.out.println(ImportExport.exportString(ImportExport.importString(exx)));
+
         new Timer(1000 / 60, e -> {
             panel.repaint();
         }).start();
@@ -1044,6 +1048,178 @@ class EditingPanelFactory {
             }
         }
     }
+}
+
+class ImportExport {
+
+    public static String exportString(List<GraphicLayer> instructions) {
+        StringBuilder sb = new StringBuilder();
+        for (GraphicLayer layer : instructions) {
+            sb.append(exportString(layer));
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+
+    public static String exportString(GraphicLayer layer) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("LAYER ");
+        sb.append(layer.name);
+        sb.append("\n");
+        sb.append("VISIBLE ");
+        sb.append(layer.shown ? "T" : "F");
+        sb.append("\n");
+        for (GraphicObject object : layer.objects) {
+            sb.append(exportString(object));
+            sb.append("\n");
+        }
+        sb.append("END");
+        return sb.toString();
+    }
+
+    public static String exportString(GraphicObject object) {
+        if (object instanceof GraphicLine) {
+            return exportString((GraphicLine) object);
+        } else if (object instanceof GraphicPolygon) {
+            return exportString((GraphicPolygon) object);
+        } else if (object instanceof GraphicBezierCurve) {
+            return exportString((GraphicBezierCurve) object);
+        } else if (object instanceof GraphicFloodFill) {
+            return exportString((GraphicFloodFill) object);
+        } else if (object instanceof GraphicImage) {
+            return exportString((GraphicImage) object);
+        } else {
+            return "";
+        }
+    }
+
+    public static String exportString(GraphicLine line) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("LINE ");
+        sb.append(exportString(line.color));
+        sb.append(" ");
+        sb.append(exportString(line.p1));
+        sb.append(" ");
+        sb.append(exportString(line.p2));
+        return sb.toString();
+    }
+
+    public static String exportString(GraphicPolygon polygon) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("POLYGON ");
+        sb.append(exportString(polygon.color));
+        sb.append(" ");
+        for (Point point : polygon.points) {
+            sb.append(exportString(point));
+            sb.append(" ");
+        }
+        sb.append("END");
+        return sb.toString();
+    }
+
+    public static String exportString(GraphicBezierCurve bezierCurve) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("BEZIERCURVE ");
+        sb.append(exportString(bezierCurve.color));
+        sb.append(" ");
+        sb.append(exportString(bezierCurve.p1));
+        sb.append(" ");
+        sb.append(exportString(bezierCurve.p2));
+        sb.append(" ");
+        sb.append(exportString(bezierCurve.p3));
+        sb.append(" ");
+        sb.append(exportString(bezierCurve.p4));
+        sb.append(" ");
+        return sb.toString();
+    }
+
+    public static String exportString(GraphicFloodFill floodFill) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("FLOODFILL ");
+        sb.append(exportString(floodFill.color));
+        sb.append(" ");
+        sb.append(exportString(floodFill.point));
+        return sb.toString();
+    }
+
+    public static String exportString(Color color) {
+        return "#" + Integer.toHexString(color.getRGB()).substring(2);
+    }
+
+    public static String exportString(Point point) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(point.x);
+        sb.append(",");
+        sb.append(point.y);
+        return sb.toString();
+    }
+
+    public static String exportString(Dimension dim) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(dim.width);
+        sb.append(",");
+        sb.append(dim.height);
+        return sb.toString();
+    }
+
+    public static String exportString(GraphicImage image) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("IMAGE ");
+        sb.append(image.filePath.value);
+        sb.append("\n");
+        sb.append(exportString(image.origin));
+        sb.append(" ");
+        sb.append(exportString(image.size));
+        sb.append(" ");
+        sb.append(image.opacity.value);
+        return sb.toString();
+    }
+
+    public static List<GraphicLayer> importString(String str) {
+        Scanner sc = new Scanner(str);
+        List<GraphicLayer> layers = new ArrayList<>();
+        while (sc.hasNext()) {
+            layers.add(importLayer(sc));
+        }
+        return layers;
+    }
+
+    public static GraphicLayer importLayer(Scanner sc) {
+        sc.useDelimiter("\n");
+        sc.skip("LAYER ");
+        String layerName = sc.nextLine();
+        sc.skip("VISIBLE ");
+        boolean visible = sc.nextLine().equals("T");
+        List<GraphicObject> objects = new ArrayList<>();
+        sc.useDelimiter("[ \n]");
+        while (true) {
+            String type = sc.next();
+            if (type.equals("END")) {
+                break;
+            }
+            switch (type) {
+                case "LINE":
+                    objects.add(importLine(sc));
+                    break;
+                case "POLYGON":
+                    objects.add(importPolygon(sc));
+                    break;
+                case "BEZIERCURVE":
+                    objects.add(importBezierCurve(sc));
+                    break;
+                case "FLOODFILL":
+                    objects.add(importFloodFill(sc));
+                    break;
+                case "IMAGE":
+                    objects.add(importImage(sc));
+                    break;
+            }
+        }
+        var layer = new GraphicLayer(layerName, objects);
+        layer.shown = visible;
+        return layer;
+    }
+
 }
 
 class GraphicsPanel extends JPanel {
