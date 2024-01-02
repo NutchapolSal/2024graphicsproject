@@ -1,3 +1,4 @@
+import java.awt.AWTException;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -6,8 +7,13 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -811,10 +817,44 @@ class PannerPanelHListener implements MouseMotionListener, MouseListener {
 
 }
 
+class MouseMover {
+    // https://stackoverflow.com/a/10665280/3623350
+    public static void moveMouse(int x, int y) {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice[] gs = ge.getScreenDevices();
+
+        // Search the devices for the one that draws the specified point.
+        for (GraphicsDevice device : gs) {
+            GraphicsConfiguration[] configurations = device.getConfigurations();
+            for (GraphicsConfiguration config : configurations) {
+                Rectangle bounds = config.getBounds();
+                if (bounds.contains(x, y)) {
+                    // Set point to screen coordinates.
+                    Point b = bounds.getLocation();
+                    Point s = new Point(x - b.x, y - b.y);
+
+                    try {
+                        Robot r = new Robot(device);
+                        r.mouseMove(s.x, s.y);
+                    } catch (AWTException e) {
+                        e.printStackTrace();
+                    }
+
+                    return;
+                }
+            }
+        }
+        // Couldn't move to the point, it may be off screen.
+        return;
+    }
+}
+
 class PannerPanelDebuggingHoverListener implements MouseListener {
     static boolean stop = false;
     private GraphicObject obj;
     private int debugValue;
+    private int cursorStartX = 0;
+    private int cursorStartY = 0;
 
     PannerPanelDebuggingHoverListener(GraphicObject obj, int debugValue) {
         this.obj = obj;
@@ -848,6 +888,8 @@ class PannerPanelDebuggingHoverListener implements MouseListener {
         obj.debugging = debugValue;
         DebuggingHoverListener.stop = true;
         PannerPanelDebuggingHoverListener.stop = true;
+        cursorStartX = e.getXOnScreen();
+        cursorStartY = e.getYOnScreen();
     }
 
     @Override
@@ -855,6 +897,7 @@ class PannerPanelDebuggingHoverListener implements MouseListener {
         obj.debugging = -1;
         DebuggingHoverListener.stop = false;
         PannerPanelDebuggingHoverListener.stop = false;
+        MouseMover.moveMouse(cursorStartX, cursorStartY);
     }
 
 }
