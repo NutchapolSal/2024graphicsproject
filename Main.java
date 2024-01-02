@@ -16,16 +16,21 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Scanner;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -39,6 +44,8 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 
 public class Main {
     public static void main(String[] args) {
+
+        MutableInt currentLayer = new MutableInt(0);
 
         List<GraphicLayer> instructions = new ArrayList<>();
         instructions.add(new GraphicLayer("base sketch", new ArrayList<>())
@@ -70,16 +77,67 @@ public class Main {
         JFrame frame2 = new JFrame();
         frame2.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
         frame2.setTitle("editor");
-        GroupLayout layout = new GroupLayout(frame2.getContentPane());
-        frame2.getContentPane().setLayout(layout);
+        frame2.setSize(600, 600);
+
+        JPanel panel2 = new JPanel();
+        frame2.setContentPane(panel2);
+
+        GroupLayout layout = new GroupLayout(panel2);
+        panel2.setLayout(layout);
 
         JScrollPane layerScrollPane = new JScrollPane();
+        layerScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        layerScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+
+        layerScrollPane.setViewportView(createLayerListPanel(instructions, frame2, currentLayer));
+
+        JScrollPane editorScrollPane = new JScrollPane();
+
+        JPanel editorPane = EditingPanelFactory.create(instructions.get(currentLayer.value));
+        editorScrollPane.setViewportView(editorPane);
+        editorScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        editorScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+
+        JButton addLayerButton = new JButton("add layer");
+        addLayerButton.addActionListener(e -> {
+            instructions.add(new GraphicLayer("new layer", new ArrayList<>()));
+            layerScrollPane.setViewportView(createLayerListPanel(instructions, frame2, currentLayer));
+        });
+
+        layout.setHorizontalGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(Alignment.LEADING, false)
+                        .addComponent(layerScrollPane)
+                        .addComponent(addLayerButton))
+                .addComponent(editorScrollPane));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                        .addComponent(layerScrollPane)
+                        .addComponent(addLayerButton))
+                .addComponent(editorScrollPane));
+
+        JMenuBar menuBar = new JMenuBar();
+        frame2.setJMenuBar(menuBar);
+
+        var fileMenu = new JMenu("File");
+        menuBar.add(fileMenu);
+
+        var saveMenuItem = fileMenu.add("Save");
+        var saveAsMenuItem = fileMenu.add("Save as...");
+        var loadMenuItem = fileMenu.add("Load");
+
+        frame2.setVisible(true);
+
+        new Timer(1000 / 60, e -> {
+            panel.repaint();
+        }).start();
+
+    }
+
+    private static JPanel createLayerListPanel(List<GraphicLayer> instructions, JFrame frame2,
+            MutableInt currentLayer) {
         JPanel layerPane = new JPanel();
         GroupLayout layerLayout = new GroupLayout(layerPane);
         layerPane.setLayout(layerLayout);
-        layerScrollPane.setViewportView(layerPane);
-        layerScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        layerScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 
         var layerVGroup = layerLayout.createSequentialGroup();
         var layerCheckboxHGroup = layerLayout.createParallelGroup();
@@ -100,13 +158,15 @@ public class Main {
             });
 
             var layerEditRadio = new JRadioButton(layer.name);
-            if (layerI == 0) {
+            if (layerI == currentLayer.value) {
                 layerEditRadio.setSelected(true);
             }
+            final int layerI2 = layerI;
             layerEditRadio.addActionListener(e -> {
-                JScrollPane editorScrollPane = (JScrollPane) frame2.getContentPane().getComponent(1);
+                JScrollPane editorScrollPane = (JScrollPane) frame2.getContentPane().getComponent(2);
                 JPanel editorPane = EditingPanelFactory.create(layer);
                 editorScrollPane.setViewportView(editorPane);
+                currentLayer.value = layerI2;
             });
             layerButtonGroup.add(layerEditRadio);
 
@@ -119,28 +179,7 @@ public class Main {
             layerRadioHGroup.addComponent(layerEditRadio);
             layerI++;
         }
-
-        JScrollPane editorScrollPane = new JScrollPane();
-
-        JPanel editorPane = EditingPanelFactory.create(instructions.get(0));
-        editorScrollPane.setViewportView(editorPane);
-        editorScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        editorScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(layerScrollPane, GroupLayout.DEFAULT_SIZE, 150, 150)
-                .addComponent(editorScrollPane));
-        layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING, false)
-                .addComponent(layerScrollPane, GroupLayout.DEFAULT_SIZE, 600, 600)
-                .addComponent(editorScrollPane, GroupLayout.DEFAULT_SIZE, 600, 600));
-
-        frame2.pack();
-        frame2.setVisible(true);
-
-        new Timer(1000 / 60, e -> {
-            panel.repaint();
-        }).start();
-
+        return layerPane;
     }
 }
 
@@ -148,6 +187,14 @@ class MutableDouble {
     public double value;
 
     MutableDouble(double value) {
+        this.value = value;
+    }
+}
+
+class MutableInt {
+    public int value;
+
+    MutableInt(int value) {
         this.value = value;
     }
 }
@@ -390,6 +437,181 @@ class GraphicImage extends GraphicObject {
     }
 }
 
+class PannerPanelXListener implements MouseMotionListener, MouseListener {
+    private Point point;
+    private JSpinner spinner;
+    private int startX = 0;
+    private int originX = 0;
+
+    PannerPanelXListener(JSpinner spinner, Point point) {
+        this.spinner = spinner;
+        this.point = point;
+    }
+
+    @Override
+    public void mouseMoved(java.awt.event.MouseEvent e) {
+    }
+
+    @Override
+    public void mouseDragged(java.awt.event.MouseEvent e) {
+        spinner.setValue(originX + (e.getX() - startX));
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        startX = e.getX();
+        originX = point.x;
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
+
+}
+
+class PannerPanelYListener implements MouseMotionListener, MouseListener {
+    private Point point;
+    private JSpinner spinner;
+    private int startY = 0;
+    private int originY = 0;
+
+    PannerPanelYListener(JSpinner spinner, Point point) {
+        this.spinner = spinner;
+        this.point = point;
+    }
+
+    @Override
+    public void mouseMoved(java.awt.event.MouseEvent e) {
+    }
+
+    @Override
+    public void mouseDragged(java.awt.event.MouseEvent e) {
+        spinner.setValue(originY + (e.getY() - startY));
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        startY = e.getY();
+        originY = point.y;
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
+}
+
+class PannerPanelWListener implements MouseMotionListener, MouseListener {
+    private Dimension dim;
+    private JSpinner spinner;
+    private int startX = 0;
+    private int originX = 0;
+
+    PannerPanelWListener(JSpinner spinner, Dimension dim) {
+        this.spinner = spinner;
+        this.dim = dim;
+    }
+
+    @Override
+    public void mouseMoved(java.awt.event.MouseEvent e) {
+    }
+
+    @Override
+    public void mouseDragged(java.awt.event.MouseEvent e) {
+        spinner.setValue(originX + (e.getX() - startX));
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        startX = e.getX();
+        originX = dim.width;
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
+
+}
+
+class PannerPanelHListener implements MouseMotionListener, MouseListener {
+    private Dimension dim;
+    private JSpinner spinner;
+    private int startY = 0;
+    private int originY = 0;
+
+    PannerPanelHListener(JSpinner spinner, Dimension dim) {
+        this.spinner = spinner;
+        this.dim = dim;
+    }
+
+    @Override
+    public void mouseMoved(java.awt.event.MouseEvent e) {
+    }
+
+    @Override
+    public void mouseDragged(java.awt.event.MouseEvent e) {
+        spinner.setValue(originY + (e.getY() - startY));
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        startY = e.getY();
+        originY = dim.height;
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
+
+}
+
 class EditingPanelFactory {
     private EditingPanelFactory() {
     }
@@ -434,81 +656,8 @@ class EditingPanelFactory {
         pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
 
-        class PannerPanelXListener implements MouseMotionListener, MouseListener {
-            private int startX = 0;
-            private int originX = 0;
-
-            @Override
-            public void mouseMoved(java.awt.event.MouseEvent e) {
-            }
-
-            @Override
-            public void mouseDragged(java.awt.event.MouseEvent e) {
-                xSpinner.setValue(originX + (e.getX() - startX));
-            }
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                startX = e.getX();
-                originX = point.x;
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-            }
-
-        }
-        class PannerPanelYListener implements MouseMotionListener, MouseListener {
-            private int startY = 0;
-            private int originY = 0;
-
-            @Override
-            public void mouseMoved(java.awt.event.MouseEvent e) {
-            }
-
-            @Override
-            public void mouseDragged(java.awt.event.MouseEvent e) {
-                ySpinner.setValue(originY + (e.getY() - startY));
-            }
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                startY = e.getY();
-                originY = point.y;
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-            }
-
-        }
-
-        var xListener = new PannerPanelXListener();
-        var yListener = new PannerPanelYListener();
+        var xListener = new PannerPanelXListener(xSpinner, point);
+        var yListener = new PannerPanelYListener(ySpinner, point);
         pannerPanel.addMouseListener(xListener);
         pannerPanel.addMouseListener(yListener);
         pannerPanel.addMouseMotionListener(xListener);
@@ -583,81 +732,8 @@ class EditingPanelFactory {
         pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
 
-        class PannerPanelXListener implements MouseMotionListener, MouseListener {
-            private int startX = 0;
-            private int originX = 0;
-
-            @Override
-            public void mouseMoved(java.awt.event.MouseEvent e) {
-            }
-
-            @Override
-            public void mouseDragged(java.awt.event.MouseEvent e) {
-                wSpinner.setValue(originX + (e.getX() - startX));
-            }
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                startX = e.getX();
-                originX = dim.width;
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-            }
-
-        }
-        class PannerPanelYListener implements MouseMotionListener, MouseListener {
-            private int startY = 0;
-            private int originY = 0;
-
-            @Override
-            public void mouseMoved(java.awt.event.MouseEvent e) {
-            }
-
-            @Override
-            public void mouseDragged(java.awt.event.MouseEvent e) {
-                hSpinner.setValue(originY + (e.getY() - startY));
-            }
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                startY = e.getY();
-                originY = dim.height;
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-            }
-
-        }
-
-        var xListener = new PannerPanelXListener();
-        var yListener = new PannerPanelYListener();
+        var xListener = new PannerPanelWListener(wSpinner, dim);
+        var yListener = new PannerPanelHListener(hSpinner, dim);
         pannerPanel.addMouseListener(xListener);
         pannerPanel.addMouseListener(yListener);
         pannerPanel.addMouseMotionListener(xListener);
@@ -767,6 +843,42 @@ class EditingPanelFactory {
             hGroup.addComponent(objPanel);
         }
 
+        JComboBox<String> comboBox = new JComboBox<String>();
+        comboBox.addItem("GraphicLine");
+        comboBox.addItem("GraphicPolygon");
+        comboBox.addItem("GraphicBezierCurve");
+        comboBox.addItem("GraphicFloodFill");
+        comboBox.addItem("GraphicImage");
+
+        JButton addButton = new JButton("+");
+        addButton.addActionListener(e -> {
+            switch ((String) comboBox.getSelectedItem()) {
+                case "GraphicLine":
+                    layer.add(new GraphicLine("#000000", new Point(0, 0), new Point(50, 50)));
+                    break;
+                case "GraphicPolygon":
+                    layer.add(new GraphicPolygon("#000000", List.of(new Point(0, 0), new Point(50, 50))));
+                    break;
+                case "GraphicBezierCurve":
+                    layer.add(new GraphicBezierCurve("#000000", new Point(0, 0), new Point(50, 50), new Point(50, 50),
+                            new Point(50, 50)));
+                    break;
+                case "GraphicFloodFill":
+                    layer.add(new GraphicFloodFill("#000000", new Point(0, 0)));
+                    break;
+                case "GraphicImage":
+                    layer.add(new GraphicImage("image.png", new Point(0, 0), new Dimension(50, 50), 1.0));
+                    break;
+            }
+        });
+
+        vGroup.addPreferredGap(ComponentPlacement.RELATED);
+        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER, false)
+                .addComponent(comboBox)
+                .addComponent(addButton));
+        hGroup.addGroup(layout.createSequentialGroup()
+                .addComponent(comboBox)
+                .addComponent(addButton));
         return panel;
     }
 
