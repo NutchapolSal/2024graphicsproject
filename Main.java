@@ -1824,7 +1824,7 @@ class ImportExport {
                     break;
             }
         }
-        sc.skip("[ \\n]*");
+        sc.skip("[ \\n\\r]*");
         var layer = new GraphicLayer(layerName, objects);
         layer.shown = visible;
         return layer;
