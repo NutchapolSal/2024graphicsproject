@@ -39,20 +39,151 @@ public class Main {
 
         List<GraphicLayer> instructions = new ArrayList<>();
         instructions.add(new GraphicLayer("base sketch", new ArrayList<>())
-                .add(new GraphicImage("baseSketch.jpg", new Point(0, 0), new Dimension(600, 600), 1.0)));
-        instructions.add(new GraphicLayer("cross", new ArrayList<>())
-                .add(new GraphicLine("#777700", new Point(50, 50), new Point(550, 550)))
-                .add(new GraphicLine("#777700", new Point(50, 550), new Point(550, 50))));
+                .add(new GraphicImage("baseSketch.jpg", new Point(0, 0), new Dimension(600, 600), 0.2)));
         instructions.add(new GraphicLayer("third swing", new ArrayList<>())
                 .add(new GraphicLine("#000000", new Point(25, 550), new Point(575, 550)))
                 .add(new GraphicBezierCurve("#FF0000",
-                        new Point(100, 500), new Point(100, 100), new Point(500, 100), new Point(500, 500)))
+                        new Point(100, 500), new Point(100, 100), new Point(500, 100), new Point(500,
+                                500)))
                 .add(new GraphicBezierCurve("#FF7700",
-                        new Point(100, 500), new Point(500, 100), new Point(100, 500), new Point(500, 500)))
+                        new Point(100, 500), new Point(500, 100), new Point(100, 500), new Point(500,
+                                500)))
                 .add(new GraphicPolygon("#00FF00",
                         List.of(new Point(150, 150), new Point(250, 100), new Point(325, 125), new Point(375, 225),
-                                new Point(400, 325), new Point(275, 375), new Point(100, 300))))
-                .add(new GraphicFloodFill("#00FFFF", new Point(310, 340))));
+                                new Point(400, 325), new Point(275, 375), new Point(100, 300)))));
+        // .add(new GraphicFloodFill("#00FFFF", new Point(310, 340))));
+        instructions.add(new GraphicLayer("dirt", new ArrayList<>())
+                .add(new GraphicBezierCurve("#000", new Point(341, 600), new Point(341, 539), new Point(489, 419),
+                        new Point(600, 475))));
+        instructions.add(new GraphicLayer("christmas tree", new ArrayList<>())
+                .add(new GraphicBezierCurve("#000", new Point(394, 534), new Point(396, 568), new Point(384, 560),
+                        new Point(379, 568)))
+                .add(new GraphicBezierCurve("#000", new Point(390, 583), new Point(394, 572), new Point(386, 570),
+                        new Point(379, 568)))
+                .add(new GraphicBezierCurve("#000", new Point(390, 583), new Point(389, 582), new Point(407, 563),
+                        new Point(420, 581)))
+                .add(new GraphicBezierCurve("#000", new Point(420, 581), new Point(409, 569), new Point(401, 570),
+                        new Point(390, 583)))
+                .add(new GraphicBezierCurve("#000", new Point(420, 581), new Point(420, 563), new Point(430, 559),
+                        new Point(437, 562)))
+                .add(new GraphicBezierCurve("#000", new Point(447, 547), new Point(436, 544), new Point(430, 559),
+                        new Point(437, 562)))
+                .add(new GraphicBezierCurve("#000", new Point(447, 547), new Point(438, 546), new Point(441, 541),
+                        new Point(440, 538)))
+                .add(new GraphicBezierCurve("#000", new Point(403, 528), new Point(421, 538), new Point(430, 542),
+                        new Point(440, 538)))
+                .add(new GraphicBezierCurve("#000", new Point(403, 528), new Point(403, 527), new Point(403, 531),
+                        new Point(394, 534)))
+                .add(new GraphicBezierCurve("#000", new Point(394, 534), new Point(380, 528), new Point(409, 506),
+                        new Point(403, 528)))
+
+                .add(new GraphicBezierCurve("#000", new Point(395, 600), new Point(397, 587), new Point(402, 588),
+                        new Point(400, 576)))
+                .add(new GraphicBezierCurve("#000", new Point(395, 600), new Point(396, 595), new Point(402, 590),
+                        new Point(414, 600)))
+                .add(new GraphicBezierCurve("#000", new Point(434, 593), new Point(420, 583), new Point(406, 614),
+                        new Point(414, 600)))
+                .add(new GraphicBezierCurve("#000", new Point(434, 593), new Point(440, 579), new Point(456, 578),
+                        new Point(452, 581)))
+                .add(new GraphicBezierCurve("#000", new Point(452, 581), new Point(452, 569), new Point(460, 570),
+                        new Point(459, 563)))
+                .add(new GraphicBezierCurve("#000", new Point(441, 552), new Point(448, 562), new Point(448, 562),
+                        new Point(459, 563)))
+
+                .add(new GraphicBezierCurve("#000", new Point(454, 574), new Point(472, 582), new Point(467, 578),
+                        new Point(482, 575)))
+                .add(new GraphicBezierCurve("#000", new Point(479, 600), new Point(477, 606), new Point(467, 578),
+                        new Point(482, 575)))
+
+                .add(new GraphicBezierCurve("#000", new Point(399, 533), new Point(400, 560), new Point(400, 530),
+                        new Point(397, 561)))
+                .add(new GraphicBezierCurve("#000", new Point(399, 533), new Point(405, 551), new Point(402, 528),
+                        new Point(408, 558)))
+                .add(new GraphicBezierCurve("#000", new Point(399, 533), new Point(414, 547), new Point(415, 544),
+                        new Point(427, 546)))
+
+                .add(new GraphicBezierCurve("#000", new Point(410, 573), new Point(414, 596), new Point(412, 582),
+                        new Point(412, 594)))
+                .add(new GraphicBezierCurve("#000", new Point(425, 566), new Point(426, 575), new Point(426, 575),
+                        new Point(432, 578)))
+                .add(new GraphicBezierCurve("#000", new Point(435, 563), new Point(445, 570), new Point(438, 566),
+                        new Point(449, 570)))
+
+                .add(new GraphicBezierCurve("#000", new Point(452, 584), new Point(472, 598), new Point(453, 587),
+                        new Point(477, 600)))
+                .add(new GraphicBezierCurve("#000", new Point(438, 591), new Point(436, 608), new Point(480, 612),
+                        new Point(436, 600))));
+        instructions.add(new GraphicLayer("star", new ArrayList<>())
+                .add(new GraphicBezierCurve("#000", new Point(50, 19), new Point(49, 49), new Point(58, 42),
+                        new Point(68, 44)))
+                .add(new GraphicBezierCurve("#000", new Point(52, 79), new Point(47, 67), new Point(58, 42),
+                        new Point(68, 44)))
+                .add(new GraphicBezierCurve("#000", new Point(50, 19), new Point(52, 34), new Point(33, 52),
+                        new Point(29, 46)))
+                .add(new GraphicBezierCurve("#000", new Point(52, 79), new Point(55, 46), new Point(33, 52),
+                        new Point(29, 46)))
+
+                .add(new GraphicBezierCurve("#000", new Point(67, 77), new Point(65, 90), new Point(69, 89),
+                        new Point(74, 90)))
+                .add(new GraphicBezierCurve("#000", new Point(66, 109), new Point(65, 90), new Point(69, 89),
+                        new Point(74, 90)))
+                .add(new GraphicBezierCurve("#000", new Point(67, 77), new Point(64, 84), new Point(63, 89),
+                        new Point(56, 91)))
+                .add(new GraphicBezierCurve("#000", new Point(66, 109), new Point(65, 90), new Point(63, 89),
+                        new Point(56, 91)))
+
+                .add(new GraphicBezierCurve("#000", new Point(551, 15), new Point(548, 22), new Point(531, 40),
+                        new Point(550, 50)))
+                .add(new GraphicBezierCurve("#000", new Point(522, 63), new Point(522, 67), new Point(531, 42),
+                        new Point(550, 50)))
+                .add(new GraphicBezierCurve("#000", new Point(551, 15), new Point(533, 37), new Point(520, 31),
+                        new Point(518, 32)))
+                .add(new GraphicBezierCurve("#000", new Point(522, 63), new Point(531, 42), new Point(520, 31),
+                        new Point(518, 32)))
+
+                .add(new GraphicBezierCurve("#000", new Point(517, 154), new Point(517, 156), new Point(503, 172),
+                        new Point(518, 176)))
+                .add(new GraphicBezierCurve("#000", new Point(498, 192), new Point(498, 182), new Point(511, 173),
+                        new Point(518, 176)))
+                .add(new GraphicBezierCurve("#000", new Point(517, 154), new Point(504, 172), new Point(505, 167),
+                        new Point(494, 168)))
+                .add(new GraphicBezierCurve("#000", new Point(498, 192), new Point(499, 191), new Point(503, 172),
+                        new Point(494, 168))));
+        instructions.add(new GraphicLayer("santa", new ArrayList<>())
+                .add(new GraphicBezierCurve("#000", new Point(37, 499), new Point(45, 459), new Point(77, 462),
+                        new Point(82, 466)))
+                .add(new GraphicBezierCurve("#000", new Point(37, 499), new Point(50, 504), new Point(73, 494),
+                        new Point(82, 466)))
+                .add(new GraphicBezierCurve("#000", new Point(86, 514), new Point(88, 495), new Point(86, 487),
+                        new Point(82, 466)))
+                .add(new GraphicBezierCurve("#000", new Point(37, 499), new Point(51, 514), new Point(66, 519),
+                        new Point(86, 514)))
+                .add(new GraphicBezierCurve("#000", new Point(82, 466), new Point(90, 453), new Point(65, 437),
+                        new Point(38, 463)))
+                .add(new GraphicBezierCurve("#000", new Point(38, 463), new Point(15, 496), new Point(26, 508),
+                        new Point(41, 502)))
+                .add(new GraphicBezierCurve("#000", new Point(66, 449), new Point(32, 413), new Point(0, 488),
+                        new Point(20, 507)))
+                .add(new GraphicBezierCurve("#000", new Point(20, 507), new Point(23, 502), new Point(29, 500),
+                        new Point(32, 506)))
+                .add(new GraphicBezierCurve("#000", new Point(20, 507), new Point(12, 517), new Point(26, 520),
+                        new Point(32, 506)))
+
+                .add(new GraphicBezierCurve("#000", new Point(63, 475), new Point(63, 474), new Point(70, 474),
+                        new Point(68, 482)))
+                .add(new GraphicBezierCurve("#000", new Point(63, 475), new Point(62, 481), new Point(62, 481),
+                        new Point(68, 482)))
+                .add(new GraphicBezierCurve("#000", new Point(50, 487), new Point(52, 487), new Point(56, 488),
+                        new Point(55, 492)))
+                .add(new GraphicBezierCurve("#000", new Point(50, 487), new Point(48, 493), new Point(52, 494),
+                        new Point(55, 492)))
+
+                .add(new GraphicBezierCurve("#000", new Point(54, 512), new Point(45, 529), new Point(41, 536),
+                        new Point(50, 556)))
+                .add(new GraphicBezierCurve("#000", new Point(54, 512), new Point(53, 532), new Point(55, 534),
+                        new Point(60, 542)))
+                .add(new GraphicBezierCurve("#000", new Point(60, 542), new Point(59, 551), new Point(60, 553),
+                        new Point(50, 556))));
 
         GraphicsPanel panel = new GraphicsPanel(instructions);
 
@@ -66,11 +197,12 @@ public class Main {
 
         JFrame frame2 = new JFrame();
         JScrollPane scrollPane = new JScrollPane();
-        scrollPane.setViewportView(EditingPanelFactory.create(instructions.get(0)));
+        scrollPane.setViewportView(EditingPanelFactory.create(instructions.get(1)));
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
         frame2.add(scrollPane);
-        frame2.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
+        frame2.setLocation(frame.getLocation().x + frame.getWidth(),
+                frame.getLocation().y);
         // EditingPanelFactory.recurseAddBorders(frame2.getContentPane());
         frame2.setTitle("editor");
         frame2.pack();
