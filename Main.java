@@ -1474,7 +1474,7 @@ class EditingPanelFactory {
                 case "GraphicPolygon":
                     pred = obj -> obj instanceof GraphicPolygon;
                     defaultObj = new GraphicPolygon("#000000", 1,
-                            new ArrayList<>(List.of(new Point(0, 0), new Point(50, 50))));
+                            new ArrayList<>(List.of(new Point(0, 0), new Point(50, 50), new Point(0, 50))));
                     break;
                 case "GraphicBezierCurve":
                     pred = obj -> obj instanceof GraphicBezierCurve;
