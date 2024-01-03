@@ -339,6 +339,8 @@ class GraphicLayer {
     public String name;
     public List<GraphicObject> objects;
 
+    private BufferedImage cache = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
+
     GraphicLayer(String name) {
         this.name = name;
         this.objects = new ArrayList<>();
@@ -350,10 +352,22 @@ class GraphicLayer {
     }
 
     BufferedImage draw() {
+        var changed = false;
+        for (GraphicObject object : objects) {
+            if (object.changed) {
+                changed = true;
+                break;
+            }
+        }
+        if (!changed) {
+            return cache;
+        }
         BufferedImage buffer = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
         for (GraphicObject object : objects) {
             object.draw(buffer);
+            object.changed = false;
         }
+        cache = buffer;
         return buffer;
     }
 
@@ -376,6 +390,7 @@ abstract class GraphicObject {
     abstract public void draw(BufferedImage buffer);
 
     public int debugging = -1;
+    public boolean changed = true;
 
     abstract public void debugDraw(Graphics g);
 
@@ -1075,10 +1090,12 @@ class EditingPanelFactory {
         JSpinner xSpinner = new JSpinner(xModel);
         xSpinner.addChangeListener(e -> {
             point.x = (int) xSpinner.getValue();
+            obj.changed = true;
         });
         JSpinner ySpinner = new JSpinner(yModel);
         ySpinner.addChangeListener(e -> {
             point.y = (int) ySpinner.getValue();
+            obj.changed = true;
         });
 
         JPanel pannerPanel = new JPanel();
@@ -1153,11 +1170,13 @@ class EditingPanelFactory {
 
         wSpinner.addChangeListener(e -> {
             dim.width = (int) wSpinner.getValue();
+            obj.changed = true;
         });
 
         JSpinner hSpinner = new JSpinner(hModel);
         hSpinner.addChangeListener(e -> {
             dim.height = (int) hSpinner.getValue();
+            obj.changed = true;
         });
 
         JPanel pannerPanel = new JPanel();
@@ -1218,7 +1237,7 @@ class EditingPanelFactory {
         return panel;
     }
 
-    public static JPanel create(String labelText, MutableString str) {
+    public static JPanel create(String labelText, MutableString str, GraphicObject obj, int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
         GroupLayout layout = new GroupLayout(panel);
@@ -1227,6 +1246,7 @@ class EditingPanelFactory {
         JTextField textField = new JTextField(str.value);
         textField.addActionListener(e -> {
             str.value = textField.getText();
+            obj.changed = true;
         });
 
         layout.setHorizontalGroup(layout.createSequentialGroup()
@@ -1241,7 +1261,8 @@ class EditingPanelFactory {
         return panel;
     }
 
-    public static JPanel create(String labelText, MutableDouble doub, double min, double max, double stepSize) {
+    public static JPanel create(String labelText, MutableDouble doub, double min, double max, double stepSize,
+            GraphicObject obj, int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
         GroupLayout layout = new GroupLayout(panel);
@@ -1253,9 +1274,11 @@ class EditingPanelFactory {
         spinner.addChangeListener(e -> {
             doub.value = (double) spinner.getValue();
             slider.setValue((int) ((doub.value - min) / stepSize));
+            obj.changed = true;
         });
         slider.addChangeListener(e -> {
             spinner.setValue(slider.getValue() * stepSize + min);
+            obj.changed = true;
         });
 
         layout.setHorizontalGroup(layout.createSequentialGroup()
@@ -1269,10 +1292,13 @@ class EditingPanelFactory {
                         .addComponent(slider)
                         .addComponent(spinner));
 
+        slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+
         return panel;
     }
 
-    public static JPanel create(String labelText, MutableInt integer, int min, int max, int stepSize) {
+    public static JPanel create(String labelText, MutableInt integer, int min, int max, int stepSize, GraphicObject obj,
+            int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
         GroupLayout layout = new GroupLayout(panel);
@@ -1284,9 +1310,11 @@ class EditingPanelFactory {
         spinner.addChangeListener(e -> {
             integer.value = (int) spinner.getValue();
             slider.setValue((integer.value - min) / stepSize);
+            obj.changed = true;
         });
         slider.addChangeListener(e -> {
             spinner.setValue(slider.getValue() * stepSize + min);
+            obj.changed = true;
         });
 
         layout.setHorizontalGroup(layout.createSequentialGroup()
@@ -1299,6 +1327,8 @@ class EditingPanelFactory {
                         .addComponent(label)
                         .addComponent(slider)
                         .addComponent(spinner));
+
+        slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
 
         return panel;
     }
@@ -1320,11 +1350,13 @@ class EditingPanelFactory {
                 color.value = newColor;
                 button.setColor(color.value);
                 textField.setText(ColorHexer.encode(color.value));
+                obj.changed = true;
             }
         });
         textField.addActionListener(e -> {
             color.value = ColorHexer.decode(textField.getText());
             button.setColor(color.value);
+            obj.changed = true;
         });
 
         layout.setHorizontalGroup(layout.createSequentialGroup()
@@ -1340,7 +1372,7 @@ class EditingPanelFactory {
                         .addComponent(button)
                         .addComponent(textField));
 
-        button.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
+        button.addMouseListener(new DebuggingHoverListener(obj, debugValue));
 
         return panel;
     }
@@ -1433,7 +1465,7 @@ class EditingPanelFactory {
 
         JLabel label = new JLabel("GraphicLine");
         var colorPanel = create("color", line.color, line, 0);
-        var thicknessPanel = create("thickness", line.thickness, 1, 15, 1);
+        var thicknessPanel = create("thickness", line.thickness, 1, 15, 1, line, 0);
         var p1Panel = create("p1", line.p1, line, 1);
         var p2Panel = create("p2", line.p2, line, 2);
 
@@ -1466,7 +1498,7 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicPolygon");
-        var thickenssPanel = create("thickness", polygon.thickness, 1, 15, 1);
+        var thickenssPanel = create("thickness", polygon.thickness, 1, 15, 1, polygon, 0);
         var colorPanel = create("color", polygon.color, polygon, 0);
 
         var pointsHGroup = layout.createParallelGroup();
@@ -1503,7 +1535,7 @@ class EditingPanelFactory {
 
         JLabel label = new JLabel("GraphicBezierCurve");
         var colorPanel = create("color", bezierCurve.color, bezierCurve, 0);
-        var thicknessPanel = create("thickness", bezierCurve.thickness, 1, 15, 1);
+        var thicknessPanel = create("thickness", bezierCurve.thickness, 1, 15, 1, bezierCurve, 0);
         var p1Panel = create("p1", bezierCurve.p1, bezierCurve, 1);
         var p2Panel = create("p2", bezierCurve.p2, bezierCurve, 2);
 
@@ -1603,12 +1635,12 @@ class EditingPanelFactory {
 
         JLabel label = new JLabel("GraphicImage");
 
-        var filePathPanel = create("file path", image.filePath);
+        var filePathPanel = create("file path", image.filePath, image, 0);
 
         var originPanel = create("origin", image.origin, image, 1);
         var sizePanel = create("size", image.size, image, 2);
 
-        var opacityPanel = create("opacity", image.opacity, 0.0, 1.0, 0.01);
+        var opacityPanel = create("opacity", image.opacity, 0.0, 1.0, 0.01, image, 0);
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(label)
