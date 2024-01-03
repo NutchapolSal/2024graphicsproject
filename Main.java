@@ -317,6 +317,14 @@ class EditorFrame {
     }
 }
 
+class MutableBoolean {
+    public boolean value;
+
+    MutableBoolean(boolean value) {
+        this.value = value;
+    }
+}
+
 class MutableColor {
     public Color value;
 
@@ -611,6 +619,87 @@ class GraphicPolygon extends GraphicPlotter {
             newPoints.add(new Point(point.x, point.y));
         }
         return new GraphicPolygon(ColorHexer.encode(color.value), newPoints);
+    }
+}
+
+class GraphicPolyline extends GraphicPlotter {
+    public MutableInt thickness = new MutableInt(1);
+    public MutableBoolean closed = new MutableBoolean(false);
+    public List<Point> points;
+
+    GraphicPolyline(String hexColor, int thickness, boolean closed, List<Point> points) {
+        super(hexColor);
+        this.thickness.value = thickness;
+        this.closed.value = closed;
+        this.points = points;
+    }
+
+    @Override
+    public void draw(BufferedImage buffer) {
+        Graphics g = buffer.createGraphics();
+        g.setColor(color.value);
+
+        for (int i = 1; i < points.size(); i++) {
+            plotLine(g, points.get(i - 1), points.get(i));
+        }
+        if (closed.value) {
+            plotLine(g, points.get(points.size() - 1), points.get(0));
+        }
+    }
+
+    private void plotLine(Graphics g, Point p1, Point p2) {
+        int dx = Math.abs(p2.x - p1.x);
+        int dy = Math.abs(p2.y - p1.y);
+
+        int sx = (p1.x < p2.x) ? 1 : -1;
+        int sy = (p1.y < p2.y) ? 1 : -1;
+        boolean isSwap = false;
+
+        if (dy > dx) {
+            int temp = dy;
+            dy = dx;
+            dx = temp;
+            isSwap = true;
+        }
+        int D = 2 * dy - dx;
+
+        int x = p1.x;
+        int y = p1.y;
+        for (int i = 1; i <= dx; i++) {
+            plot(g, x, y, thickness.value);
+            if (D >= 0) {
+                if (isSwap) {
+                    x += sx;
+                } else {
+                    y += sy;
+                }
+                D -= 2 * dx;
+            }
+
+            if (isSwap) {
+                y += sy;
+            } else {
+                x += sx;
+            }
+            D += 2 * dy;
+        }
+    }
+
+    @Override
+    public void debugDraw(Graphics g) {
+        for (int i = 0; i < points.size(); i++) {
+            Point point = points.get(i);
+            debugCircle(g, point.x, point.y, debugging == i + 1);
+        }
+    }
+
+    @Override
+    public GraphicObject copy() {
+        List<Point> newPoints = new ArrayList<>();
+        for (Point point : points) {
+            newPoints.add(new Point(point.x, point.y));
+        }
+        return new GraphicPolyline(ColorHexer.encode(color.value), thickness.value, closed.value, newPoints);
     }
 }
 
@@ -1445,6 +1534,33 @@ class EditingPanelFactory {
         return panel;
     }
 
+    public static JPanel create(String labelText, MutableBoolean bool, GraphicObject obj, int debugValue) {
+        JPanel panel = new JPanel();
+        JLabel label = new JLabel(labelText);
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        JCheckBox checkBox = new JCheckBox();
+        checkBox.setSelected(bool.value);
+        checkBox.addActionListener(e -> {
+            bool.value = checkBox.isSelected();
+            obj.changed = true;
+        });
+
+        layout.setHorizontalGroup(layout.createSequentialGroup()
+                .addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED)
+                .addComponent(checkBox));
+        layout.setVerticalGroup(
+                layout.createParallelGroup(Alignment.BASELINE)
+                        .addComponent(label)
+                        .addComponent(checkBox));
+
+        checkBox.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+
+        return panel;
+    }
+
     public static JPanel create(GraphicLayer layer) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
@@ -1470,6 +1586,7 @@ class EditingPanelFactory {
 
         JComboBox<String> comboBox = new JComboBox<String>();
         comboBox.addItem("GraphicLine");
+        comboBox.addItem("GraphicPolyline");
         comboBox.addItem("GraphicPolygon");
         comboBox.addItem("GraphicBezierCurve");
         comboBox.addItem("GraphicFloodFill");
@@ -1483,6 +1600,11 @@ class EditingPanelFactory {
                 case "GraphicLine":
                     pred = obj -> obj instanceof GraphicLine;
                     defaultObj = (new GraphicLine("#000000", 1, new Point(0, 0), new Point(50, 50)));
+                    break;
+                case "GraphicPolyline":
+                    pred = obj -> obj instanceof GraphicPolyline;
+                    defaultObj = new GraphicPolyline("#000000", 1, false,
+                            new ArrayList<>(List.of(new Point(0, 0), new Point(50, 50))));
                     break;
                 case "GraphicPolygon":
                     pred = obj -> obj instanceof GraphicPolygon;
@@ -1519,6 +1641,14 @@ class EditingPanelFactory {
                     var result = (GraphicLine) streamResult.get().copy();
                     result.p1.translate(10, 10);
                     result.p2.translate(10, 10);
+                    layer.add(result);
+                    break;
+                }
+                case "GraphicPolyline": {
+                    var result = (GraphicPolyline) streamResult.get().copy();
+                    for (Point point : result.points) {
+                        point.translate(10, 10);
+                    }
                     layer.add(result);
                     break;
                 }
@@ -1568,6 +1698,8 @@ class EditingPanelFactory {
     public static JPanel create(GraphicObject object) {
         if (object instanceof GraphicLine) {
             return create((GraphicLine) object);
+        } else if (object instanceof GraphicPolyline) {
+            return create((GraphicPolyline) object);
         } else if (object instanceof GraphicPolygon) {
             return create((GraphicPolygon) object);
         } else if (object instanceof GraphicBezierCurve) {
@@ -1611,6 +1743,73 @@ class EditingPanelFactory {
         panel.addMouseListener(new DebuggingHoverListener(line, 0));
         p1Panel.addMouseListener(new DebuggingHoverListener(line, 1));
         p2Panel.addMouseListener(new DebuggingHoverListener(line, 2));
+
+        return panel;
+    }
+
+    public static JPanel create(GraphicPolyline polyline) {
+        JPanel panel = new JPanel();
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        JLabel label = new JLabel("GraphicPolyline");
+        var colorPanel = create("color", polyline.color, polyline, 0);
+        var thicknessPanel = create("thickness", polyline.thickness, 1, 15, 1, polyline, 0);
+        var closedPanel = create("closed", polyline.closed, polyline, 0);
+
+        JButton addButton = new JButton("+");
+        JButton minusButton = new JButton("-");
+        addButton.addActionListener(e -> {
+            polyline.points.add(new Point(polyline.points.get(polyline.points.size() - 1).x + 20,
+                    polyline.points.get(polyline.points.size() - 1).y + 20));
+            polyline.changed = true;
+            needsUpdate = true;
+        });
+        minusButton.addActionListener(e -> {
+            if (polyline.points.size() > 2) {
+                polyline.points.remove(polyline.points.size() - 1);
+                polyline.changed = true;
+                needsUpdate = true;
+            }
+        });
+        minusButton.setEnabled(polyline.points.size() > 2);
+
+        var pointsHGroup = layout.createParallelGroup();
+        var pointsVGroup = layout.createSequentialGroup();
+
+        for (int i = 0; i < polyline.points.size(); i++) {
+            var pointPanel = create("p" + i, polyline.points.get(i), polyline, i + 1);
+            pointsVGroup.addPreferredGap(ComponentPlacement.RELATED);
+            pointsVGroup.addComponent(pointPanel);
+            pointsHGroup.addComponent(pointPanel);
+            pointPanel.addMouseListener(new DebuggingHoverListener(polyline, i + 1));
+        }
+
+        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
+                .addComponent(label)
+                .addComponent(colorPanel)
+                .addComponent(thicknessPanel)
+                .addComponent(closedPanel)
+                .addGroup(pointsHGroup)
+                .addGroup(layout.createSequentialGroup()
+                        .addComponent(addButton)
+                        .addComponent(minusButton)));
+
+        layout.setVerticalGroup(layout.createSequentialGroup()
+                .addComponent(label)
+                .addComponent(colorPanel)
+                .addGap(2)
+                .addComponent(thicknessPanel)
+                .addGap(2)
+                .addComponent(closedPanel)
+                .addGap(2)
+                .addGroup(pointsVGroup)
+                .addGap(2)
+                .addGroup(layout.createParallelGroup(Alignment.CENTER)
+                        .addComponent(addButton)
+                        .addComponent(minusButton)));
+
+        panel.addMouseListener(new DebuggingHoverListener(polyline, 0));
 
         return panel;
     }
@@ -1842,7 +2041,7 @@ class ImportExport {
         sb.append(layer.name);
         sb.append("\n");
         sb.append("VISIBLE ");
-        sb.append(layer.shown ? "T" : "F");
+        sb.append(exportString(layer.shown));
         sb.append("\n");
         for (GraphicObject object : layer.objects) {
             sb.append(exportString(object));
@@ -1878,6 +2077,23 @@ class ImportExport {
         sb.append(exportString(line.p1));
         sb.append(" ");
         sb.append(exportString(line.p2));
+        return sb.toString();
+    }
+
+    public static String exportString(GraphicPolyline polyline) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("POLYLINE ");
+        sb.append(exportString(polyline.color.value));
+        sb.append(" ");
+        sb.append(polyline.thickness.value);
+        sb.append(" ");
+        sb.append(exportString(polyline.closed.value));
+        sb.append(" ");
+        for (Point point : polyline.points) {
+            sb.append(exportString(point));
+            sb.append(" ");
+        }
+        sb.append("END");
         return sb.toString();
     }
 
@@ -1955,6 +2171,10 @@ class ImportExport {
         return sb.toString();
     }
 
+    public static String exportString(boolean bool) {
+        return bool ? "T" : "F";
+    }
+
     public static List<GraphicLayer> importString(String str) {
         Scanner sc = new Scanner(str);
         List<GraphicLayer> layers = importLayers(sc);
@@ -2011,6 +2231,21 @@ class ImportExport {
         Point p1 = importPoint(sc);
         Point p2 = importPoint(sc);
         return new GraphicLine(hexColor, thickness, p1, p2);
+    }
+
+    public static GraphicPolyline importPolyline(Scanner sc) {
+        String hexColor = sc.next();
+        int thickness = sc.nextInt();
+        boolean closed = sc.next().equals("T");
+        List<Point> points = new ArrayList<>();
+        while (true) {
+            points.add(importPoint(sc));
+            if (sc.hasNext("END")) {
+                sc.next();
+                break;
+            }
+        }
+        return new GraphicPolyline(hexColor, thickness, closed, points);
     }
 
     public static GraphicPolygon importPolygon(Scanner sc) {
