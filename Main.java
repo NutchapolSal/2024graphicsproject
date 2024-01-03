@@ -1066,8 +1066,9 @@ class GraphicImage extends GraphicObject {
 
     @Override
     public void debugDraw(Graphics g) {
+        debugLine(g, origin.x, origin.y, origin.x + size.width, origin.y + size.height, debugging == 2);
+        debugDot(g, origin.x + size.width, origin.y + size.height, debugging == 2);
         debugCircle(g, origin.x, origin.y, debugging == 1);
-        debugCircle(g, origin.x + size.width, origin.y + size.height, debugging == 2);
     }
 
     @Override
@@ -1615,6 +1616,7 @@ class EditingPanelFactory {
         pannerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
         pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
+        addPannerKeybinds(pannerPanel);
 
         JPanel pannerXPanel = new JPanel();
         pannerXPanel.setPreferredSize(new Dimension(20, 8));
@@ -1623,6 +1625,7 @@ class EditingPanelFactory {
         pannerXPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
         pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
+        addPannerKeybinds(pannerXPanel);
 
         JPanel pannerYPanel = new JPanel();
         pannerYPanel.setPreferredSize(new Dimension(8, 20));
@@ -1631,6 +1634,7 @@ class EditingPanelFactory {
         pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
         pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
+        addPannerKeybinds(pannerYPanel);
 
         var xListener = new PannerPanelWListener(wSpinner, dim);
         var yListener = new PannerPanelHListener(hSpinner, dim);
