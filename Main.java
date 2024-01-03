@@ -73,9 +73,9 @@ public class Main {
                         new Point(100, 500), new Point(500, 100),
                         new ArrayList<>(List.of(new Point(100, 500), new Point(500,
                                 500)))))
-                .add(new GraphicPolygon("#00FF00", 1,
-                        List.of(new Point(150, 150), new Point(250, 100), new Point(325, 125), new Point(375, 225),
-                                new Point(400, 325), new Point(275, 375), new Point(100, 300)))));
+                .add(new GraphicPolygon("#00FF00",
+                        new ArrayList<>(List.of(new Point(150, 150), new Point(250, 100), new Point(325, 125),
+                                new Point(375, 225), new Point(400, 325), new Point(275, 375), new Point(100, 300))))));
 
         GraphicsPanel panel = new GraphicsPanel(instructions);
 
@@ -577,12 +577,10 @@ class GraphicLine extends GraphicPlotter {
 }
 
 class GraphicPolygon extends GraphicPlotter {
-    public MutableInt thickness = new MutableInt(1);
     public List<Point> points;
 
-    GraphicPolygon(String hexColor, int thickness, List<Point> points) {
+    GraphicPolygon(String hexColor, List<Point> points) {
         super(hexColor);
-        this.thickness.value = thickness;
         this.points = points;
     }
 
@@ -590,13 +588,12 @@ class GraphicPolygon extends GraphicPlotter {
     public void draw(BufferedImage buffer) {
         Graphics2D g = buffer.createGraphics();
         g.setColor(color.value);
-        g.setStroke(new BasicStroke(thickness.value));
 
         Polygon poly = new Polygon();
         for (Point point : points) {
             poly.addPoint(point.x, point.y);
         }
-        g.drawPolygon(poly);
+        g.fillPolygon(poly);
     }
 
     @Override
@@ -613,7 +610,7 @@ class GraphicPolygon extends GraphicPlotter {
         for (Point point : points) {
             newPoints.add(new Point(point.x, point.y));
         }
-        return new GraphicPolygon(ColorHexer.encode(color.value), thickness.value, newPoints);
+        return new GraphicPolygon(ColorHexer.encode(color.value), newPoints);
     }
 }
 
@@ -1489,7 +1486,7 @@ class EditingPanelFactory {
                     break;
                 case "GraphicPolygon":
                     pred = obj -> obj instanceof GraphicPolygon;
-                    defaultObj = new GraphicPolygon("#000000", 1,
+                    defaultObj = new GraphicPolygon("#000000",
                             new ArrayList<>(List.of(new Point(0, 0), new Point(50, 50), new Point(0, 50))));
                     break;
                 case "GraphicBezierCurve":
@@ -1624,8 +1621,24 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicPolygon");
-        var thickenssPanel = create("thickness", polygon.thickness, 1, 15, 1, polygon, 0);
         var colorPanel = create("color", polygon.color, polygon, 0);
+
+        JButton addButton = new JButton("+");
+        JButton minusButton = new JButton("-");
+        addButton.addActionListener(e -> {
+            polygon.points.add(new Point(polygon.points.get(polygon.points.size() - 1).x + 20,
+                    polygon.points.get(polygon.points.size() - 1).y + 20));
+            polygon.changed = true;
+            needsUpdate = true;
+        });
+        minusButton.addActionListener(e -> {
+            if (polygon.points.size() > 3) {
+                polygon.points.remove(polygon.points.size() - 1);
+                polygon.changed = true;
+                needsUpdate = true;
+            }
+        });
+        minusButton.setEnabled(polygon.points.size() > 3);
 
         var pointsHGroup = layout.createParallelGroup();
         var pointsVGroup = layout.createSequentialGroup();
@@ -1640,14 +1653,19 @@ class EditingPanelFactory {
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(label)
-                .addComponent(thickenssPanel)
                 .addComponent(colorPanel)
-                .addGroup(pointsHGroup));
+                .addGroup(pointsHGroup)
+                .addGroup(layout.createSequentialGroup()
+                        .addComponent(addButton)
+                        .addComponent(minusButton)));
+
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addComponent(label)
-                .addComponent(thickenssPanel)
                 .addComponent(colorPanel)
-                .addGroup(pointsVGroup));
+                .addGroup(pointsVGroup)
+                .addGroup(layout.createParallelGroup(Alignment.CENTER)
+                        .addComponent(addButton)
+                        .addComponent(minusButton)));
 
         panel.addMouseListener(new DebuggingHoverListener(polygon, 0));
 
@@ -1866,8 +1884,6 @@ class ImportExport {
         sb.append("POLYGON ");
         sb.append(exportString(polygon.color.value));
         sb.append(" ");
-        sb.append(polygon.thickness.value);
-        sb.append(" ");
         for (Point point : polygon.points) {
             sb.append(exportString(point));
             sb.append(" ");
@@ -1997,7 +2013,6 @@ class ImportExport {
 
     public static GraphicPolygon importPolygon(Scanner sc) {
         String hexColor = sc.next();
-        int thickness = sc.nextInt();
         List<Point> points = new ArrayList<>();
         while (true) {
             points.add(importPoint(sc));
@@ -2006,7 +2021,7 @@ class ImportExport {
                 break;
             }
         }
-        return new GraphicPolygon(hexColor, thickness, points);
+        return new GraphicPolygon(hexColor, points);
     }
 
     public static GraphicBezierCurve importBezierCurve(Scanner sc) {
