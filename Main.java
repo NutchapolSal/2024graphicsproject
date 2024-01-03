@@ -107,7 +107,7 @@ class EditorFrame {
 
     private List<GraphicLayer> instructions;
 
-    private MutableInt currentLayer = new MutableInt(0);
+    private MutableInt currentLayer = new MutableInt(-1);
     private MutableString savePath = new MutableString(null);
 
     private JScrollPane layerScrollPane = new JScrollPane();
@@ -135,8 +135,7 @@ class EditorFrame {
         editorScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         editorScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 
-        JPanel editorPane = EditingPanelFactory.create(this.instructions.get(this.currentLayer.value));
-        editorScrollPane.setViewportView(editorPane);
+        changeEditorPane(0);
 
         JButton addLayerButton = new JButton("add layer");
         addLayerButton.addActionListener(e -> {
@@ -234,11 +233,23 @@ class EditorFrame {
 
         new Timer(250, e -> {
             if (EditingPanelFactory.needsUpdate) {
-                editorScrollPane
-                        .setViewportView(EditingPanelFactory.create(this.instructions.get(this.currentLayer.value)));
+                changeEditorPane(this.currentLayer.value);
                 EditingPanelFactory.needsUpdate = false;
             }
         }).start();
+    }
+
+    private void changeEditorPane(int layerIndex) {
+        boolean sameLayer = layerIndex == this.currentLayer.value;
+        int scrollPos = editorScrollPane.getVerticalScrollBar().getValue();
+        editorScrollPane
+                .setViewportView(EditingPanelFactory.create(this.instructions.get(layerIndex)));
+        if (sameLayer) {
+            editorScrollPane.getVerticalScrollBar().setValue(scrollPos);
+        } else {
+            editorScrollPane.getVerticalScrollBar().setValue(0);
+        }
+        this.currentLayer.value = layerIndex;
     }
 
     private JPanel createLayerListPanel() {
@@ -270,9 +281,7 @@ class EditorFrame {
             }
             final int layerI2 = layerI;
             layerEditRadio.addActionListener(e -> {
-                JPanel editorPane = EditingPanelFactory.create(layer);
-                editorScrollPane.setViewportView(editorPane);
-                currentLayer.value = layerI2;
+                changeEditorPane(layerI2);
             });
             layerButtonGroup.add(layerEditRadio);
 
