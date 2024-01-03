@@ -29,6 +29,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
+import java.util.function.Predicate;
 import java.util.prefs.Preferences;
 
 import javax.imageio.ImageIO;
@@ -398,6 +399,8 @@ abstract class GraphicObject {
 
     abstract public void debugDraw(Graphics g);
 
+    abstract public GraphicObject copy();
+
     protected void debugCircle(Graphics g, int x, int y, boolean active) {
         var g2 = (Graphics2D) g.create();
         g2.setColor(Color.black);
@@ -548,6 +551,13 @@ class GraphicLine extends GraphicPlotter {
         debugCircle(g, p1.x, p1.y, debugging == 1);
         debugCircle(g, p2.x, p2.y, debugging == 2);
     }
+
+    @Override
+    public GraphicObject copy() {
+        return new GraphicLine(ColorHexer.encode(color.value), thickness.value, new Point(p1.x, p1.y),
+                new Point(p2.x, p2.y));
+    }
+
 }
 
 class GraphicPolygon extends GraphicPlotter {
@@ -579,6 +589,15 @@ class GraphicPolygon extends GraphicPlotter {
             Point point = points.get(i);
             debugCircle(g, point.x, point.y, debugging == i + 1);
         }
+    }
+
+    @Override
+    public GraphicObject copy() {
+        List<Point> newPoints = new ArrayList<>();
+        for (Point point : points) {
+            newPoints.add(new Point(point.x, point.y));
+        }
+        return new GraphicPolygon(ColorHexer.encode(color.value), thickness.value, newPoints);
     }
 }
 
@@ -648,6 +667,16 @@ class GraphicBezierCurve extends GraphicPlotter {
             debugCircle(g, endP.x, endP.y, debugging == i + 3);
         }
     }
+
+    @Override
+    public GraphicObject copy() {
+        List<Point> newPoints = new ArrayList<>();
+        for (Point point : continuedPoints) {
+            newPoints.add(new Point(point.x, point.y));
+        }
+        return new GraphicBezierCurve(ColorHexer.encode(color.value), thickness.value, new Point(p1.x, p1.y),
+                new Point(p2.x, p2.y), newPoints);
+    }
 }
 
 class GraphicFloodFill extends GraphicPlotter {
@@ -695,6 +724,11 @@ class GraphicFloodFill extends GraphicPlotter {
     @Override
     public void debugDraw(Graphics g) {
         debugCircle(g, point.x, point.y, debugging == 1);
+    }
+
+    @Override
+    public GraphicObject copy() {
+        return new GraphicFloodFill(ColorHexer.encode(color.value), new Point(point.x, point.y));
     }
 }
 
@@ -746,6 +780,12 @@ class GraphicImage extends GraphicObject {
     public void debugDraw(Graphics g) {
         debugCircle(g, origin.x, origin.y, debugging == 1);
         debugCircle(g, origin.x + size.width, origin.y + size.height, debugging == 2);
+    }
+
+    @Override
+    public GraphicObject copy() {
+        return new GraphicImage(filePath.value, new Point(origin.x, origin.y), new Dimension(size.width, size.height),
+                opacity.value);
     }
 }
 
@@ -1424,27 +1464,82 @@ class EditingPanelFactory {
 
         JButton addButton = new JButton("+");
         addButton.addActionListener(e -> {
+            Predicate<? super GraphicObject> pred;
+            GraphicObject defaultObj;
             switch ((String) comboBox.getSelectedItem()) {
                 case "GraphicLine":
-                    layer.add(new GraphicLine("#000000", 1, new Point(0, 0), new Point(50, 50)));
+                    pred = obj -> obj instanceof GraphicLine;
+                    defaultObj = (new GraphicLine("#000000", 1, new Point(0, 0), new Point(50, 50)));
                     break;
                 case "GraphicPolygon":
-                    layer.add(new GraphicPolygon("#000000", 1,
-                            new ArrayList<>(List.of(new Point(0, 0), new Point(50, 50)))));
+                    pred = obj -> obj instanceof GraphicPolygon;
+                    defaultObj = new GraphicPolygon("#000000", 1,
+                            new ArrayList<>(List.of(new Point(0, 0), new Point(50, 50))));
                     break;
                 case "GraphicBezierCurve":
-                    layer.add(new GraphicBezierCurve("#000000", 1, new Point(0, 0), new Point(50, 50),
+                    pred = obj -> obj instanceof GraphicBezierCurve;
+                    defaultObj = new GraphicBezierCurve("#000000", 1, new Point(0, 0), new Point(50, 0),
                             new ArrayList<>(List.of(new Point(50, 50),
-                                    new Point(50, 50)))));
+                                    new Point(0, 50))));
                     break;
                 case "GraphicFloodFill":
-                    layer.add(new GraphicFloodFill("#000000", new Point(0, 0)));
+                    pred = obj -> obj instanceof GraphicFloodFill;
+                    defaultObj = new GraphicFloodFill("#000000", new Point(0, 0));
                     break;
                 case "GraphicImage":
-                    layer.add(new GraphicImage("image.png", new Point(0, 0), new Dimension(50, 50), 1.0));
+                    pred = obj -> obj instanceof GraphicImage;
+                    defaultObj = new GraphicImage("image.png", new Point(0, 0), new Dimension(50, 50), 1.0);
                     break;
+                default:
+                    return;
             }
+
             needsUpdate = true;
+
+            var streamResult = layer.objects.stream().filter(pred).reduce((a, b) -> b);
+            if (!streamResult.isPresent()) {
+                layer.objects.add(defaultObj);
+                return;
+            }
+            switch ((String) comboBox.getSelectedItem()) {
+                case "GraphicLine": {
+                    var result = (GraphicLine) streamResult.get().copy();
+                    result.p1.translate(10, 10);
+                    result.p2.translate(10, 10);
+                    layer.add(result);
+                    break;
+                }
+                case "GraphicPolygon": {
+                    var result = (GraphicPolygon) streamResult.get().copy();
+                    for (Point point : result.points) {
+                        point.translate(10, 10);
+                    }
+                    layer.add(result);
+                    break;
+                }
+                case "GraphicBezierCurve": {
+                    var result = (GraphicBezierCurve) streamResult.get().copy();
+                    result.p1.translate(10, 10);
+                    result.p2.translate(10, 10);
+                    for (Point point : result.continuedPoints) {
+                        point.translate(10, 10);
+                    }
+                    layer.add(result);
+                    break;
+                }
+                case "GraphicFloodFill": {
+                    var result = (GraphicFloodFill) streamResult.get().copy();
+                    layer.add(result);
+                    break;
+                }
+                case "GraphicImage": {
+                    var result = (GraphicImage) streamResult.get().copy();
+                    result.origin.translate(10, 10);
+                    layer.add(result);
+                    break;
+                }
+            }
+
         });
 
         vGroup.addPreferredGap(ComponentPlacement.RELATED);
