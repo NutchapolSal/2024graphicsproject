@@ -1287,12 +1287,9 @@ class EditingPanelFactory {
 
         JLabel label = new JLabel("GraphicPolygon");
         var pointsPanel = new JPanel();
-        GroupLayout pointsLayout = new GroupLayout(pointsPanel);
-        pointsPanel.setLayout(pointsLayout);
-        var pointsVGroup = pointsLayout.createSequentialGroup();
-        var pointsHGroup = pointsLayout.createParallelGroup();
-        pointsLayout.setVerticalGroup(pointsVGroup);
-        pointsLayout.setHorizontalGroup(pointsHGroup);
+
+        var pointsVGroup = layout.createSequentialGroup();
+        var pointsHGroup = layout.createParallelGroup();
 
         for (int i = 0; i < polygon.points.size(); i++) {
             var pointPanel = create("p" + i, polygon.points.get(i), polygon, i + 1);
@@ -1304,10 +1301,10 @@ class EditingPanelFactory {
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(label)
-                .addComponent(pointsPanel));
+                .addGroup(pointsHGroup));
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addComponent(label)
-                .addComponent(pointsPanel));
+                .addGroup(pointsVGroup));
 
         panel.addMouseListener(new DebuggingHoverListener(polygon, 0));
 
