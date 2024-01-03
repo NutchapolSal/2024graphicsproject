@@ -298,6 +298,14 @@ class EditorFrame {
     }
 }
 
+class MutableColor {
+    public Color value;
+
+    MutableColor(Color value) {
+        this.value = value;
+    }
+}
+
 class MutableDouble {
     public double value;
 
@@ -332,6 +340,11 @@ class GraphicLayer {
     public boolean shown = true;
     public String name;
     public List<GraphicObject> objects;
+
+    GraphicLayer(String name) {
+        this.name = name;
+        this.objects = new ArrayList<>();
+    }
 
     GraphicLayer(String name, List<GraphicObject> objects) {
         this.name = name;
@@ -397,8 +410,63 @@ abstract class GraphicObject {
     }
 }
 
+class ColorHexer {
+
+    // formats:
+    // #RGB
+    // #RGBA
+    // #RRGGBB
+    // #RRGGBBAA
+    public static Color decode(String hex) {
+        if (!hex.startsWith("#")) {
+            return Color.black;
+        }
+        try {
+            Long.parseLong(hex.substring(1), 16);
+        } catch (NumberFormatException e) {
+            return Color.black;
+        }
+
+        if (hex.length() == 4) {
+            return Color.decode("#" +
+                    hex.substring(1, 2).repeat(2) +
+                    hex.substring(2, 3).repeat(2) +
+                    hex.substring(3, 4).repeat(2));
+        } else if (hex.length() == 5) {
+            return new Color(
+                    Integer.parseInt(hex.substring(1, 2), 16) * 17,
+                    Integer.parseInt(hex.substring(2, 3), 16) * 17,
+                    Integer.parseInt(hex.substring(3, 4), 16) * 17,
+                    Integer.parseInt(hex.substring(4, 5), 16) * 17);
+        } else if (hex.length() == 7) {
+            return Color.decode(hex);
+        } else if (hex.length() == 9) {
+            return new Color(
+                    Integer.parseInt(hex.substring(1, 3), 16),
+                    Integer.parseInt(hex.substring(3, 5), 16),
+                    Integer.parseInt(hex.substring(5, 7), 16),
+                    Integer.parseInt(hex.substring(7, 9), 16));
+        } else {
+            return Color.black;
+        }
+
+    }
+
+    public static String encode(Color c) {
+        if (c.getAlpha() == 255) {
+            return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue());
+        } else {
+            return String.format("#%02x%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
+        }
+    }
+}
+
 abstract class GraphicPlotter extends GraphicObject {
-    public Color color = Color.black;
+    public MutableColor color = new MutableColor(Color.black);
+
+    protected GraphicPlotter(String hexColor) {
+        this.color.value = ColorHexer.decode(hexColor);
+    }
 
     protected void plot(Graphics g, int x, int y) {
         g.fillRect(x, y, 1, 1);
@@ -410,7 +478,7 @@ class GraphicLine extends GraphicPlotter {
     public Point p1, p2;
 
     GraphicLine(String hexColor, Point p1, Point p2) {
-        this.color = Color.decode(hexColor);
+        super(hexColor);
         this.p1 = p1;
         this.p2 = p2;
     }
@@ -418,7 +486,7 @@ class GraphicLine extends GraphicPlotter {
     @Override
     public void draw(BufferedImage buffer) {
         Graphics g = buffer.createGraphics();
-        g.setColor(color);
+        g.setColor(color.value);
 
         int dx = Math.abs(p2.x - p1.x);
         int dy = Math.abs(p2.y - p1.y);
@@ -468,14 +536,14 @@ class GraphicPolygon extends GraphicPlotter {
     public List<Point> points;
 
     GraphicPolygon(String hexColor, List<Point> points) {
-        this.color = Color.decode(hexColor);
+        super(hexColor);
         this.points = points;
     }
 
     @Override
     public void draw(BufferedImage buffer) {
         Graphics g = buffer.createGraphics();
-        g.setColor(color);
+        g.setColor(color.value);
 
         Polygon poly = new Polygon();
         for (Point point : points) {
@@ -499,7 +567,7 @@ class GraphicBezierCurve extends GraphicPlotter {
     public List<Point> continuedPoints;
 
     GraphicBezierCurve(String hexColor, Point p1, Point p2, List<Point> continuedPoints) {
-        this.color = Color.decode(hexColor);
+        super(hexColor);
         this.p1 = p1;
         this.p2 = p2;
         this.continuedPoints = continuedPoints;
@@ -508,7 +576,7 @@ class GraphicBezierCurve extends GraphicPlotter {
     @Override
     public void draw(BufferedImage buffer) {
         Graphics g = buffer.createGraphics();
-        g.setColor(color);
+        g.setColor(color.value);
 
         plotBezier(g, p1, p2, continuedPoints.get(0), continuedPoints.get(1));
         for (int i = 3; i < continuedPoints.size(); i += 2) {
@@ -563,7 +631,7 @@ class GraphicFloodFill extends GraphicPlotter {
     public Point point;
 
     GraphicFloodFill(String hexColor, Point point) {
-        this.color = Color.decode(hexColor);
+        super(hexColor);
         this.point = point;
     }
 
@@ -589,7 +657,7 @@ class GraphicFloodFill extends GraphicPlotter {
             }
 
             if (buffer.getRGB(p.x, p.y) == target_color.getRGB()) {
-                buffer.setRGB(p.x, p.y, color.getRGB());
+                buffer.setRGB(p.x, p.y, color.value.getRGB());
                 q.add(new Point(p.x + 1, p.y));
                 q.add(new Point(p.x - 1, p.y));
                 q.add(new Point(p.x, p.y + 1));
@@ -956,6 +1024,34 @@ class DebuggingHoverListener implements MouseListener {
 
 }
 
+class ColorButton extends JButton {
+    static int squareSize = 10;
+    private Color color;
+
+    public ColorButton() {
+        this.setText(" ");
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+        this.repaint();
+    }
+
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        for (int i = 0; i < getWidth(); i += squareSize) {
+            for (int j = 0; j < getHeight(); j += squareSize) {
+                g.setColor((i / squareSize + j / squareSize) % 2 == 0 ? Color.lightGray : Color.white);
+                g.fillRect(i, j, squareSize, squareSize);
+            }
+        }
+        g.setColor(color);
+        g.fillRect(0, 0, getWidth(), getHeight());
+        g.setColor(new Color(color.getRGB(), false));
+        g.fillRect(0, 0, getWidth() / 3, getHeight());
+    }
+}
+
 class EditingPanelFactory {
     // possibly the most cursed solution
     public static boolean needsUpdate = false;
@@ -1173,6 +1269,48 @@ class EditingPanelFactory {
         return panel;
     }
 
+    public static JPanel create(String labelText, MutableColor color, GraphicObject obj, int debugValue) {
+        JPanel panel = new JPanel();
+        JLabel label = new JLabel(labelText);
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        ColorButton button = new ColorButton();
+        button.setColor(color.value);
+
+        JTextField textField = new JTextField(ColorHexer.encode(color.value));
+
+        button.addActionListener(e -> {
+            Color newColor = JColorChooser.showDialog(null, "Choose a color", color.value);
+            if (newColor != null) {
+                color.value = newColor;
+                button.setColor(color.value);
+                textField.setText(ColorHexer.encode(color.value));
+            }
+        });
+        textField.addActionListener(e -> {
+            color.value = ColorHexer.decode(textField.getText());
+            button.setColor(color.value);
+        });
+
+        layout.setHorizontalGroup(layout.createSequentialGroup()
+                .addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED)
+                .addComponent(button)
+                .addPreferredGap(ComponentPlacement.RELATED)
+                .addComponent(textField));
+
+        layout.setVerticalGroup(
+                layout.createParallelGroup(Alignment.BASELINE)
+                        .addComponent(label)
+                        .addComponent(button)
+                        .addComponent(textField));
+
+        button.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
+
+        return panel;
+    }
+
     public static JPanel create(GraphicLayer layer) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
@@ -1260,15 +1398,19 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicLine");
+        var colorPanel = create("color", line.color, line, 0);
         var p1Panel = create("p1", line.p1, line, 1);
         var p2Panel = create("p2", line.p2, line, 2);
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(label)
+                .addComponent(colorPanel)
                 .addComponent(p1Panel)
                 .addComponent(p2Panel));
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addComponent(label)
+                .addComponent(colorPanel)
+                .addGap(2)
                 .addComponent(p1Panel)
                 .addGap(2)
                 .addComponent(p2Panel));
@@ -1286,10 +1428,10 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicPolygon");
-        var pointsPanel = new JPanel();
+        var colorPanel = create("color", polygon.color, polygon, 0);
 
-        var pointsVGroup = layout.createSequentialGroup();
         var pointsHGroup = layout.createParallelGroup();
+        var pointsVGroup = layout.createSequentialGroup();
 
         for (int i = 0; i < polygon.points.size(); i++) {
             var pointPanel = create("p" + i, polygon.points.get(i), polygon, i + 1);
@@ -1301,9 +1443,11 @@ class EditingPanelFactory {
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(label)
+                .addComponent(colorPanel)
                 .addGroup(pointsHGroup));
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addComponent(label)
+                .addComponent(colorPanel)
                 .addGroup(pointsVGroup));
 
         panel.addMouseListener(new DebuggingHoverListener(polygon, 0));
@@ -1317,6 +1461,7 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicBezierCurve");
+        var colorPanel = create("color", bezierCurve.color, bezierCurve, 0);
         var p1Panel = create("p1", bezierCurve.p1, bezierCurve, 1);
         var p2Panel = create("p2", bezierCurve.p2, bezierCurve, 2);
 
@@ -1339,12 +1484,16 @@ class EditingPanelFactory {
         });
         minusButton.setEnabled(bezierCurve.continuedPoints.size() > 2);
 
-        var hGroup = layout.createParallelGroup(Alignment.LEADING).addComponent(label)
+        var hGroup = layout.createParallelGroup(Alignment.LEADING)
+                .addComponent(label)
+                .addComponent(colorPanel)
                 .addComponent(p1Panel)
                 .addComponent(p2Panel);
 
         var vGroup = layout.createSequentialGroup()
                 .addComponent(label)
+                .addComponent(colorPanel)
+                .addGap(2)
                 .addComponent(p1Panel)
                 .addGap(2)
                 .addComponent(p2Panel)
@@ -1384,13 +1533,16 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicFloodFill");
+        var colorPanel = create("color", floodFill.color, floodFill, 0);
         var pointPanel = create("point", floodFill.point, floodFill, 1);
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(label)
+                .addComponent(colorPanel)
                 .addComponent(pointPanel));
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addComponent(label)
+                .addComponent(colorPanel)
                 .addComponent(pointPanel));
 
         panel.addMouseListener(new DebuggingHoverListener(floodFill, 0));
@@ -1496,7 +1648,7 @@ class ImportExport {
     public static String exportString(GraphicLine line) {
         StringBuilder sb = new StringBuilder();
         sb.append("LINE ");
-        sb.append(exportString(line.color));
+        sb.append(exportString(line.color.value));
         sb.append(" ");
         sb.append(exportString(line.p1));
         sb.append(" ");
@@ -1507,7 +1659,7 @@ class ImportExport {
     public static String exportString(GraphicPolygon polygon) {
         StringBuilder sb = new StringBuilder();
         sb.append("POLYGON ");
-        sb.append(exportString(polygon.color));
+        sb.append(exportString(polygon.color.value));
         sb.append(" ");
         for (Point point : polygon.points) {
             sb.append(exportString(point));
@@ -1520,7 +1672,7 @@ class ImportExport {
     public static String exportString(GraphicBezierCurve bezierCurve) {
         StringBuilder sb = new StringBuilder();
         sb.append("BEZIERCURVE ");
-        sb.append(exportString(bezierCurve.color));
+        sb.append(exportString(bezierCurve.color.value));
         sb.append(" ");
         sb.append(exportString(bezierCurve.p1));
         sb.append(" ");
@@ -1537,14 +1689,14 @@ class ImportExport {
     public static String exportString(GraphicFloodFill floodFill) {
         StringBuilder sb = new StringBuilder();
         sb.append("FLOODFILL ");
-        sb.append(exportString(floodFill.color));
+        sb.append(exportString(floodFill.color.value));
         sb.append(" ");
         sb.append(exportString(floodFill.point));
         return sb.toString();
     }
 
     public static String exportString(Color color) {
-        return "#" + Integer.toHexString(color.getRGB()).substring(2);
+        return ColorHexer.encode(color);
     }
 
     public static String exportString(Point point) {
