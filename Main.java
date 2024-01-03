@@ -1874,6 +1874,7 @@ class EditingPanelFactory {
         comboBox.addItem("GraphicPolygon");
         comboBox.addItem("GraphicBezierCurve");
         comboBox.addItem("GraphicPolyBezier");
+        comboBox.addItem("GraphicCircle");
         comboBox.addItem("GraphicFloodFill");
         comboBox.addItem("GraphicImage");
 
@@ -1908,6 +1909,10 @@ class EditingPanelFactory {
                             new Point(0, 0),
                             new PolyBezierData(new Point(50, 0),
                                     new Point(50, 50), new Point(0, 50)));
+                    break;
+                case "GraphicCircle":
+                    pred = obj -> obj instanceof GraphicCircle;
+                    defaultObj = new GraphicCircle("#000000", 1, new Point(0, 0), 50);
                     break;
                 case "GraphicFloodFill":
                     pred = obj -> obj instanceof GraphicFloodFill;
@@ -1976,6 +1981,12 @@ class EditingPanelFactory {
                             p.translate(10, 10);
                         }
                     }
+                    layer.add(result);
+                    break;
+                }
+                case "GraphicCircle": {
+                    var result = (GraphicCircle) streamResult.get().copy();
+                    result.center.translate(10, 10);
                     layer.add(result);
                     break;
                 }
@@ -2405,17 +2416,21 @@ class EditingPanelFactory {
 
         JLabel label = new JLabel("GraphicCircle");
         var colorPanel = create("color", circle.color, circle, 0);
+        var thicknessPanel = create("thickness", circle.thickness, 1, 15, 1, circle, 0);
         var pointPanel = create("center", circle.center, circle, 1);
         var radiusPanel = create("radius", circle.radius, 0, 50, 1, circle, 2);
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(label)
                 .addComponent(colorPanel)
+                .addComponent(thicknessPanel)
                 .addComponent(pointPanel)
                 .addComponent(radiusPanel));
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addComponent(label)
                 .addComponent(colorPanel)
+                .addGap(2)
+                .addComponent(thicknessPanel)
                 .addGap(2)
                 .addComponent(pointPanel)
                 .addGap(2)
