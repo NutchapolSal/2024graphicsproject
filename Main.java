@@ -27,6 +27,7 @@ import java.io.FileWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Queue;
@@ -66,21 +67,28 @@ public class Main {
     public static void main(String[] args) {
 
         List<GraphicLayer> instructions = new ArrayList<>();
-        instructions.add(new GraphicLayer("third point five swing")
+        instructions.add(new GraphicLayer("third point six swing")
                 .add(new GraphicLine("#000000", 1, new Point(25, 550), new Point(575, 550)))
                 .add(new GraphicBezierCurve("#FF0000", 1,
                         new Point(100, 500), new Point(100, 100),
-                        new ArrayList<>(List.of(new Point(500, 100), new Point(500,
-                                500)))))
+                        new Point(500, 100), new Point(500, 500)))
                 .add(new GraphicBezierCurve("#FF7700", 2,
                         new Point(100, 500), new Point(500, 100),
-                        new ArrayList<>(List.of(new Point(100, 500), new Point(500,
-                                500)))))
+                        new Point(100, 500), new Point(500, 500)))
                 .add(new GraphicPolyline("#00FF00", 3, false,
-                        new ArrayList<>(List.of(new Point(150, 150), new Point(250, 100), new Point(325, 125),
-                                new Point(375, 225), new Point(400, 325), new Point(275, 375), new Point(100, 300)))))
+                        new Point(150, 150), new Point(250, 100), new Point(325, 125),
+                        new Point(375, 225), new Point(400, 325), new Point(275, 375), new Point(100, 300)))
                 .add(new GraphicPolygon("#0000FF",
-                        new ArrayList<>(List.of(new Point(350, 100), new Point(350, 200), new Point(300, 200)))))
+                        new Point(350, 100), new Point(350, 200), new Point(300, 200)))
+                .add(new GraphicPolyBezier("#FF00FF", 1,
+                        new Point(100, 100),
+                        new PolyBezierData(new Point(50, 130),
+                                new Point(150, 130), new Point(90, 160)),
+                        new PolyBezierData(new Point(100, 300),
+                                new Point(250, 150), new Point(300, 250),
+                                new Point(450, 150), new Point(500, 250))))
+                .add(new GraphicFloodFill("#00FFFF", new Point(250, 250)))
+                .add(new GraphicImage("null", new Point(10, 10), new Dimension(20, 20), 1.0))
 
         );
 
@@ -524,22 +532,15 @@ abstract class GraphicPlotter extends GraphicObject {
     }
 }
 
-class GraphicLine extends GraphicPlotter {
+abstract class GraphicLinePlotter extends GraphicPlotter {
     public MutableInt thickness = new MutableInt(1);
-    public Point p1, p2;
 
-    GraphicLine(String hexColor, int thickness, Point p1, Point p2) {
+    protected GraphicLinePlotter(String hexColor, int thickness) {
         super(hexColor);
         this.thickness.value = thickness;
-        this.p1 = p1;
-        this.p2 = p2;
     }
 
-    @Override
-    public void draw(BufferedImage buffer) {
-        Graphics g = buffer.createGraphics();
-        g.setColor(color.value);
-
+    protected void plotLine(Graphics g, Point p1, Point p2) {
         int dx = Math.abs(p2.x - p1.x);
         int dy = Math.abs(p2.y - p1.y);
 
@@ -576,6 +577,24 @@ class GraphicLine extends GraphicPlotter {
             D += 2 * dy;
         }
     }
+}
+
+class GraphicLine extends GraphicLinePlotter {
+    public Point p1, p2;
+
+    GraphicLine(String hexColor, int thickness, Point p1, Point p2) {
+        super(hexColor, thickness);
+        this.p1 = p1;
+        this.p2 = p2;
+    }
+
+    @Override
+    public void draw(BufferedImage buffer) {
+        Graphics g = buffer.createGraphics();
+        g.setColor(color.value);
+
+        plotLine(g, p1, p2);
+    }
 
     @Override
     public void debugDraw(Graphics g) {
@@ -593,6 +612,10 @@ class GraphicLine extends GraphicPlotter {
 
 class GraphicPolygon extends GraphicPlotter {
     public List<Point> points;
+
+    GraphicPolygon(String hexColor, Point... points) {
+        this(hexColor, new ArrayList<>(Arrays.asList(points)));
+    }
 
     GraphicPolygon(String hexColor, List<Point> points) {
         super(hexColor);
@@ -629,14 +652,16 @@ class GraphicPolygon extends GraphicPlotter {
     }
 }
 
-class GraphicPolyline extends GraphicPlotter {
-    public MutableInt thickness = new MutableInt(1);
+class GraphicPolyline extends GraphicLinePlotter {
     public MutableBoolean closed = new MutableBoolean(false);
     public List<Point> points;
 
+    GraphicPolyline(String hexColor, int thickness, boolean closed, Point... points) {
+        this(hexColor, thickness, closed, new ArrayList<>(Arrays.asList(points)));
+    }
+
     GraphicPolyline(String hexColor, int thickness, boolean closed, List<Point> points) {
-        super(hexColor);
-        this.thickness.value = thickness;
+        super(hexColor, thickness);
         this.closed.value = closed;
         this.points = points;
     }
@@ -651,44 +676,6 @@ class GraphicPolyline extends GraphicPlotter {
         }
         if (closed.value) {
             plotLine(g, points.get(points.size() - 1), points.get(0));
-        }
-    }
-
-    private void plotLine(Graphics g, Point p1, Point p2) {
-        int dx = Math.abs(p2.x - p1.x);
-        int dy = Math.abs(p2.y - p1.y);
-
-        int sx = (p1.x < p2.x) ? 1 : -1;
-        int sy = (p1.y < p2.y) ? 1 : -1;
-        boolean isSwap = false;
-
-        if (dy > dx) {
-            int temp = dy;
-            dy = dx;
-            dx = temp;
-            isSwap = true;
-        }
-        int D = 2 * dy - dx;
-
-        int x = p1.x;
-        int y = p1.y;
-        for (int i = 1; i <= dx; i++) {
-            plot(g, x, y, thickness.value);
-            if (D >= 0) {
-                if (isSwap) {
-                    x += sx;
-                } else {
-                    y += sy;
-                }
-                D -= 2 * dx;
-            }
-
-            if (isSwap) {
-                y += sy;
-            } else {
-                x += sx;
-            }
-            D += 2 * dy;
         }
     }
 
@@ -710,15 +697,44 @@ class GraphicPolyline extends GraphicPlotter {
     }
 }
 
-class GraphicBezierCurve extends GraphicPlotter {
+abstract class GraphicBezierPlotter extends GraphicPlotter {
     private static final int BEZIER_ITERATIONS = 2000;
     public MutableInt thickness = new MutableInt(1);
+
+    protected GraphicBezierPlotter(String hexColor, int thickness) {
+        super(hexColor);
+        this.thickness.value = thickness;
+    }
+
+    protected void plotBezier(Graphics g, Point pA, Point pB, Point pC, Point pD) {
+        for (int i = 0; i < BEZIER_ITERATIONS; i++) {
+            double t = i / (double) BEZIER_ITERATIONS;
+
+            double x = Math.pow(1 - t, 3) * pA.x +
+                    3 * t * Math.pow(1 - t, 2) * pB.x +
+                    3 * Math.pow(t, 2) * (1 - t) * pC.x
+                    + Math.pow(t, 3) * pD.x;
+
+            double y = Math.pow(1 - t, 3) * pA.y +
+                    3 * t * Math.pow(1 - t, 2) * pB.y +
+                    3 * Math.pow(t, 2) * (1 - t) * pC.y
+                    + Math.pow(t, 3) * pD.y;
+
+            plot(g, (int) Math.round(x), (int) Math.round(y), thickness.value);
+        }
+    }
+}
+
+class GraphicBezierCurve extends GraphicBezierPlotter {
     public Point p1, p2;
     public List<Point> continuedPoints;
 
+    GraphicBezierCurve(String hexColor, int thickness, Point p1, Point p2, Point... continuedPoints) {
+        this(hexColor, thickness, p1, p2, new ArrayList<>(Arrays.asList(continuedPoints)));
+    }
+
     GraphicBezierCurve(String hexColor, int thickness, Point p1, Point p2, List<Point> continuedPoints) {
-        super(hexColor);
-        this.thickness.value = thickness;
+        super(hexColor, thickness);
         this.p1 = p1;
         this.p2 = p2;
         this.continuedPoints = continuedPoints;
@@ -738,24 +754,6 @@ class GraphicBezierCurve extends GraphicPlotter {
             Point pD = continuedPoints.get(i);
 
             plotBezier(g, pA, pB, pC, pD);
-        }
-    }
-
-    private void plotBezier(Graphics g, Point pA, Point pB, Point pC, Point pD) {
-        for (int i = 0; i < BEZIER_ITERATIONS; i++) {
-            double t = i / (double) BEZIER_ITERATIONS;
-
-            double x = Math.pow(1 - t, 3) * pA.x +
-                    3 * t * Math.pow(1 - t, 2) * pB.x +
-                    3 * Math.pow(t, 2) * (1 - t) * pC.x
-                    + Math.pow(t, 3) * pD.x;
-
-            double y = Math.pow(1 - t, 3) * pA.y +
-                    3 * t * Math.pow(1 - t, 2) * pB.y +
-                    3 * Math.pow(t, 2) * (1 - t) * pC.y
-                    + Math.pow(t, 3) * pD.y;
-
-            plot(g, (int) Math.round(x), (int) Math.round(y), thickness.value);
         }
     }
 
@@ -786,6 +784,101 @@ class GraphicBezierCurve extends GraphicPlotter {
         return new GraphicBezierCurve(ColorHexer.encode(color.value), thickness.value, new Point(p1.x, p1.y),
                 new Point(p2.x, p2.y), newPoints);
     }
+}
+
+class PolyBezierData {
+    public Point p2;
+    public List<Point> morePoints;
+
+    PolyBezierData(Point p2, Point... morePoints) {
+        this(p2, new ArrayList<>(Arrays.asList(morePoints)));
+    }
+
+    PolyBezierData(Point p2, List<Point> morePoints) {
+        this.p2 = p2;
+        this.morePoints = morePoints;
+    }
+
+    public PolyBezierData copy() {
+        List<Point> newPoints = new ArrayList<>();
+        for (Point point : morePoints) {
+            newPoints.add(new Point(point.x, point.y));
+        }
+        return new PolyBezierData(new Point(p2.x, p2.y), newPoints);
+    }
+}
+
+class GraphicPolyBezier extends GraphicBezierPlotter {
+    public Point p1;
+    public List<PolyBezierData> data;
+
+    GraphicPolyBezier(String hexColor, int thickness, Point p1, PolyBezierData... data) {
+        this(hexColor, thickness, p1, new ArrayList<>(Arrays.asList(data)));
+    }
+
+    GraphicPolyBezier(String hexColor, int thickness, Point p1, List<PolyBezierData> data) {
+        super(hexColor, thickness);
+        this.p1 = p1;
+        this.data = data;
+    }
+
+    @Override
+    public void draw(BufferedImage buffer) {
+        Graphics g = buffer.createGraphics();
+        g.setColor(color.value);
+
+        Point pNextA = p1;
+
+        for (PolyBezierData d : data) {
+            plotBezier(g, pNextA, d.p2, d.morePoints.get(0), d.morePoints.get(1));
+            for (int i = 3; i < d.morePoints.size(); i += 2) {
+                Point pA = d.morePoints.get(i - 2);
+                Point pBtemp = d.morePoints.get(i - 3);
+                Point pB = new Point(pA.x + (pA.x - pBtemp.x), pA.y + (pA.y - pBtemp.y));
+                Point pC = d.morePoints.get(i - 1);
+                Point pD = d.morePoints.get(i);
+
+                plotBezier(g, pA, pB, pC, pD);
+            }
+            pNextA = d.morePoints.get(d.morePoints.size() - 1);
+        }
+    }
+
+    @Override
+    public void debugDraw(Graphics g) {
+        debugCircle(g, p1.x, p1.y, debugging == 1);
+        Point pNextA = p1;
+        int i = 2;
+        for (PolyBezierData d : data) {
+            debugLine(g, pNextA.x, pNextA.y, d.p2.x, d.p2.y, debugging == i);
+            debugDot(g, d.p2.x, d.p2.y, debugging == i);
+            i++;
+            for (int j = 1; j < d.morePoints.size(); j += 2) {
+                Point controlP = d.morePoints.get(j - 1);
+                Point endP = d.morePoints.get(j);
+                Point controlEndP = endP;
+                if (j + 2 < d.morePoints.size()) {
+                    controlEndP = new Point(endP.x + (endP.x - controlP.x), endP.y + (endP.y - controlP.y));
+                }
+                debugLine(g, controlP.x, controlP.y, controlEndP.x, controlEndP.y, debugging == i);
+                debugDot(g, controlP.x, controlP.y, debugging == i);
+                debugCircle(g, endP.x, endP.y, debugging == i + 1);
+                i += 2;
+            }
+            pNextA = d.morePoints.get(d.morePoints.size() - 1);
+        }
+    }
+
+    @Override
+    public GraphicObject copy() {
+        List<PolyBezierData> newData = new ArrayList<>();
+        for (PolyBezierData d : data) {
+            newData.add(d.copy());
+        }
+        return new GraphicPolyBezier(ColorHexer.encode(color.value), thickness.value, new Point(p1.x, p1.y),
+                newData);
+    }
+
 }
 
 class GraphicFloodFill extends GraphicPlotter {
@@ -1804,6 +1897,8 @@ class EditingPanelFactory {
             return create((GraphicPolygon) object);
         } else if (object instanceof GraphicBezierCurve) {
             return create((GraphicBezierCurve) object);
+        } else if (object instanceof GraphicPolyBezier) {
+            return create((GraphicPolyBezier) object);
         } else if (object instanceof GraphicFloodFill) {
             return create((GraphicFloodFill) object);
         } else if (object instanceof GraphicImage) {
@@ -2049,6 +2144,142 @@ class EditingPanelFactory {
         return panel;
     }
 
+    public static JPanel create(PolyBezierData pbd, GraphicPolyBezier polyBezier, int pbdIndex, int debuggingStartI) {
+        JPanel panel = new JPanel();
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        char pointLetter = (char) (97 + (pbdIndex + 15) % 26);
+
+        JButton addButton = new JButton("+");
+        JButton minusButton = new JButton("-");
+        addButton.addActionListener(e -> {
+            var newCp = new Point(pbd.morePoints.get(pbd.morePoints.size() - 2).x + 20,
+                    pbd.morePoints.get(pbd.morePoints.size() - 2).y + 20);
+            var newPp = new Point(pbd.morePoints.get(pbd.morePoints.size() - 1).x + 20,
+                    pbd.morePoints.get(pbd.morePoints.size() - 1).y + 20);
+            pbd.morePoints.add(newCp);
+            pbd.morePoints.add(newPp);
+            polyBezier.changed = true;
+            GlobalState.needsUpdateEditor = true;
+        });
+        minusButton.addActionListener(e -> {
+            if (pbd.morePoints.size() > 2) {
+                pbd.morePoints.remove(pbd.morePoints.size() - 1);
+                pbd.morePoints.remove(pbd.morePoints.size() - 1);
+                polyBezier.changed = true;
+                GlobalState.needsUpdateEditor = true;
+            }
+        });
+        minusButton.setEnabled(pbd.morePoints.size() > 2);
+
+        var pointsHGroup = layout.createParallelGroup();
+        var pointsVGroup = layout.createSequentialGroup();
+
+        var p2Panel = create(pointLetter + "2", pbd.p2, polyBezier, debuggingStartI);
+        pointsVGroup.addPreferredGap(ComponentPlacement.RELATED);
+        pointsVGroup.addComponent(p2Panel);
+        pointsHGroup.addComponent(p2Panel);
+        p2Panel.addMouseListener(new DebuggingHoverListener(polyBezier, debuggingStartI));
+
+        for (int i = 0; i < pbd.morePoints.size(); i++) {
+            var pointPanel = create(pointLetter + "" + (i + 3), pbd.morePoints.get(i), polyBezier,
+                    i + debuggingStartI + 1);
+            pointsVGroup.addPreferredGap(ComponentPlacement.RELATED);
+            pointsVGroup.addComponent(pointPanel);
+            pointsHGroup.addComponent(pointPanel);
+            pointPanel.addMouseListener(new DebuggingHoverListener(polyBezier, i + debuggingStartI + 1));
+        }
+
+        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
+                .addGroup(pointsHGroup)
+                .addGroup(layout.createSequentialGroup()
+                        .addComponent(addButton)
+                        .addComponent(minusButton)));
+
+        layout.setVerticalGroup(layout.createSequentialGroup()
+                .addGroup(pointsVGroup)
+                .addGap(2)
+                .addGroup(layout.createParallelGroup(Alignment.CENTER)
+                        .addComponent(addButton)
+                        .addComponent(minusButton)));
+
+        return panel;
+    }
+
+    public static JPanel create(GraphicPolyBezier polyBezier) {
+        JPanel panel = new JPanel();
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        JLabel label = new JLabel("GraphicPolyBezier");
+        var colorPanel = create("color", polyBezier.color, polyBezier, 0);
+        var thicknessPanel = create("thickness", polyBezier.thickness, 1, 15, 1, polyBezier, 0);
+        var p1Panel = create("p1", polyBezier.p1, polyBezier, 1);
+
+        JButton addButton = new JButton("+++");
+        JButton minusButton = new JButton("---");
+        addButton.addActionListener(e -> {
+            var pbd = polyBezier.data.get(polyBezier.data.size() - 1).copy();
+            pbd.p2.translate(20, 20);
+            for (Point point : pbd.morePoints) {
+                point.translate(20, 20);
+            }
+            polyBezier.data.add(pbd);
+            polyBezier.changed = true;
+            GlobalState.needsUpdateEditor = true;
+        });
+        minusButton.addActionListener(e -> {
+            if (polyBezier.data.size() > 1) {
+                polyBezier.data.remove(polyBezier.data.size() - 1);
+                polyBezier.changed = true;
+                GlobalState.needsUpdateEditor = true;
+            }
+        });
+        minusButton.setEnabled(polyBezier.data.size() > 1);
+
+        var hGroup = layout.createParallelGroup(Alignment.LEADING)
+                .addComponent(label)
+                .addComponent(thicknessPanel)
+                .addComponent(colorPanel)
+                .addComponent(p1Panel);
+
+        var vGroup = layout.createSequentialGroup()
+                .addComponent(label)
+                .addComponent(thicknessPanel)
+                .addGap(2)
+                .addComponent(colorPanel)
+                .addGap(2)
+                .addComponent(p1Panel)
+                .addGap(2);
+
+        layout.setHorizontalGroup(hGroup);
+        layout.setVerticalGroup(vGroup);
+
+        int i = 0;
+        int debuggingStartI = 2;
+        for (PolyBezierData pbd : polyBezier.data) {
+            var pbdPanel = create(pbd, polyBezier, i, debuggingStartI);
+            hGroup.addComponent(pbdPanel);
+            vGroup.addGap(2);
+            vGroup.addComponent(pbdPanel);
+            i++;
+            debuggingStartI += pbd.morePoints.size() + 1;
+        }
+
+        hGroup.addGroup(layout.createSequentialGroup()
+                .addComponent(addButton)
+                .addComponent(minusButton));
+        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER)
+                .addComponent(addButton)
+                .addComponent(minusButton));
+
+        panel.addMouseListener(new DebuggingHoverListener(polyBezier, 0));
+        p1Panel.addMouseListener(new DebuggingHoverListener(polyBezier, 1));
+
+        return panel;
+    }
+
     public static JPanel create(GraphicFloodFill floodFill) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
@@ -2160,6 +2391,8 @@ class ImportExport {
             return exportString((GraphicPolygon) object);
         } else if (object instanceof GraphicBezierCurve) {
             return exportString((GraphicBezierCurve) object);
+        } else if (object instanceof GraphicPolyBezier) {
+            return exportString((GraphicPolyBezier) object);
         } else if (object instanceof GraphicFloodFill) {
             return exportString((GraphicFloodFill) object);
         } else if (object instanceof GraphicImage) {
@@ -2226,6 +2459,35 @@ class ImportExport {
         for (Point point : bezierCurve.continuedPoints) {
             sb.append(exportString(point));
             sb.append(" ");
+        }
+        sb.append("END");
+        return sb.toString();
+    }
+
+    public static String exportString(PolyBezierData pbd) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(exportString(pbd.p2));
+        sb.append(" ");
+        for (Point point : pbd.morePoints) {
+            sb.append(exportString(point));
+            sb.append(" ");
+        }
+        sb.append("END");
+        return sb.toString();
+    }
+
+    public static String exportString(GraphicPolyBezier polyBezier) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("POLYBEZIER ");
+        sb.append(exportString(polyBezier.color.value));
+        sb.append(" ");
+        sb.append(polyBezier.thickness.value);
+        sb.append(" ");
+        sb.append(exportString(polyBezier.p1));
+        sb.append("\n");
+        for (PolyBezierData pbd : polyBezier.data) {
+            sb.append(exportString(pbd));
+            sb.append("\n");
         }
         sb.append("END");
         return sb.toString();
@@ -2316,6 +2578,9 @@ class ImportExport {
                 case "BEZIERCURVE":
                     objects.add(importBezierCurve(sc));
                     break;
+                case "POLYBEZIER":
+                    objects.add(importPolyBezier(sc));
+                    break;
                 case "FLOODFILL":
                     objects.add(importFloodFill(sc));
                     break;
@@ -2380,6 +2645,34 @@ class ImportExport {
             }
         }
         return new GraphicBezierCurve(hexColor, thickness, p1, p2, points);
+    }
+
+    public static PolyBezierData importPolyBezierData(Scanner sc) {
+        Point p2 = importPoint(sc);
+        List<Point> morePoints = new ArrayList<>();
+        while (true) {
+            morePoints.add(importPoint(sc));
+            if (sc.hasNext("END")) {
+                sc.next();
+                break;
+            }
+        }
+        return new PolyBezierData(p2, morePoints);
+    }
+
+    public static GraphicPolyBezier importPolyBezier(Scanner sc) {
+        String hexColor = sc.next();
+        int thickness = sc.nextInt();
+        Point p1 = importPoint(sc);
+        List<PolyBezierData> data = new ArrayList<>();
+        while (true) {
+            data.add(importPolyBezierData(sc));
+            if (sc.hasNext("END")) {
+                sc.next();
+                break;
+            }
+        }
+        return new GraphicPolyBezier(hexColor, thickness, p1, data);
     }
 
     public static Point importPoint(Scanner sc) {
