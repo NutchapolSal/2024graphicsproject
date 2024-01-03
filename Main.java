@@ -142,12 +142,12 @@ class EditorFrame {
 
         layerScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         layerScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-        layerScrollPane.setViewportView(createLayerListPanel());
 
         editorScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         editorScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 
         changeEditorPane(0);
+        layerScrollPane.setViewportView(createLayerListPanel());
 
         JButton addLayerButton = new JButton("add layer");
         addLayerButton.addActionListener(e -> {
