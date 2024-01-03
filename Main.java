@@ -233,13 +233,13 @@ class EditorFrame {
         frame2.setVisible(true);
 
         new Timer(250, e -> {
-            if (EditingPanelFactory.needsUpdate) {
+            if (GlobalState.needsUpdateEditor) {
                 changeEditorPane(this.currentLayer.value);
-                EditingPanelFactory.needsUpdate = false;
+                GlobalState.needsUpdateEditor = false;
             }
-            if (EditingPanelFactory.needsUpdateLayers) {
+            if (GlobalState.needsUpdateLayers) {
                 updateLayerListPanel();
-                EditingPanelFactory.needsUpdateLayers = false;
+                GlobalState.needsUpdateLayers = false;
             }
         }).start();
     }
@@ -309,7 +309,7 @@ class EditorFrame {
             var layerDeleteMenuItem = layerPopupMenu.add("Delete");
             layerDeleteMenuItem.addActionListener(e -> {
                 instructions.remove(layer);
-                EditingPanelFactory.needsUpdateLayers = true;
+                GlobalState.needsUpdateLayers = true;
             });
 
             layerEditRadio.setComponentPopupMenu(layerPopupMenu);
@@ -895,7 +895,6 @@ class GraphicImage extends GraphicObject {
 }
 
 class PannerPanelXListener implements MouseMotionListener, MouseListener {
-    public static boolean slow = false;
     private boolean slowed = false;
     private Point point;
     private JSpinner spinner;
@@ -913,13 +912,13 @@ class PannerPanelXListener implements MouseMotionListener, MouseListener {
 
     @Override
     public void mouseDragged(java.awt.event.MouseEvent e) {
-        if (slow != slowed) {
+        if (GlobalState.pannerPanelSlow != slowed) {
             startX = e.getX();
             originX = point.x;
-            slowed = slow;
+            slowed = GlobalState.pannerPanelSlow;
         }
 
-        if (slow) {
+        if (GlobalState.pannerPanelSlow) {
             spinner.setValue(originX + (e.getX() - startX) / 8);
         } else {
             spinner.setValue(originX + (e.getX() - startX));
@@ -952,7 +951,6 @@ class PannerPanelXListener implements MouseMotionListener, MouseListener {
 }
 
 class PannerPanelYListener implements MouseMotionListener, MouseListener {
-    public static boolean slow = false;
     private boolean slowed = false;
     private Point point;
     private JSpinner spinner;
@@ -970,13 +968,13 @@ class PannerPanelYListener implements MouseMotionListener, MouseListener {
 
     @Override
     public void mouseDragged(java.awt.event.MouseEvent e) {
-        if (slow != slowed) {
+        if (GlobalState.pannerPanelSlow != slowed) {
             startY = e.getY();
             originY = point.y;
-            slowed = slow;
+            slowed = GlobalState.pannerPanelSlow;
         }
 
-        if (slow) {
+        if (GlobalState.pannerPanelSlow) {
             spinner.setValue(originY + (e.getY() - startY) / 8);
         } else {
             spinner.setValue(originY + (e.getY() - startY));
@@ -1008,7 +1006,6 @@ class PannerPanelYListener implements MouseMotionListener, MouseListener {
 }
 
 class PannerPanelWListener implements MouseMotionListener, MouseListener {
-    public static boolean slow = false;
     private boolean slowed = false;
     private Dimension dim;
     private JSpinner spinner;
@@ -1026,13 +1023,13 @@ class PannerPanelWListener implements MouseMotionListener, MouseListener {
 
     @Override
     public void mouseDragged(java.awt.event.MouseEvent e) {
-        if (slow != slowed) {
+        if (GlobalState.pannerPanelSlow != slowed) {
             startX = e.getX();
             originX = dim.width;
-            slowed = slow;
+            slowed = GlobalState.pannerPanelSlow;
         }
 
-        if (slow) {
+        if (GlobalState.pannerPanelSlow) {
             spinner.setValue(originX + (e.getX() - startX) / 8);
         } else {
             spinner.setValue(originX + (e.getX() - startX));
@@ -1065,7 +1062,6 @@ class PannerPanelWListener implements MouseMotionListener, MouseListener {
 }
 
 class PannerPanelHListener implements MouseMotionListener, MouseListener {
-    public static boolean slow = false;
     private boolean slowed = false;
     private Dimension dim;
     private JSpinner spinner;
@@ -1083,13 +1079,13 @@ class PannerPanelHListener implements MouseMotionListener, MouseListener {
 
     @Override
     public void mouseDragged(java.awt.event.MouseEvent e) {
-        if (slow != slowed) {
+        if (GlobalState.pannerPanelSlow != slowed) {
             startY = e.getY();
             originY = dim.height;
-            slowed = slow;
+            slowed = GlobalState.pannerPanelSlow;
         }
 
-        if (slow) {
+        if (GlobalState.pannerPanelSlow) {
             spinner.setValue(originY + (e.getY() - startY) / 8);
         } else {
             spinner.setValue(originY + (e.getY() - startY));
@@ -1154,7 +1150,6 @@ class MouseMover {
 }
 
 class PannerPanelDebuggingHoverListener implements MouseListener {
-    static boolean stop = false;
     private GraphicObject obj;
     private int debugValue;
     private int cursorStartX = 0;
@@ -1171,7 +1166,7 @@ class PannerPanelDebuggingHoverListener implements MouseListener {
 
     @Override
     public void mouseEntered(MouseEvent e) {
-        if (stop) {
+        if (GlobalState.pannerPanelDragging) {
             return;
         }
         obj.debugging = debugValue;
@@ -1180,7 +1175,7 @@ class PannerPanelDebuggingHoverListener implements MouseListener {
 
     @Override
     public void mouseExited(MouseEvent e) {
-        if (stop) {
+        if (GlobalState.pannerPanelDragging) {
             return;
         }
         obj.debugging = -1;
@@ -1190,24 +1185,28 @@ class PannerPanelDebuggingHoverListener implements MouseListener {
     @Override
     public void mousePressed(MouseEvent e) {
         obj.debugging = -1;
-        DebuggingHoverListener.stop = true;
-        PannerPanelDebuggingHoverListener.stop = true;
+        GlobalState.pannerPanelDragging = true;
         cursorStartX = e.getXOnScreen();
         cursorStartY = e.getYOnScreen();
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        DebuggingHoverListener.stop = false;
-        PannerPanelDebuggingHoverListener.stop = false;
+        GlobalState.pannerPanelDragging = false;
         MouseMover.moveMouse(cursorStartX, cursorStartY);
     }
 
 }
 
-class DebuggingHoverListener implements MouseListener {
-    static boolean stop = false;
+class GlobalState {
+    public static boolean pannerPanelDragging = false;
+    public static boolean pannerPanelSlow = false;
 
+    public static boolean needsUpdateEditor = false;
+    public static boolean needsUpdateLayers = false;
+}
+
+class DebuggingHoverListener implements MouseListener {
     private GraphicObject obj;
     private int debugValue;
 
@@ -1222,7 +1221,7 @@ class DebuggingHoverListener implements MouseListener {
 
     @Override
     public void mouseEntered(MouseEvent e) {
-        if (stop) {
+        if (GlobalState.pannerPanelDragging) {
             return;
         }
         obj.debugging = debugValue;
@@ -1230,7 +1229,7 @@ class DebuggingHoverListener implements MouseListener {
 
     @Override
     public void mouseExited(MouseEvent e) {
-        if (stop) {
+        if (GlobalState.pannerPanelDragging) {
             return;
         }
         obj.debugging = -1;
@@ -1275,9 +1274,6 @@ class ColorButton extends JButton {
 }
 
 class EditingPanelFactory {
-    // possibly the most cursed solution
-    public static boolean needsUpdate = false;
-    public static boolean needsUpdateLayers = false;
 
     private EditingPanelFactory() {
     }
@@ -1291,20 +1287,14 @@ class EditingPanelFactory {
         actionMap.put("slow pressed", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                PannerPanelXListener.slow = true;
-                PannerPanelYListener.slow = true;
-                PannerPanelWListener.slow = true;
-                PannerPanelHListener.slow = true;
+                GlobalState.pannerPanelSlow = true;
             }
         });
 
         actionMap.put("slow released", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                PannerPanelXListener.slow = false;
-                PannerPanelYListener.slow = false;
-                PannerPanelWListener.slow = false;
-                PannerPanelHListener.slow = false;
+                GlobalState.pannerPanelSlow = false;
             }
         });
 
@@ -1486,7 +1476,7 @@ class EditingPanelFactory {
         if (obj == null) {
             textField.addActionListener(e -> {
                 str.value = textField.getText();
-                needsUpdateLayers = true;
+                GlobalState.needsUpdateLayers = true;
             });
         } else {
             textField.addActionListener(e -> {
@@ -1718,7 +1708,7 @@ class EditingPanelFactory {
                     return;
             }
 
-            needsUpdate = true;
+            GlobalState.needsUpdateEditor = true;
 
             var streamResult = layer.objects.stream().filter(pred).reduce((a, b) -> b);
             if (!streamResult.isPresent()) {
@@ -1852,13 +1842,13 @@ class EditingPanelFactory {
             polyline.points.add(new Point(polyline.points.get(polyline.points.size() - 1).x + 20,
                     polyline.points.get(polyline.points.size() - 1).y + 20));
             polyline.changed = true;
-            needsUpdate = true;
+            GlobalState.needsUpdateEditor = true;
         });
         minusButton.addActionListener(e -> {
             if (polyline.points.size() > 2) {
                 polyline.points.remove(polyline.points.size() - 1);
                 polyline.changed = true;
-                needsUpdate = true;
+                GlobalState.needsUpdateEditor = true;
             }
         });
         minusButton.setEnabled(polyline.points.size() > 2);
@@ -1917,13 +1907,13 @@ class EditingPanelFactory {
             polygon.points.add(new Point(polygon.points.get(polygon.points.size() - 1).x + 20,
                     polygon.points.get(polygon.points.size() - 1).y + 20));
             polygon.changed = true;
-            needsUpdate = true;
+            GlobalState.needsUpdateEditor = true;
         });
         minusButton.addActionListener(e -> {
             if (polygon.points.size() > 3) {
                 polygon.points.remove(polygon.points.size() - 1);
                 polygon.changed = true;
-                needsUpdate = true;
+                GlobalState.needsUpdateEditor = true;
             }
         });
         minusButton.setEnabled(polygon.points.size() > 3);
@@ -1980,14 +1970,14 @@ class EditingPanelFactory {
             bezierCurve.continuedPoints.add(new Point(lastP2.x + 20, lastP2.y + 20));
             bezierCurve.continuedPoints.add(new Point(lastP.x + 20, lastP.y + 20));
             bezierCurve.changed = true;
-            needsUpdate = true;
+            GlobalState.needsUpdateEditor = true;
         });
         minusButton.addActionListener(e -> {
             if (bezierCurve.continuedPoints.size() > 2) {
                 bezierCurve.continuedPoints.remove(bezierCurve.continuedPoints.size() - 1);
                 bezierCurve.continuedPoints.remove(bezierCurve.continuedPoints.size() - 1);
                 bezierCurve.changed = true;
-                needsUpdate = true;
+                GlobalState.needsUpdateEditor = true;
             }
         });
         minusButton.setEnabled(bezierCurve.continuedPoints.size() > 2);
