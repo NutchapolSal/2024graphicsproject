@@ -156,16 +156,43 @@ class EditorFrame {
             this.instructions.add(new GraphicLayer("new layer", new ArrayList<>()));
             updateLayerListPanel();
         });
+        JButton layerUpButton = new JButton("^");
+        layerUpButton.addActionListener(e -> {
+            if (currentLayer.value > 0) {
+                var temp = instructions.get(currentLayer.value - 1);
+                instructions.set(currentLayer.value - 1, instructions.get(currentLayer.value));
+                instructions.set(currentLayer.value, temp);
+                currentLayer.value--;
+                updateLayerListPanel();
+            }
+        });
+
+        JButton layerDownButton = new JButton("v");
+        layerDownButton.addActionListener(e -> {
+            if (currentLayer.value < instructions.size() - 1) {
+                var temp = instructions.get(currentLayer.value + 1);
+                instructions.set(currentLayer.value + 1, instructions.get(currentLayer.value));
+                instructions.set(currentLayer.value, temp);
+                currentLayer.value++;
+                updateLayerListPanel();
+            }
+        });
 
         layout.setHorizontalGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(Alignment.LEADING, false)
                         .addComponent(layerScrollPane)
-                        .addComponent(addLayerButton))
+                        .addGroup(layout.createSequentialGroup()
+                                .addComponent(addLayerButton)
+                                .addComponent(layerUpButton)
+                                .addComponent(layerDownButton)))
                 .addComponent(editorScrollPane));
         layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
                         .addComponent(layerScrollPane)
-                        .addComponent(addLayerButton))
+                        .addGroup(layout.createParallelGroup(Alignment.BASELINE)
+                                .addComponent(addLayerButton)
+                                .addComponent(layerUpButton)
+                                .addComponent(layerDownButton)))
                 .addComponent(editorScrollPane));
 
         JMenuBar menuBar = new JMenuBar();
