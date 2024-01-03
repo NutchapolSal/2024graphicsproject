@@ -89,6 +89,7 @@ public class Main {
                                 new Point(450, 150), new Point(500, 250))))
                 .add(new GraphicFloodFill("#00FFFF", new Point(250, 250)))
                 .add(new GraphicImage("null", new Point(10, 10), new Dimension(20, 20), 1.0))
+                .add(new GraphicCircle("#2266AA", 1, new Point(80, 40), 20))
 
         );
 
@@ -908,6 +909,64 @@ class GraphicPolyBezier extends GraphicBezierPlotter {
 
 }
 
+// https://stackoverflow.com/q/1734745/3623350
+class GraphicCircle extends GraphicBezierPlotter {
+    private static final double BEZIER_CIRCLE_CONSTANT = 0.552284749831;
+    public Point center;
+    public MutableInt radius;
+
+    GraphicCircle(String hexColor, int thickness, Point center, int radius) {
+        super(hexColor, thickness);
+        this.center = center;
+        this.radius = new MutableInt(radius);
+    }
+
+    private Point roundPoint(double x, double y) {
+        return new Point((int) Math.round(x), (int) Math.round(y));
+    }
+
+    @Override
+    public void draw(BufferedImage buffer) {
+        Graphics g = buffer.createGraphics();
+        g.setColor(color.value);
+        double offset = radius.value * BEZIER_CIRCLE_CONSTANT;
+
+        plotBezier(g, roundPoint(center.x, center.y - radius.value),
+                roundPoint(center.x + offset, center.y - radius.value),
+                roundPoint(center.x + radius.value, center.y - offset),
+                roundPoint(center.x + radius.value, center.y));
+
+        plotBezier(g, roundPoint(center.x, center.y + radius.value),
+                roundPoint(center.x + offset, center.y + radius.value),
+                roundPoint(center.x + radius.value, center.y + offset),
+                roundPoint(center.x + radius.value, center.y));
+
+        plotBezier(g, roundPoint(center.x, center.y + radius.value),
+                roundPoint(center.x - offset, center.y + radius.value),
+                roundPoint(center.x - radius.value, center.y + offset),
+                roundPoint(center.x - radius.value, center.y));
+
+        plotBezier(g, roundPoint(center.x, center.y - radius.value),
+                roundPoint(center.x - offset, center.y - radius.value),
+                roundPoint(center.x - radius.value, center.y - offset),
+                roundPoint(center.x - radius.value, center.y));
+    }
+
+    @Override
+    public void debugDraw(Graphics g) {
+        debugLine(g, center.x, center.y, center.x + radius.value, center.y, debugging == 2);
+        debugDot(g, center.x + radius.value, center.y, debugging == 2);
+        debugCircle(g, center.x, center.y, debugging == 1);
+    }
+
+    @Override
+    public GraphicObject copy() {
+        return new GraphicCircle(ColorHexer.encode(color.value), thickness.value, new Point(center.x, center.y),
+                radius.value);
+    }
+
+}
+
 class GraphicFloodFill extends GraphicPlotter {
     public Point point;
 
@@ -1683,7 +1742,8 @@ class EditingPanelFactory {
 
         int sliderSteps = (max - min) / stepSize;
         JSlider slider = new JSlider(0, sliderSteps, (integer.value - min) / stepSize);
-        JSpinner spinner = new JSpinner(new SpinnerNumberModel(integer.value, min, max, stepSize));
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel(integer.value, min, Integer.MAX_VALUE, stepSize));
+        ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(2);
         spinner.addChangeListener(e -> {
             integer.value = (int) spinner.getValue();
             slider.setValue((integer.value - min) / stepSize);
@@ -1951,6 +2011,8 @@ class EditingPanelFactory {
             return create((GraphicBezierCurve) object);
         } else if (object instanceof GraphicPolyBezier) {
             return create((GraphicPolyBezier) object);
+        } else if (object instanceof GraphicCircle) {
+            return create((GraphicCircle) object);
         } else if (object instanceof GraphicFloodFill) {
             return create((GraphicFloodFill) object);
         } else if (object instanceof GraphicImage) {
@@ -2332,6 +2394,36 @@ class EditingPanelFactory {
         return panel;
     }
 
+    public static JPanel create(GraphicCircle circle) {
+        JPanel panel = new JPanel();
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        JLabel label = new JLabel("GraphicCircle");
+        var colorPanel = create("color", circle.color, circle, 0);
+        var pointPanel = create("center", circle.center, circle, 1);
+        var radiusPanel = create("radius", circle.radius, 0, 50, 1, circle, 2);
+
+        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
+                .addComponent(label)
+                .addComponent(colorPanel)
+                .addComponent(pointPanel)
+                .addComponent(radiusPanel));
+        layout.setVerticalGroup(layout.createSequentialGroup()
+                .addComponent(label)
+                .addComponent(colorPanel)
+                .addGap(2)
+                .addComponent(pointPanel)
+                .addGap(2)
+                .addComponent(radiusPanel));
+
+        panel.addMouseListener(new DebuggingHoverListener(circle, 0));
+        pointPanel.addMouseListener(new DebuggingHoverListener(circle, 1));
+        radiusPanel.addMouseListener(new DebuggingHoverListener(circle, 2));
+
+        return panel;
+    }
+
     public static JPanel create(GraphicFloodFill floodFill) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
@@ -2445,6 +2537,8 @@ class ImportExport {
             return exportString((GraphicBezierCurve) object);
         } else if (object instanceof GraphicPolyBezier) {
             return exportString((GraphicPolyBezier) object);
+        } else if (object instanceof GraphicCircle) {
+            return exportString((GraphicCircle) object);
         } else if (object instanceof GraphicFloodFill) {
             return exportString((GraphicFloodFill) object);
         } else if (object instanceof GraphicImage) {
@@ -2545,6 +2639,19 @@ class ImportExport {
         return sb.toString();
     }
 
+    public static String exportString(GraphicCircle circle) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("CIRCLE ");
+        sb.append(exportString(circle.color.value));
+        sb.append(" ");
+        sb.append(circle.thickness.value);
+        sb.append(" ");
+        sb.append(exportString(circle.center));
+        sb.append(" ");
+        sb.append(circle.radius.value);
+        return sb.toString();
+    }
+
     public static String exportString(GraphicFloodFill floodFill) {
         StringBuilder sb = new StringBuilder();
         sb.append("FLOODFILL ");
@@ -2632,6 +2739,9 @@ class ImportExport {
                     break;
                 case "POLYBEZIER":
                     objects.add(importPolyBezier(sc));
+                    break;
+                case "CIRCLE":
+                    objects.add(importCircle(sc));
                     break;
                 case "FLOODFILL":
                     objects.add(importFloodFill(sc));
@@ -2725,6 +2835,14 @@ class ImportExport {
             }
         }
         return new GraphicPolyBezier(hexColor, thickness, p1, data);
+    }
+
+    public static GraphicCircle importCircle(Scanner sc) {
+        String hexColor = sc.next();
+        int thickness = sc.nextInt();
+        Point center = importPoint(sc);
+        int radius = sc.nextInt();
+        return new GraphicCircle(hexColor, thickness, center, radius);
     }
 
     public static Point importPoint(Scanner sc) {
