@@ -970,7 +970,7 @@ class PannerPanelDebuggingHoverListener implements MouseListener {
 
     @Override
     public void mousePressed(MouseEvent e) {
-        obj.debugging = debugValue;
+        obj.debugging = -1;
         DebuggingHoverListener.stop = true;
         PannerPanelDebuggingHoverListener.stop = true;
         cursorStartX = e.getXOnScreen();
@@ -979,7 +979,6 @@ class PannerPanelDebuggingHoverListener implements MouseListener {
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        obj.debugging = -1;
         DebuggingHoverListener.stop = false;
         PannerPanelDebuggingHoverListener.stop = false;
         MouseMover.moveMouse(cursorStartX, cursorStartY);
