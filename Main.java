@@ -47,6 +47,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
@@ -133,14 +134,12 @@ class EditorFrame {
         editorScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         editorScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 
-        changeEditorPane(0);
-        layerScrollPane.setViewportView(createLayerListPanel());
+        updateLayerListPanel();
 
         JButton addLayerButton = new JButton("add layer");
         addLayerButton.addActionListener(e -> {
             this.instructions.add(new GraphicLayer("new layer", new ArrayList<>()));
-            layerScrollPane
-                    .setViewportView(createLayerListPanel());
+            updateLayerListPanel();
         });
 
         layout.setHorizontalGroup(layout.createSequentialGroup()
@@ -214,7 +213,7 @@ class EditorFrame {
                     scanner.close();
                     prefs.put("lastSavePath", this.savePath.value);
                     frame2.setTitle("editor - " + file.getName());
-                    layerScrollPane.setViewportView(createLayerListPanel());
+                    updateLayerListPanel();
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -236,13 +235,18 @@ class EditorFrame {
                 EditingPanelFactory.needsUpdate = false;
             }
             if (EditingPanelFactory.needsUpdateLayers) {
-                layerScrollPane.setViewportView(createLayerListPanel());
+                updateLayerListPanel();
                 EditingPanelFactory.needsUpdateLayers = false;
             }
         }).start();
     }
 
     private void changeEditorPane(int layerIndex) {
+        if (layerIndex < 0 || layerIndex >= instructions.size()) {
+            editorScrollPane.setViewportView(new JPanel());
+            this.currentLayer.value = layerIndex;
+            return;
+        }
         boolean sameLayer = layerIndex == this.currentLayer.value;
         int scrollPos = editorScrollPane.getVerticalScrollBar().getValue();
         editorScrollPane
@@ -255,7 +259,7 @@ class EditorFrame {
         this.currentLayer.value = layerIndex;
     }
 
-    private JPanel createLayerListPanel() {
+    private void updateLayerListPanel() {
         JPanel layerPane = new JPanel();
         GroupLayout layerLayout = new GroupLayout(layerPane);
         layerPane.setLayout(layerLayout);
@@ -269,6 +273,8 @@ class EditorFrame {
         layerLayout.setVerticalGroup(layerVGroup);
 
         ButtonGroup layerButtonGroup = new ButtonGroup();
+
+        changeEditorPane(Math.max(0, Math.min(this.currentLayer.value, instructions.size() - 1)));
 
         int layerI = 0;
         for (GraphicLayer layer : instructions) {
@@ -295,9 +301,19 @@ class EditorFrame {
             layerVGroup.addPreferredGap(ComponentPlacement.RELATED);
             layerCheckboxHGroup.addComponent(layerVisibleCheckbox);
             layerRadioHGroup.addComponent(layerEditRadio);
+
+            JPopupMenu layerPopupMenu = new JPopupMenu();
+            var layerDeleteMenuItem = layerPopupMenu.add("Delete");
+            layerDeleteMenuItem.addActionListener(e -> {
+                instructions.remove(layer);
+                EditingPanelFactory.needsUpdateLayers = true;
+            });
+
+            layerEditRadio.setComponentPopupMenu(layerPopupMenu);
+
             layerI++;
         }
-        return layerPane;
+        layerScrollPane.setViewportView(layerPane);
     }
 }
 
