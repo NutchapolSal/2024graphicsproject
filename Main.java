@@ -14,8 +14,10 @@ import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -33,6 +35,7 @@ import java.util.function.Predicate;
 import java.util.prefs.Preferences;
 
 import javax.imageio.ImageIO;
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
@@ -892,6 +895,8 @@ class GraphicImage extends GraphicObject {
 }
 
 class PannerPanelXListener implements MouseMotionListener, MouseListener {
+    public static boolean slow = false;
+    private boolean slowed = false;
     private Point point;
     private JSpinner spinner;
     private int startX = 0;
@@ -908,7 +913,17 @@ class PannerPanelXListener implements MouseMotionListener, MouseListener {
 
     @Override
     public void mouseDragged(java.awt.event.MouseEvent e) {
-        spinner.setValue(originX + (e.getX() - startX));
+        if (slow != slowed) {
+            startX = e.getX();
+            originX = point.x;
+            slowed = slow;
+        }
+
+        if (slow) {
+            spinner.setValue(originX + (e.getX() - startX) / 8);
+        } else {
+            spinner.setValue(originX + (e.getX() - startX));
+        }
     }
 
     @Override
@@ -919,6 +934,7 @@ class PannerPanelXListener implements MouseMotionListener, MouseListener {
     public void mousePressed(MouseEvent e) {
         startX = e.getX();
         originX = point.x;
+        e.getComponent().requestFocusInWindow();
     }
 
     @Override
@@ -936,6 +952,8 @@ class PannerPanelXListener implements MouseMotionListener, MouseListener {
 }
 
 class PannerPanelYListener implements MouseMotionListener, MouseListener {
+    public static boolean slow = false;
+    private boolean slowed = false;
     private Point point;
     private JSpinner spinner;
     private int startY = 0;
@@ -952,7 +970,17 @@ class PannerPanelYListener implements MouseMotionListener, MouseListener {
 
     @Override
     public void mouseDragged(java.awt.event.MouseEvent e) {
-        spinner.setValue(originY + (e.getY() - startY));
+        if (slow != slowed) {
+            startY = e.getY();
+            originY = point.y;
+            slowed = slow;
+        }
+
+        if (slow) {
+            spinner.setValue(originY + (e.getY() - startY) / 8);
+        } else {
+            spinner.setValue(originY + (e.getY() - startY));
+        }
     }
 
     @Override
@@ -963,6 +991,7 @@ class PannerPanelYListener implements MouseMotionListener, MouseListener {
     public void mousePressed(MouseEvent e) {
         startY = e.getY();
         originY = point.y;
+        e.getComponent().requestFocusInWindow();
     }
 
     @Override
@@ -979,6 +1008,8 @@ class PannerPanelYListener implements MouseMotionListener, MouseListener {
 }
 
 class PannerPanelWListener implements MouseMotionListener, MouseListener {
+    public static boolean slow = false;
+    private boolean slowed = false;
     private Dimension dim;
     private JSpinner spinner;
     private int startX = 0;
@@ -995,7 +1026,17 @@ class PannerPanelWListener implements MouseMotionListener, MouseListener {
 
     @Override
     public void mouseDragged(java.awt.event.MouseEvent e) {
-        spinner.setValue(originX + (e.getX() - startX));
+        if (slow != slowed) {
+            startX = e.getX();
+            originX = dim.width;
+            slowed = slow;
+        }
+
+        if (slow) {
+            spinner.setValue(originX + (e.getX() - startX) / 8);
+        } else {
+            spinner.setValue(originX + (e.getX() - startX));
+        }
     }
 
     @Override
@@ -1006,6 +1047,7 @@ class PannerPanelWListener implements MouseMotionListener, MouseListener {
     public void mousePressed(MouseEvent e) {
         startX = e.getX();
         originX = dim.width;
+        e.getComponent().requestFocusInWindow();
     }
 
     @Override
@@ -1023,6 +1065,8 @@ class PannerPanelWListener implements MouseMotionListener, MouseListener {
 }
 
 class PannerPanelHListener implements MouseMotionListener, MouseListener {
+    public static boolean slow = false;
+    private boolean slowed = false;
     private Dimension dim;
     private JSpinner spinner;
     private int startY = 0;
@@ -1039,7 +1083,17 @@ class PannerPanelHListener implements MouseMotionListener, MouseListener {
 
     @Override
     public void mouseDragged(java.awt.event.MouseEvent e) {
-        spinner.setValue(originY + (e.getY() - startY));
+        if (slow != slowed) {
+            startY = e.getY();
+            originY = dim.height;
+            slowed = slow;
+        }
+
+        if (slow) {
+            spinner.setValue(originY + (e.getY() - startY) / 8);
+        } else {
+            spinner.setValue(originY + (e.getY() - startY));
+        }
     }
 
     @Override
@@ -1050,6 +1104,7 @@ class PannerPanelHListener implements MouseMotionListener, MouseListener {
     public void mousePressed(MouseEvent e) {
         startY = e.getY();
         originY = dim.height;
+        e.getComponent().requestFocusInWindow();
     }
 
     @Override
@@ -1227,6 +1282,34 @@ class EditingPanelFactory {
     private EditingPanelFactory() {
     }
 
+    private static void addSlowListener(JComponent comp) {
+        var inputMap = comp.getInputMap();
+        var actionMap = comp.getActionMap();
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), "slow pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "slow released");
+
+        actionMap.put("slow pressed", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                PannerPanelXListener.slow = true;
+                PannerPanelYListener.slow = true;
+                PannerPanelWListener.slow = true;
+                PannerPanelHListener.slow = true;
+            }
+        });
+
+        actionMap.put("slow released", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                PannerPanelXListener.slow = false;
+                PannerPanelYListener.slow = false;
+                PannerPanelWListener.slow = false;
+                PannerPanelHListener.slow = false;
+            }
+        });
+
+    }
+
     public static JPanel create(String labelText, Point point, GraphicObject obj, int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
@@ -1255,6 +1338,8 @@ class EditingPanelFactory {
         pannerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
         pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
+        pannerPanel.setFocusable(true);
+        addSlowListener(pannerPanel);
 
         JPanel pannerXPanel = new JPanel();
         pannerXPanel.setPreferredSize(new Dimension(20, 8));
@@ -1263,6 +1348,8 @@ class EditingPanelFactory {
         pannerXPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
         pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
+        pannerXPanel.setFocusable(true);
+        addSlowListener(pannerXPanel);
 
         JPanel pannerYPanel = new JPanel();
         pannerYPanel.setPreferredSize(new Dimension(8, 20));
@@ -1271,6 +1358,8 @@ class EditingPanelFactory {
         pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
         pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
+        pannerYPanel.setFocusable(true);
+        addSlowListener(pannerYPanel);
 
         var xListener = new PannerPanelXListener(xSpinner, point);
         var yListener = new PannerPanelYListener(ySpinner, point);
