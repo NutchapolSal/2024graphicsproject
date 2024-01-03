@@ -234,6 +234,10 @@ class EditorFrame {
                 changeEditorPane(this.currentLayer.value);
                 EditingPanelFactory.needsUpdate = false;
             }
+            if (EditingPanelFactory.needsUpdateLayers) {
+                layerScrollPane.setViewportView(createLayerListPanel());
+                EditingPanelFactory.needsUpdateLayers = false;
+            }
         }).start();
     }
 
@@ -273,7 +277,7 @@ class EditorFrame {
                 layer.shown = layerVisibleCheckbox.isSelected();
             });
 
-            var layerEditRadio = new JRadioButton(layer.name);
+            var layerEditRadio = new JRadioButton(layer.name.value);
             if (layerI == currentLayer.value) {
                 layerEditRadio.setSelected(true);
             }
@@ -336,18 +340,18 @@ class MutableString {
 
 class GraphicLayer {
     public boolean shown = true;
-    public String name;
+    public MutableString name = new MutableString("");
     public List<GraphicObject> objects;
 
     private BufferedImage cache = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
 
     GraphicLayer(String name) {
-        this.name = name;
+        this.name.value = name;
         this.objects = new ArrayList<>();
     }
 
     GraphicLayer(String name, List<GraphicObject> objects) {
-        this.name = name;
+        this.name.value = name;
         this.objects = objects;
     }
 
@@ -1073,6 +1077,7 @@ class ColorButton extends JButton {
 class EditingPanelFactory {
     // possibly the most cursed solution
     public static boolean needsUpdate = false;
+    public static boolean needsUpdateLayers = false;
 
     private EditingPanelFactory() {
     }
@@ -1244,10 +1249,17 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JTextField textField = new JTextField(str.value);
-        textField.addActionListener(e -> {
-            str.value = textField.getText();
-            obj.changed = true;
-        });
+        if (obj == null) {
+            textField.addActionListener(e -> {
+                str.value = textField.getText();
+                needsUpdateLayers = true;
+            });
+        } else {
+            textField.addActionListener(e -> {
+                str.value = textField.getText();
+                obj.changed = true;
+            });
+        }
 
         layout.setHorizontalGroup(layout.createSequentialGroup()
                 .addComponent(label)
@@ -1390,9 +1402,9 @@ class EditingPanelFactory {
         vGroup.addGap(5);
         layout.setVerticalGroup(vGroup);
 
-        var label = new JLabel(layer.name);
-        vGroup.addComponent(label);
-        hGroup.addComponent(label);
+        var layerNamePanel = create("layer", layer.name, null, 0);
+        vGroup.addComponent(layerNamePanel);
+        hGroup.addComponent(layerNamePanel);
         for (var gObj : layer.objects) {
             var objPanel = create(gObj);
             vGroup.addPreferredGap(ComponentPlacement.RELATED);
