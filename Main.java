@@ -1388,6 +1388,8 @@ class GlobalState {
 
     public static boolean needsUpdateEditor = false;
     public static boolean needsUpdateLayers = false;
+
+    public static int lastSelectedNewObjI = 0;
 }
 
 class DebuggingHoverListener implements MouseListener {
@@ -1878,8 +1880,11 @@ class EditingPanelFactory {
         comboBox.addItem("GraphicFloodFill");
         comboBox.addItem("GraphicImage");
 
+        comboBox.setSelectedIndex(GlobalState.lastSelectedNewObjI);
+
         JButton addButton = new JButton("+");
         addButton.addActionListener(e -> {
+            GlobalState.lastSelectedNewObjI = comboBox.getSelectedIndex();
             Predicate<? super GraphicObject> pred;
             GraphicObject defaultObj;
             switch ((String) comboBox.getSelectedItem()) {
