@@ -66,19 +66,23 @@ public class Main {
     public static void main(String[] args) {
 
         List<GraphicLayer> instructions = new ArrayList<>();
-        instructions.add(new GraphicLayer("third swing")
+        instructions.add(new GraphicLayer("third point five swing")
                 .add(new GraphicLine("#000000", 1, new Point(25, 550), new Point(575, 550)))
                 .add(new GraphicBezierCurve("#FF0000", 1,
                         new Point(100, 500), new Point(100, 100),
                         new ArrayList<>(List.of(new Point(500, 100), new Point(500,
                                 500)))))
-                .add(new GraphicBezierCurve("#FF7700", 1,
+                .add(new GraphicBezierCurve("#FF7700", 2,
                         new Point(100, 500), new Point(500, 100),
                         new ArrayList<>(List.of(new Point(100, 500), new Point(500,
                                 500)))))
-                .add(new GraphicPolygon("#00FF00",
+                .add(new GraphicPolyline("#00FF00", 3, false,
                         new ArrayList<>(List.of(new Point(150, 150), new Point(250, 100), new Point(325, 125),
-                                new Point(375, 225), new Point(400, 325), new Point(275, 375), new Point(100, 300))))));
+                                new Point(375, 225), new Point(400, 325), new Point(275, 375), new Point(100, 300)))))
+                .add(new GraphicPolygon("#0000FF",
+                        new ArrayList<>(List.of(new Point(350, 100), new Point(350, 200), new Point(300, 200)))))
+
+        );
 
         GraphicsPanel panel = new GraphicsPanel(instructions);
 
