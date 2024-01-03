@@ -2054,6 +2054,8 @@ class ImportExport {
     public static String exportString(GraphicObject object) {
         if (object instanceof GraphicLine) {
             return exportString((GraphicLine) object);
+        } else if (object instanceof GraphicPolyline) {
+            return exportString((GraphicPolyline) object);
         } else if (object instanceof GraphicPolygon) {
             return exportString((GraphicPolygon) object);
         } else if (object instanceof GraphicBezierCurve) {
@@ -2204,6 +2206,9 @@ class ImportExport {
             switch (type) {
                 case "LINE":
                     objects.add(importLine(sc));
+                    break;
+                case "POLYLINE":
+                    objects.add(importPolyline(sc));
                     break;
                 case "POLYGON":
                     objects.add(importPolygon(sc));
