@@ -1314,6 +1314,25 @@ class EditingPanelFactory {
         var p1Panel = create("p1", bezierCurve.p1, bezierCurve, 1);
         var p2Panel = create("p2", bezierCurve.p2, bezierCurve, 2);
 
+        JButton addButton = new JButton("+");
+        JButton minusButton = new JButton("-");
+        addButton.addActionListener(e -> {
+            Point lastP2 = bezierCurve.continuedPoints.get(bezierCurve.continuedPoints.size() - 2);
+            Point lastP = bezierCurve.continuedPoints.get(bezierCurve.continuedPoints.size() - 1);
+
+            bezierCurve.continuedPoints.add(new Point(lastP2.x + 20, lastP2.y + 20));
+            bezierCurve.continuedPoints.add(new Point(lastP.x + 20, lastP.y + 20));
+            needsUpdate = true;
+        });
+        minusButton.addActionListener(e -> {
+            if (bezierCurve.continuedPoints.size() > 2) {
+                bezierCurve.continuedPoints.remove(bezierCurve.continuedPoints.size() - 1);
+                bezierCurve.continuedPoints.remove(bezierCurve.continuedPoints.size() - 1);
+                needsUpdate = true;
+            }
+        });
+        minusButton.setEnabled(bezierCurve.continuedPoints.size() > 2);
+
         var hGroup = layout.createParallelGroup(Alignment.LEADING).addComponent(label)
                 .addComponent(p1Panel)
                 .addComponent(p2Panel);
@@ -1335,6 +1354,13 @@ class EditingPanelFactory {
 
             i++;
         }
+
+        hGroup.addGroup(layout.createSequentialGroup()
+                .addComponent(addButton)
+                .addComponent(minusButton));
+        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER)
+                .addComponent(addButton)
+                .addComponent(minusButton));
 
         layout.setHorizontalGroup(hGroup);
         layout.setVerticalGroup(vGroup);
