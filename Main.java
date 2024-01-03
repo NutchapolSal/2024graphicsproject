@@ -1798,18 +1798,19 @@ class EditingPanelFactory {
                 case "GraphicPolyline":
                     pred = obj -> obj instanceof GraphicPolyline;
                     defaultObj = new GraphicPolyline("#000000", 1, false,
-                            new ArrayList<>(List.of(new Point(0, 0), new Point(50, 50))));
+                            new Point(0, 0), new Point(50, 50));
                     break;
                 case "GraphicPolygon":
                     pred = obj -> obj instanceof GraphicPolygon;
                     defaultObj = new GraphicPolygon("#000000",
-                            new ArrayList<>(List.of(new Point(0, 0), new Point(50, 50), new Point(0, 50))));
+                            new Point(0, 0), new Point(50, 50), new Point(0, 50));
                     break;
                 case "GraphicBezierCurve":
                     pred = obj -> obj instanceof GraphicBezierCurve;
                     defaultObj = new GraphicBezierCurve("#000000", 1, new Point(0, 0), new Point(50, 0),
-                            new ArrayList<>(List.of(new Point(50, 50),
-                                    new Point(0, 50))));
+                            new Point(50, 50),
+                            new Point(0, 50));
+                    break;
                 case "GraphicPolyBezier":
                     pred = obj -> obj instanceof GraphicPolyBezier;
                     defaultObj = new GraphicPolyBezier("#000000", 1,
@@ -1846,6 +1847,7 @@ class EditingPanelFactory {
                 }
                 case "GraphicPolyline": {
                     var result = (GraphicPolyline) streamResult.get().copy();
+                    result.points.subList(2, result.points.size()).clear();
                     for (Point point : result.points) {
                         point.translate(10, 10);
                     }
@@ -1854,6 +1856,7 @@ class EditingPanelFactory {
                 }
                 case "GraphicPolygon": {
                     var result = (GraphicPolygon) streamResult.get().copy();
+                    result.points.subList(3, result.points.size()).clear();
                     for (Point point : result.points) {
                         point.translate(10, 10);
                     }
@@ -1864,6 +1867,7 @@ class EditingPanelFactory {
                     var result = (GraphicBezierCurve) streamResult.get().copy();
                     result.p1.translate(10, 10);
                     result.p2.translate(10, 10);
+                    result.continuedPoints.subList(2, result.continuedPoints.size()).clear();
                     for (Point point : result.continuedPoints) {
                         point.translate(10, 10);
                     }
@@ -1872,9 +1876,11 @@ class EditingPanelFactory {
                 }
                 case "GraphicPolyBezier": {
                     var result = (GraphicPolyBezier) streamResult.get().copy();
+                    result.data.subList(1, result.data.size()).clear();
                     result.p1.translate(10, 10);
                     for (var d : result.data) {
                         d.p2.translate(10, 10);
+                        d.morePoints.subList(2, d.morePoints.size()).clear();
                         for (var p : d.morePoints) {
                             p.translate(10, 10);
                         }
