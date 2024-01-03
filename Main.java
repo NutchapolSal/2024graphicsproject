@@ -666,6 +666,9 @@ class GraphicFloodFill extends GraphicPlotter {
                 point.y < buffer.getHeight())) {
             return;
         }
+        if (buffer.getRGB(point.x, point.y) == color.value.getRGB()) {
+            return;
+        }
 
         Queue<Point> q = new ArrayDeque<>();
         q.add(point);
