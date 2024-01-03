@@ -1691,12 +1691,14 @@ class EditingPanelFactory {
 
             bezierCurve.continuedPoints.add(new Point(lastP2.x + 20, lastP2.y + 20));
             bezierCurve.continuedPoints.add(new Point(lastP.x + 20, lastP.y + 20));
+            bezierCurve.changed = true;
             needsUpdate = true;
         });
         minusButton.addActionListener(e -> {
             if (bezierCurve.continuedPoints.size() > 2) {
                 bezierCurve.continuedPoints.remove(bezierCurve.continuedPoints.size() - 1);
                 bezierCurve.continuedPoints.remove(bezierCurve.continuedPoints.size() - 1);
+                bezierCurve.changed = true;
                 needsUpdate = true;
             }
         });
