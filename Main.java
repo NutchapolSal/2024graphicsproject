@@ -735,8 +735,12 @@ abstract class GraphicBezierPlotter extends GraphicPlotter {
     }
 
     protected void plotBezier(Graphics g, Point pA, Point pB, Point pC, Point pD) {
-        for (int i = 0; i < BEZIER_ITERATIONS; i++) {
-            double t = i / (double) BEZIER_ITERATIONS;
+        plotBezier(g, pA, pB, pC, pD, BEZIER_ITERATIONS);
+    }
+
+    protected void plotBezier(Graphics g, Point pA, Point pB, Point pC, Point pD, int iterations) {
+        for (int i = 0; i < iterations; i++) {
+            double t = i / (double) iterations;
 
             double x = Math.pow(1 - t, 3) * pA.x +
                     3 * t * Math.pow(1 - t, 2) * pB.x +
@@ -930,26 +934,28 @@ class GraphicCircle extends GraphicBezierPlotter {
         Graphics g = buffer.createGraphics();
         g.setColor(color.value);
         double offset = radius.value * BEZIER_CIRCLE_CONSTANT;
+        double perimeter = radius.value * 2 * Math.PI;
+        int iters = (int) Math.round(perimeter);
 
         plotBezier(g, roundPoint(center.x, center.y - radius.value),
                 roundPoint(center.x + offset, center.y - radius.value),
                 roundPoint(center.x + radius.value, center.y - offset),
-                roundPoint(center.x + radius.value, center.y));
+                roundPoint(center.x + radius.value, center.y), iters);
 
         plotBezier(g, roundPoint(center.x, center.y + radius.value),
                 roundPoint(center.x + offset, center.y + radius.value),
                 roundPoint(center.x + radius.value, center.y + offset),
-                roundPoint(center.x + radius.value, center.y));
+                roundPoint(center.x + radius.value, center.y), iters);
 
         plotBezier(g, roundPoint(center.x, center.y + radius.value),
                 roundPoint(center.x - offset, center.y + radius.value),
                 roundPoint(center.x - radius.value, center.y + offset),
-                roundPoint(center.x - radius.value, center.y));
+                roundPoint(center.x - radius.value, center.y), iters);
 
         plotBezier(g, roundPoint(center.x, center.y - radius.value),
                 roundPoint(center.x - offset, center.y - radius.value),
                 roundPoint(center.x - radius.value, center.y - offset),
-                roundPoint(center.x - radius.value, center.y));
+                roundPoint(center.x - radius.value, center.y), iters);
     }
 
     @Override
