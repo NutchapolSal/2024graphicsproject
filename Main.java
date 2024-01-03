@@ -2416,17 +2416,21 @@ class EditingPanelFactory {
 
         JLabel label = new JLabel("GraphicCircle");
         var colorPanel = create("color", circle.color, circle, 0);
+        var thicknessPanel = create("thickness", circle.thickness, 1, 15, 1, circle, 0);
         var pointPanel = create("center", circle.center, circle, 1);
         var radiusPanel = create("radius", circle.radius, 0, 50, 1, circle, 2);
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(label)
                 .addComponent(colorPanel)
+                .addComponent(thicknessPanel)
                 .addComponent(pointPanel)
                 .addComponent(radiusPanel));
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addComponent(label)
                 .addComponent(colorPanel)
+                .addGap(2)
+                .addComponent(thicknessPanel)
                 .addGap(2)
                 .addComponent(pointPanel)
                 .addGap(2)
