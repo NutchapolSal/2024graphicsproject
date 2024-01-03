@@ -443,19 +443,19 @@ abstract class GraphicObject {
     protected void debugCircle(Graphics g, int x, int y, boolean active) {
         var g2 = (Graphics2D) g.create();
         g2.setColor(Color.black);
-        g2.setStroke(new BasicStroke(5));
-        g2.drawOval(x - 6, y - 6, 12, 12);
+        g2.setStroke(new BasicStroke(4));
+        g2.drawOval(x - 5, y - 5, 11, 11);
         g2.setColor(active ? Color.green : Color.red);
-        g2.setStroke(new BasicStroke(3));
-        g2.drawOval(x - 6, y - 6, 12, 12);
+        g2.setStroke(new BasicStroke(2));
+        g2.drawOval(x - 5, y - 5, 11, 11);
     }
 
     protected void debugDot(Graphics g, int x, int y, boolean active) {
         var g2 = (Graphics2D) g.create();
         g2.setColor(Color.black);
-        g2.fillOval(x - 6, y - 6, 12, 12);
+        g2.fillRect(x - 2, y - 2, 5, 5);
         g2.setColor(active ? Color.green : Color.red);
-        g2.fillOval(x - 4, y - 4, 8, 8);
+        g2.fillRect(x - 1, y - 1, 3, 3);
     }
 
     protected void debugLine(Graphics g, int x1, int y1, int x2, int y2, boolean active) {
