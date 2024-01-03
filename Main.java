@@ -1782,6 +1782,7 @@ class EditingPanelFactory {
         comboBox.addItem("GraphicPolyline");
         comboBox.addItem("GraphicPolygon");
         comboBox.addItem("GraphicBezierCurve");
+        comboBox.addItem("GraphicPolyBezier");
         comboBox.addItem("GraphicFloodFill");
         comboBox.addItem("GraphicImage");
 
@@ -1809,6 +1810,12 @@ class EditingPanelFactory {
                     defaultObj = new GraphicBezierCurve("#000000", 1, new Point(0, 0), new Point(50, 0),
                             new ArrayList<>(List.of(new Point(50, 50),
                                     new Point(0, 50))));
+                case "GraphicPolyBezier":
+                    pred = obj -> obj instanceof GraphicPolyBezier;
+                    defaultObj = new GraphicPolyBezier("#000000", 1,
+                            new Point(0, 0),
+                            new PolyBezierData(new Point(50, 0),
+                                    new Point(50, 50), new Point(0, 50)));
                     break;
                 case "GraphicFloodFill":
                     pred = obj -> obj instanceof GraphicFloodFill;
@@ -1859,6 +1866,18 @@ class EditingPanelFactory {
                     result.p2.translate(10, 10);
                     for (Point point : result.continuedPoints) {
                         point.translate(10, 10);
+                    }
+                    layer.add(result);
+                    break;
+                }
+                case "GraphicPolyBezier": {
+                    var result = (GraphicPolyBezier) streamResult.get().copy();
+                    result.p1.translate(10, 10);
+                    for (var d : result.data) {
+                        d.p2.translate(10, 10);
+                        for (var p : d.morePoints) {
+                            p.translate(10, 10);
+                        }
                     }
                     layer.add(result);
                     break;
