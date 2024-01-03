@@ -1184,7 +1184,6 @@ class PannerPanelDebuggingHoverListener implements MouseListener {
 
     @Override
     public void mousePressed(MouseEvent e) {
-        obj.debugging = -1;
         GlobalState.pannerPanelDragging = true;
         cursorStartX = e.getXOnScreen();
         cursorStartY = e.getYOnScreen();
@@ -1201,6 +1200,7 @@ class PannerPanelDebuggingHoverListener implements MouseListener {
 class GlobalState {
     public static boolean pannerPanelDragging = false;
     public static boolean pannerPanelSlow = false;
+    public static boolean pannerShowDebugging = false;
 
     public static boolean needsUpdateEditor = false;
     public static boolean needsUpdateLayers = false;
@@ -1278,11 +1278,14 @@ class EditingPanelFactory {
     private EditingPanelFactory() {
     }
 
-    private static void addSlowListener(JComponent comp) {
+    private static void addPannerKeybinds(JComponent comp) {
         var inputMap = comp.getInputMap();
         var actionMap = comp.getActionMap();
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), "slow pressed");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "slow released");
+
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, false), "debug pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "debug released");
 
         actionMap.put("slow pressed", new AbstractAction() {
             @Override
@@ -1295,6 +1298,20 @@ class EditingPanelFactory {
             @Override
             public void actionPerformed(ActionEvent e) {
                 GlobalState.pannerPanelSlow = false;
+            }
+        });
+
+        actionMap.put("debug pressed", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                GlobalState.pannerShowDebugging = true;
+            }
+        });
+
+        actionMap.put("debug released", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                GlobalState.pannerShowDebugging = false;
             }
         });
 
@@ -1329,7 +1346,7 @@ class EditingPanelFactory {
         pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
         pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
         pannerPanel.setFocusable(true);
-        addSlowListener(pannerPanel);
+        addPannerKeybinds(pannerPanel);
 
         JPanel pannerXPanel = new JPanel();
         pannerXPanel.setPreferredSize(new Dimension(20, 8));
@@ -1339,7 +1356,7 @@ class EditingPanelFactory {
         pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
         pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
         pannerXPanel.setFocusable(true);
-        addSlowListener(pannerXPanel);
+        addPannerKeybinds(pannerXPanel);
 
         JPanel pannerYPanel = new JPanel();
         pannerYPanel.setPreferredSize(new Dimension(8, 20));
@@ -1349,7 +1366,7 @@ class EditingPanelFactory {
         pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
         pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
         pannerYPanel.setFocusable(true);
-        addSlowListener(pannerYPanel);
+        addPannerKeybinds(pannerYPanel);
 
         var xListener = new PannerPanelXListener(xSpinner, point);
         var yListener = new PannerPanelYListener(ySpinner, point);
@@ -2407,7 +2424,9 @@ class GraphicsPanel extends JPanel {
             if (layer.shown) {
                 gOuter.drawImage(layer.draw(), 0, 0, null);
             }
-            layer.debugDraw(g);
+            if (!GlobalState.pannerPanelDragging || GlobalState.pannerShowDebugging) {
+                layer.debugDraw(g);
+            }
         }
 
         gOuter.drawImage(debugBuffer, 0, 0, null);
