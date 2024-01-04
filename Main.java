@@ -17,7 +17,6 @@ import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -41,6 +40,7 @@ import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
@@ -59,11 +59,10 @@ import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.Timer;
 import javax.swing.UIManager;
-import javax.swing.GroupLayout.Alignment;
-import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -1135,11 +1134,11 @@ class PannerPanelXListener implements MouseMotionListener, MouseListener {
     }
 
     @Override
-    public void mouseMoved(java.awt.event.MouseEvent e) {
+    public void mouseMoved(MouseEvent e) {
     }
 
     @Override
-    public void mouseDragged(java.awt.event.MouseEvent e) {
+    public void mouseDragged(MouseEvent e) {
         if (GlobalState.pannerPanelSlow != slowed) {
             startX = e.getX();
             originX = point.x;
@@ -1191,11 +1190,11 @@ class PannerPanelYListener implements MouseMotionListener, MouseListener {
     }
 
     @Override
-    public void mouseMoved(java.awt.event.MouseEvent e) {
+    public void mouseMoved(MouseEvent e) {
     }
 
     @Override
-    public void mouseDragged(java.awt.event.MouseEvent e) {
+    public void mouseDragged(MouseEvent e) {
         if (GlobalState.pannerPanelSlow != slowed) {
             startY = e.getY();
             originY = point.y;
@@ -1246,11 +1245,11 @@ class PannerPanelWListener implements MouseMotionListener, MouseListener {
     }
 
     @Override
-    public void mouseMoved(java.awt.event.MouseEvent e) {
+    public void mouseMoved(MouseEvent e) {
     }
 
     @Override
-    public void mouseDragged(java.awt.event.MouseEvent e) {
+    public void mouseDragged(MouseEvent e) {
         if (GlobalState.pannerPanelSlow != slowed) {
             startX = e.getX();
             originX = dim.width;
@@ -1302,11 +1301,11 @@ class PannerPanelHListener implements MouseMotionListener, MouseListener {
     }
 
     @Override
-    public void mouseMoved(java.awt.event.MouseEvent e) {
+    public void mouseMoved(MouseEvent e) {
     }
 
     @Override
-    public void mouseDragged(java.awt.event.MouseEvent e) {
+    public void mouseDragged(MouseEvent e) {
         if (GlobalState.pannerPanelSlow != slowed) {
             startY = e.getY();
             originY = dim.height;
