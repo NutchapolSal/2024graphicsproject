@@ -417,6 +417,7 @@ class GraphicLayer {
     public boolean shown = true;
     public MutableString name = new MutableString("");
     public List<GraphicObject> objects;
+    public boolean changed = true;
 
     private BufferedImage cache = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
 
@@ -431,21 +432,18 @@ class GraphicLayer {
     }
 
     BufferedImage draw() {
-        var changed = false;
-        for (GraphicObject object : objects) {
-            if (object.changed) {
-                changed = true;
-                break;
-            }
-        }
+        var changed = this.changed || objects.stream().anyMatch(o -> o.changed);
+
         if (!changed) {
             return cache;
         }
+
         BufferedImage buffer = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
         for (GraphicObject object : objects) {
             object.draw(buffer);
             object.changed = false;
         }
+        this.changed = false;
         cache = buffer;
         return buffer;
     }
@@ -460,6 +458,13 @@ class GraphicLayer {
 
     GraphicLayer add(GraphicObject object) {
         objects.add(object);
+        this.changed = true;
+        return this;
+    }
+
+    GraphicLayer remove(GraphicObject object) {
+        objects.remove(object);
+        this.changed = true;
         return this;
     }
 
@@ -469,7 +474,7 @@ abstract class GraphicObject {
     abstract public void draw(BufferedImage buffer);
 
     public int debugging = -1;
-    public boolean changed = true;
+    public boolean changed = false;
 
     abstract public void debugDraw(Graphics g);
 
@@ -1878,6 +1883,14 @@ class EditingPanelFactory {
         hGroup.addComponent(layerNamePanel);
         for (var gObj : layer.objects) {
             var objPanel = create(gObj);
+            JPopupMenu popupMenu = new JPopupMenu();
+            var deleteItem = popupMenu.add("Delete");
+            deleteItem.addActionListener(e -> {
+                layer.remove(gObj);
+                GlobalState.needsUpdateEditor = true;
+            });
+            objPanel.setComponentPopupMenu(popupMenu);
+
             vGroup.addPreferredGap(ComponentPlacement.RELATED);
             vGroup.addComponent(objPanel);
             hGroup.addComponent(objPanel);
@@ -2020,7 +2033,6 @@ class EditingPanelFactory {
                     break;
                 }
             }
-
         });
 
         vGroup.addPreferredGap(ComponentPlacement.RELATED);
