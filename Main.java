@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.function.Predicate;
@@ -63,6 +64,8 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 public class Main {
     public static void main(String[] args) {
@@ -511,44 +514,47 @@ abstract class GraphicObject {
 
 class ColorHexer {
 
+    public static Color decode(String hex) {
+        return decodeOptional(hex).orElse(Color.black);
+    }
+
     // formats:
     // #RGB
     // #RGBA
     // #RRGGBB
     // #RRGGBBAA
-    public static Color decode(String hex) {
-        if (!hex.startsWith("#")) {
-            return Color.black;
+    public static Optional<Color> decodeOptional(String hex) {
+        if (hex.startsWith("#")) {
+            hex = hex.substring(1);
         }
         try {
-            Long.parseLong(hex.substring(1), 16);
+            Long.parseLong(hex, 16);
         } catch (NumberFormatException e) {
-            return Color.black;
+            return Optional.empty();
         }
 
-        if (hex.length() == 4) {
-            return Color.decode("#" +
+        if (hex.length() == 3) {
+            return Optional.of(Color.decode("#" +
+                    hex.substring(0, 1).repeat(2) +
                     hex.substring(1, 2).repeat(2) +
-                    hex.substring(2, 3).repeat(2) +
-                    hex.substring(3, 4).repeat(2));
-        } else if (hex.length() == 5) {
-            return new Color(
+                    hex.substring(2, 3).repeat(2)));
+        } else if (hex.length() == 4) {
+            return Optional.of(new Color(
+                    Integer.parseInt(hex.substring(0, 1), 16) * 17,
                     Integer.parseInt(hex.substring(1, 2), 16) * 17,
                     Integer.parseInt(hex.substring(2, 3), 16) * 17,
-                    Integer.parseInt(hex.substring(3, 4), 16) * 17,
-                    Integer.parseInt(hex.substring(4, 5), 16) * 17);
-        } else if (hex.length() == 7) {
-            return Color.decode(hex);
-        } else if (hex.length() == 9) {
-            return new Color(
-                    Integer.parseInt(hex.substring(1, 3), 16),
-                    Integer.parseInt(hex.substring(3, 5), 16),
-                    Integer.parseInt(hex.substring(5, 7), 16),
-                    Integer.parseInt(hex.substring(7, 9), 16));
+                    Integer.parseInt(hex.substring(3, 4), 16) * 17));
+        } else if (hex.length() == 6) {
+            return Optional.of(Color.decode("#" + hex));
+        } else if (hex.length() == 8) {
+            return Optional.of(new Color(
+                    Integer.parseInt(hex.substring(0, 2), 16),
+                    Integer.parseInt(hex.substring(2, 4), 16),
+                    Integer.parseInt(hex.substring(4, 6), 16),
+                    Integer.parseInt(hex.substring(6, 8), 16)));
         } else {
-            return Color.black;
+            return Optional.empty();
         }
-
     }
 
     public static String encode(Color c) {
@@ -1452,6 +1458,7 @@ class DebuggingHoverListener implements MouseListener {
 class ColorButton extends JButton {
     static int squareSize = 10;
     private Color color;
+    private boolean invalid = false;
 
     public ColorButton() {
         this.setText(" ");
@@ -1459,11 +1466,25 @@ class ColorButton extends JButton {
 
     public void setColor(Color color) {
         this.color = color;
+        this.invalid = false;
+        this.repaint();
+    }
+
+    public void setInvalid() {
+        this.invalid = true;
         this.repaint();
     }
 
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        if (invalid) {
+            g.setColor(Color.black);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            g.setColor(Color.red);
+            g.setFont(getFont().deriveFont(getHeight() * 0.8f));
+            g.drawString("!!", (int) (getWidth() * 0.1), (int) (getHeight() * 0.9f));
+            return;
+        }
         for (int i = 0; i < getWidth(); i += squareSize) {
             for (int j = 0; j < getHeight(); j += squareSize) {
                 g.setColor((i / squareSize + j / squareSize) % 2 == 0 ? Color.lightGray : Color.white);
@@ -1814,9 +1835,41 @@ class EditingPanelFactory {
                 obj.changed = true;
             }
         });
+
+        Runnable newColorFunction = () -> {
+            var parsedColor = ColorHexer.decodeOptional(textField.getText());
+            if (parsedColor.isPresent()) {
+                color.value = parsedColor.get();
+                button.setColor(parsedColor.get());
+                obj.changed = true;
+            } else {
+                button.setInvalid();
+            }
+        };
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                newColorFunction.run();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                newColorFunction.run();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                newColorFunction.run();
+            }
+        });
         textField.addActionListener(e -> {
-            color.value = ColorHexer.decode(textField.getText());
-            button.setColor(color.value);
+            var parsedColor = ColorHexer.decodeOptional(textField.getText());
+            if (parsedColor.isPresent()) {
+                button.setColor(color.value);
+            } else {
+                button.setInvalid();
+            }
+            color.value = parsedColor.orElse(Color.black);
             obj.changed = true;
         });
 
