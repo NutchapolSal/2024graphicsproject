@@ -432,19 +432,19 @@ class MutableString {
 
 class GraphicLayer {
     public boolean shown = true;
-    public MutableString name = new MutableString("");
+    public MutableString name;
     public List<GraphicObject> objects;
     public boolean changed = true;
 
     private BufferedImage cache = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
 
     GraphicLayer(String name) {
-        this.name.value = name;
+        this.name = new MutableString(name);
         this.objects = new ArrayList<>();
     }
 
     GraphicLayer(String name, List<GraphicObject> objects) {
-        this.name.value = name;
+        this.name = new MutableString(name);
         this.objects = objects;
     }
 
@@ -586,10 +586,10 @@ class ColorHexer {
 }
 
 abstract class GraphicPlotter extends GraphicObject {
-    public MutableColor color = new MutableColor(Color.black);
+    public MutableColor color;
 
     protected GraphicPlotter(String hexColor) {
-        this.color.value = ColorHexer.decode(hexColor);
+        this.color = new MutableColor(ColorHexer.decode(hexColor));
     }
 
     protected void plot(Graphics g, int x, int y, int size) {
@@ -598,11 +598,11 @@ abstract class GraphicPlotter extends GraphicObject {
 }
 
 abstract class GraphicLinePlotter extends GraphicPlotter {
-    public MutableInt thickness = new MutableInt(1);
+    public MutableInt thickness;
 
     protected GraphicLinePlotter(String hexColor, int thickness) {
         super(hexColor);
-        this.thickness.value = thickness;
+        this.thickness = new MutableInt(thickness);
     }
 
     protected void plotLine(Graphics g, Point p1, Point p2) {
@@ -718,7 +718,7 @@ class GraphicPolygon extends GraphicPlotter {
 }
 
 class GraphicPolyline extends GraphicLinePlotter {
-    public MutableBoolean closed = new MutableBoolean(false);
+    public MutableBoolean closed;
     public List<Point> points;
 
     GraphicPolyline(String hexColor, int thickness, boolean closed, Point... points) {
@@ -727,7 +727,7 @@ class GraphicPolyline extends GraphicLinePlotter {
 
     GraphicPolyline(String hexColor, int thickness, boolean closed, List<Point> points) {
         super(hexColor, thickness);
-        this.closed.value = closed;
+        this.closed = new MutableBoolean(closed);
         this.points = points;
     }
 
@@ -764,11 +764,11 @@ class GraphicPolyline extends GraphicLinePlotter {
 
 abstract class GraphicBezierPlotter extends GraphicPlotter {
     private static final int BEZIER_ITERATIONS = 2000;
-    public MutableInt thickness = new MutableInt(1);
+    public MutableInt thickness;
 
     protected GraphicBezierPlotter(String hexColor, int thickness) {
         super(hexColor);
-        this.thickness.value = thickness;
+        this.thickness = new MutableInt(thickness);
     }
 
     protected void plotBezier(Graphics g, Point pA, Point pB, Point pC, Point pD) {
