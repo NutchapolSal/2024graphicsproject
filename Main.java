@@ -113,10 +113,6 @@ public class Main {
         frame.pack();
         frame.setVisible(true);
 
-        var exx = ImportExport.exportString(instructions);
-        System.out.println(exx);
-        System.out.println(ImportExport.exportString(ImportExport.importString(exx)));
-
         new EditorFrame(frame, instructions);
 
         new Timer(1000 / 60, e -> {
@@ -215,6 +211,8 @@ class EditorFrame {
         var saveMenuItem = fileMenu.add("Save");
         var saveAsMenuItem = fileMenu.add("Save as...");
         var loadMenuItem = fileMenu.add("Load");
+        fileMenu.addSeparator();
+        var exportCodeMenuItem = fileMenu.add("Export code...");
 
         JFileChooser fileChooser = new JFileChooser(prefs.get("lastSavePath", System.getProperty("user.home")));
 
@@ -222,6 +220,7 @@ class EditorFrame {
             if (this.savePath.value == null) {
                 if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
                     this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+                    prefs.put("lastSavePath", fileChooser.getCurrentDirectory().getAbsolutePath());
                 }
             }
             if (this.savePath.value != null) {
@@ -241,13 +240,14 @@ class EditorFrame {
         saveAsMenuItem.addActionListener(e -> {
             if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
                 this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+                prefs.put("lastSavePath", fileChooser.getCurrentDirectory().getAbsolutePath());
+
                 try {
                     FileWriter fw = new FileWriter(this.savePath.value);
                     fw.write(ImportExport.exportString(instructions));
                     fw.close();
                     frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
                             + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
-                    prefs.put("lastSavePath", this.savePath.value);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -257,6 +257,8 @@ class EditorFrame {
         loadMenuItem.addActionListener(e -> {
             if (fileChooser.showOpenDialog(frame2) == JFileChooser.APPROVE_OPTION) {
                 this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+                prefs.put("lastSavePath", fileChooser.getCurrentDirectory().getAbsolutePath());
+
                 try {
                     var file = new File(this.savePath.value);
                     Scanner scanner = new Scanner(file);
@@ -264,9 +266,22 @@ class EditorFrame {
                     var newInstructions = ImportExport.importLayers(scanner);
                     instructions.addAll(newInstructions);
                     scanner.close();
-                    prefs.put("lastSavePath", this.savePath.value);
                     frame2.setTitle("editor - " + file.getName());
                     updateLayerListPanel();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        exportCodeMenuItem.addActionListener(e -> {
+            if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
+                prefs.put("lastSavePath", fileChooser.getCurrentDirectory().getAbsolutePath());
+
+                try {
+                    FileWriter fw = new FileWriter(fileChooser.getSelectedFile().getAbsolutePath());
+                    fw.write(ImportExport.exportCode(instructions));
+                    fw.close();
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -457,6 +472,11 @@ class GraphicLayer {
                 object.debugDraw(g);
             }
         }
+    }
+
+    GraphicLayer setShown(boolean shown) {
+        this.shown = shown;
+        return this;
     }
 
     GraphicLayer add(GraphicObject object) {
@@ -2798,6 +2818,207 @@ class ImportExport {
 
     public static String exportString(boolean bool) {
         return bool ? "T" : "F";
+    }
+
+    public static String exportCode(List<GraphicLayer> instructions) {
+        StringBuilder sb = new StringBuilder();
+        for (GraphicLayer layer : instructions) {
+            sb.append("instructions.add(");
+            sb.append(exportCode(layer));
+            sb.append(");\n");
+        }
+        return sb.toString();
+    }
+
+    public static String exportCode(GraphicLayer layer) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicLayer(\"");
+        sb.append(layer.name);
+        sb.append("\")\n.setShown(");
+        sb.append(exportCode(layer.shown));
+        sb.append(")\n");
+        for (GraphicObject object : layer.objects) {
+            sb.append(".add(");
+            sb.append(exportCode(object));
+            sb.append(")\n");
+        }
+        return sb.toString();
+    }
+
+    public static String exportCode(GraphicObject object) {
+        if (object instanceof GraphicLine) {
+            return exportCode((GraphicLine) object);
+        } else if (object instanceof GraphicPolyline) {
+            return exportCode((GraphicPolyline) object);
+        } else if (object instanceof GraphicPolygon) {
+            return exportCode((GraphicPolygon) object);
+        } else if (object instanceof GraphicBezierCurve) {
+            return exportCode((GraphicBezierCurve) object);
+        } else if (object instanceof GraphicPolyBezier) {
+            return exportCode((GraphicPolyBezier) object);
+        } else if (object instanceof GraphicCircle) {
+            return exportCode((GraphicCircle) object);
+        } else if (object instanceof GraphicFloodFill) {
+            return exportCode((GraphicFloodFill) object);
+        } else if (object instanceof GraphicImage) {
+            return exportCode((GraphicImage) object);
+        } else {
+            return "";
+        }
+    }
+
+    public static String exportCode(GraphicLine line) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicLine(");
+        sb.append(exportCode(line.color.value));
+        sb.append(", ");
+        sb.append(line.thickness.value);
+        sb.append(", ");
+        sb.append(exportCode(line.p1));
+        sb.append(", ");
+        sb.append(exportCode(line.p2));
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public static String exportCode(GraphicPolyline polyline) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicPolyline(");
+        sb.append(exportCode(polyline.color.value));
+        sb.append(", ");
+        sb.append(polyline.thickness.value);
+        sb.append(", ");
+        sb.append(exportCode(polyline.closed.value));
+        for (Point point : polyline.points) {
+            sb.append(", ");
+            sb.append(exportCode(point));
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public static String exportCode(GraphicPolygon polygon) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicPolygon(");
+        sb.append(exportCode(polygon.color.value));
+        for (Point point : polygon.points) {
+            sb.append(", ");
+            sb.append(exportCode(point));
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public static String exportCode(GraphicBezierCurve bezierCurve) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicBezierCurve(");
+        sb.append(exportCode(bezierCurve.color.value));
+        sb.append(", ");
+        sb.append(bezierCurve.thickness.value);
+        sb.append(", ");
+        sb.append(exportCode(bezierCurve.p1));
+        sb.append(", ");
+        sb.append(exportCode(bezierCurve.p2));
+        for (Point point : bezierCurve.continuedPoints) {
+            sb.append(", ");
+            sb.append(exportCode(point));
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public static String exportCode(PolyBezierData pbd) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new PolyBezierData(");
+        sb.append(exportCode(pbd.p2));
+        for (Point point : pbd.morePoints) {
+            sb.append(", ");
+            sb.append(exportCode(point));
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public static String exportCode(GraphicPolyBezier polyBezier) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicPolyBezier(");
+        sb.append(exportCode(polyBezier.color.value));
+        sb.append(", ");
+        sb.append(polyBezier.thickness.value);
+        sb.append(", ");
+        sb.append(exportCode(polyBezier.p1));
+        for (PolyBezierData pbd : polyBezier.data) {
+            sb.append(",");
+            sb.append(exportCode(pbd));
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public static String exportCode(GraphicCircle circle) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicCircle(");
+        sb.append(exportCode(circle.color.value));
+        sb.append(", ");
+        sb.append(circle.thickness.value);
+        sb.append(", ");
+        sb.append(exportCode(circle.center));
+        sb.append(", ");
+        sb.append(circle.radius.value);
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public static String exportCode(GraphicFloodFill floodFill) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicFloodFill(");
+        sb.append(exportCode(floodFill.color.value));
+        sb.append(", ");
+        sb.append(exportCode(floodFill.point));
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public static String exportCode(Color color) {
+        return "\"" + ColorHexer.encode(color) + "\"";
+    }
+
+    public static String exportCode(Point point) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Point(");
+        sb.append(point.x);
+        sb.append(",");
+        sb.append(point.y);
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public static String exportCode(Dimension dim) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Dimension(");
+        sb.append(dim.width);
+        sb.append(",");
+        sb.append(dim.height);
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public static String exportCode(GraphicImage image) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicImage(\"");
+        sb.append(image.filePath.value);
+        sb.append("\", ");
+        sb.append(exportCode(image.origin));
+        sb.append(", ");
+        sb.append(exportCode(image.size));
+        sb.append(", ");
+        sb.append(image.opacity.value);
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public static String exportCode(boolean bool) {
+        return bool ? "true" : "false";
     }
 
     public static List<GraphicLayer> importString(String str) {
