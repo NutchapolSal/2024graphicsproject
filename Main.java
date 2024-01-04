@@ -2745,16 +2745,24 @@ class ImportExport {
     public static List<GraphicLayer> importLayers(Scanner sc) {
         List<GraphicLayer> layers = new ArrayList<>();
         while (sc.hasNext()) {
-            layers.add(importLayer(sc));
+            String type = sc.next();
+            switch (type) {
+                case "LAYER":
+                    layers.add(importLayer(sc));
+                    break;
+            }
         }
         return layers;
     }
 
     public static GraphicLayer importLayer(Scanner sc) {
-        sc.skip("LAYER ");
+        sc.skip(" ");
         String layerName = sc.nextLine();
-        sc.skip("VISIBLE ");
-        boolean visible = sc.nextLine().equals("T");
+        if (!sc.hasNext("VISIBLE")) {
+            throw new IllegalArgumentException("Expected VISIBLE");
+        }
+        sc.next();
+        boolean visible = sc.next().equals("T");
         List<GraphicObject> objects = new ArrayList<>();
         while (true) {
             String type = sc.next();
