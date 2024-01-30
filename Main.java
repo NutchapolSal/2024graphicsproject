@@ -3084,6 +3084,9 @@ class ImEx {
                 case "POLYBEZIER":
                     objects.add(importPolyBezier(sc));
                     break;
+                case "PATH2D":
+                    objects.add(importPath2D(sc));
+                    break;
                 case "CIRCLE":
                     objects.add(importCircle(sc));
                     break;
@@ -3152,6 +3155,50 @@ class ImEx {
             }
         }
         return new GraphicPolyBezier(hexColor, thickness, p1, data);
+    }
+
+    public static Path2DLine importPath2DLine(Scanner sc) {
+        Point pNext = importPoint(sc);
+        return new Path2DLine(pNext);
+    }
+
+    public static Path2DBezier importPath2DBezier(Scanner sc) {
+        Point pNext = importPoint(sc);
+        List<Point> morePoints = new ArrayList<>();
+        while (true) {
+            morePoints.add(importPoint(sc));
+            if (sc.hasNext("END")) {
+                sc.next();
+                break;
+            }
+        }
+        return new Path2DBezier(pNext, morePoints);
+    }
+
+    public static GraphicPath2D importPath2D(Scanner sc) {
+        boolean stroke = sc.next().equals("T");
+        String strokeColor = sc.next();
+        int thickness = sc.nextInt();
+        boolean fill = sc.next().equals("T");
+        String fillColor = sc.next();
+        boolean closed = sc.next().equals("T");
+        Point p1 = importPoint(sc);
+        List<Path2DData> data = new ArrayList<>();
+        while (true) {
+            String type = sc.next();
+            if (type.equals("END")) {
+                break;
+            }
+            switch (type) {
+                case "LINE":
+                    data.add(importPath2DLine(sc));
+                    break;
+                case "BEZIER":
+                    data.add(importPath2DBezier(sc));
+                    break;
+            }
+        }
+        return new GraphicPath2D(stroke, strokeColor, thickness, fill, fillColor, closed, p1, data);
     }
 
     public static GraphicCircle importCircle(Scanner sc) {
