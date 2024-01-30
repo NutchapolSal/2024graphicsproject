@@ -101,6 +101,10 @@ public class Main {
 
         );
 
+        var exx = ImEx.exportString(instructions);
+        System.out.println(exx);
+        System.out.println(ImEx.exportString(ImEx.importString(exx)));
+
         GraphicsPanel panel = new GraphicsPanel(instructions);
 
         JFrame frame = new JFrame();
@@ -224,7 +228,7 @@ class EditorFrame {
             if (this.savePath.value != null) {
                 try {
                     FileWriter fw = new FileWriter(this.savePath.value);
-                    fw.write(ImportExport.exportString(instructions));
+                    fw.write(ImEx.exportString(instructions));
                     fw.close();
                     frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
                             + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
@@ -242,7 +246,7 @@ class EditorFrame {
 
                 try {
                     FileWriter fw = new FileWriter(this.savePath.value);
-                    fw.write(ImportExport.exportString(instructions));
+                    fw.write(ImEx.exportString(instructions));
                     fw.close();
                     frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
                             + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
@@ -261,7 +265,7 @@ class EditorFrame {
                     var file = new File(this.savePath.value);
                     Scanner scanner = new Scanner(file);
                     instructions.clear();
-                    var newInstructions = ImportExport.importLayers(scanner);
+                    var newInstructions = ImEx.importLayers(scanner);
                     instructions.addAll(newInstructions);
                     scanner.close();
                     frame2.setTitle("editor - " + file.getName());
@@ -278,7 +282,7 @@ class EditorFrame {
 
                 try {
                     FileWriter fw = new FileWriter(fileChooser.getSelectedFile().getAbsolutePath());
-                    fw.write(ImportExport.exportCode(instructions));
+                    fw.write(ImEx.exportCode(instructions));
                     fw.close();
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -429,7 +433,7 @@ class MutableString {
     }
 }
 
-class GraphicLayer {
+class GraphicLayer implements Exportable {
     public boolean shown = true;
     public MutableString name;
     public List<GraphicObject> objects;
@@ -490,9 +494,40 @@ class GraphicLayer {
         return this;
     }
 
+    public String exportString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("LAYER ");
+        sb.append(this.name);
+        sb.append("\n");
+        sb.append("VISIBLE ");
+        sb.append(ImEx.exportString(this.shown));
+        sb.append("\n");
+        for (GraphicObject object : this.objects) {
+            sb.append(object.exportString());
+            sb.append("\n");
+        }
+        sb.append("END");
+        return sb.toString();
+    }
+
+    public String exportCode() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicLayer(\"");
+        sb.append(this.name);
+        sb.append("\")\n.setShown(");
+        sb.append(ImEx.exportCode(this.shown));
+        sb.append(")\n");
+        for (GraphicObject object : this.objects) {
+            sb.append(".add(");
+            sb.append(object.exportCode());
+            sb.append(")\n");
+        }
+        return sb.toString();
+    }
+
 }
 
-abstract class GraphicObject {
+abstract class GraphicObject implements Exportable {
     abstract public void draw(Graphics g);
 
     public int debugging = -1;
@@ -687,6 +722,31 @@ class GraphicPolygon extends GraphicPlotter {
         return new GraphicPolygon(ColorHexer.encode(color.value), newPoints);
     }
 
+    public String exportString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("POLYGON ");
+        sb.append(ImEx.exportString(this.color.value));
+        sb.append(" ");
+        for (Point point : this.points) {
+            sb.append(ImEx.exportString(point));
+            sb.append(" ");
+        }
+        sb.append("END");
+        return sb.toString();
+    }
+
+    public String exportCode() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicPolygon(");
+        sb.append(ImEx.exportCode(this.color.value));
+        for (Point point : this.points) {
+            sb.append(", ");
+            sb.append(ImEx.exportCode(point));
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
 }
 
 class GraphicPolyline extends GraphicLinePlotter {
@@ -732,6 +792,39 @@ class GraphicPolyline extends GraphicLinePlotter {
         }
         return new GraphicPolyline(ColorHexer.encode(color.value), thickness.value, closed.value, newPoints);
     }
+
+    public String exportString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("POLYLINE ");
+        sb.append(ImEx.exportString(this.color.value));
+        sb.append(" ");
+        sb.append(this.thickness.value);
+        sb.append(" ");
+        sb.append(ImEx.exportString(this.closed.value));
+        sb.append(" ");
+        for (Point point : this.points) {
+            sb.append(ImEx.exportString(point));
+            sb.append(" ");
+        }
+        sb.append("END");
+        return sb.toString();
+    }
+
+    public String exportCode() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicPolyline(");
+        sb.append(ImEx.exportCode(this.color.value));
+        sb.append(", ");
+        sb.append(this.thickness.value);
+        sb.append(", ");
+        sb.append(ImEx.exportCode(this.closed.value));
+        for (Point point : this.points) {
+            sb.append(", ");
+            sb.append(ImEx.exportCode(point));
+        }
+        sb.append(")");
+        return sb.toString();
+    }
 }
 
 abstract class GraphicBezierPlotter extends GraphicPlotter {
@@ -766,7 +859,7 @@ abstract class GraphicBezierPlotter extends GraphicPlotter {
     }
 }
 
-class PolyBezierData {
+class PolyBezierData implements Exportable {
     public Point p2;
     public List<Point> morePoints;
 
@@ -785,6 +878,30 @@ class PolyBezierData {
             newPoints.add(new Point(point.x, point.y));
         }
         return new PolyBezierData(new Point(p2.x, p2.y), newPoints);
+    }
+
+    public String exportString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ImEx.exportString(this.p2));
+        sb.append(" ");
+        for (Point point : this.morePoints) {
+            sb.append(ImEx.exportString(point));
+            sb.append(" ");
+        }
+        sb.append("END");
+        return sb.toString();
+    }
+
+    public String exportCode() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new PolyBezierData(");
+        sb.append(ImEx.exportCode(this.p2));
+        for (Point point : this.morePoints) {
+            sb.append(", ");
+            sb.append(ImEx.exportCode(point));
+        }
+        sb.append(")");
+        return sb.toString();
     }
 }
 
@@ -859,6 +976,38 @@ class GraphicPolyBezier extends GraphicBezierPlotter {
                 newData);
     }
 
+    public String exportString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("POLYBEZIER ");
+        sb.append(ImEx.exportString(this.color.value));
+        sb.append(" ");
+        sb.append(this.thickness.value);
+        sb.append(" ");
+        sb.append(ImEx.exportString(this.p1));
+        sb.append("\n");
+        for (PolyBezierData pbd : this.data) {
+            sb.append(pbd.exportString());
+            sb.append("\n");
+        }
+        sb.append("END");
+        return sb.toString();
+    }
+
+    public String exportCode() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicPolyBezier(");
+        sb.append(ImEx.exportCode(this.color.value));
+        sb.append(", ");
+        sb.append(this.thickness.value);
+        sb.append(", ");
+        sb.append(ImEx.exportCode(this.p1));
+        for (PolyBezierData pbd : this.data) {
+            sb.append(",");
+            sb.append(pbd.exportCode());
+        }
+        sb.append(")");
+        return sb.toString();
+    }
 }
 
 abstract class GraphicDrawFiller extends GraphicObject {
@@ -895,7 +1044,7 @@ abstract class GraphicDrawFiller extends GraphicObject {
     }
 }
 
-abstract class Path2DData {
+abstract class Path2DData implements Exportable {
     abstract public void run(Path2D path);
 
     abstract public int size();
@@ -924,6 +1073,19 @@ class Path2DLine extends Path2DData {
     Point lastPoint() {
         return pNext;
     }
+
+    @Override
+    public String exportCode() {
+        // TODO Auto-generated method stub
+        return "LINE";
+    }
+
+    @Override
+    public String exportString() {
+        // TODO Auto-generated method stub
+        return "LINE";
+    }
+
 }
 
 class Path2DBezier extends Path2DData {
@@ -962,6 +1124,18 @@ class Path2DBezier extends Path2DData {
     @Override
     Point lastPoint() {
         return morePoints.get(morePoints.size() - 1);
+    }
+
+    @Override
+    public String exportCode() {
+        // TODO Auto-generated method stub
+        return "BEZIER";
+    }
+
+    @Override
+    public String exportString() {
+        // TODO Auto-generated method stub
+        return "BEZIER";
     }
 
 }
@@ -1034,6 +1208,18 @@ class GraphicPath2D extends GraphicDrawFiller {
                 fill.value, ColorHexer.encode(fillColor.value), closed.value, new Point(p1.x, p1.y), newData);
     }
 
+    @Override
+    public String exportCode() {
+        // TODO Auto-generated method stub
+        return "PATH2D";
+    }
+
+    @Override
+    public String exportString() {
+        // TODO Auto-generated method stub
+        return "PATH2D";
+    }
+
 }
 
 // https://stackoverflow.com/q/1734745/3623350
@@ -1094,6 +1280,32 @@ class GraphicCircle extends GraphicBezierPlotter {
                 radius.value);
     }
 
+    public String exportString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("CIRCLE ");
+        sb.append(ImEx.exportString(this.color.value));
+        sb.append(" ");
+        sb.append(this.thickness.value);
+        sb.append(" ");
+        sb.append(ImEx.exportString(this.center));
+        sb.append(" ");
+        sb.append(this.radius.value);
+        return sb.toString();
+    }
+
+    public String exportCode() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicCircle(");
+        sb.append(ImEx.exportCode(this.color.value));
+        sb.append(", ");
+        sb.append(this.thickness.value);
+        sb.append(", ");
+        sb.append(ImEx.exportCode(this.center));
+        sb.append(", ");
+        sb.append(this.radius.value);
+        sb.append(")");
+        return sb.toString();
+    }
 }
 
 class GraphicImage extends GraphicObject {
@@ -1151,6 +1363,33 @@ class GraphicImage extends GraphicObject {
     public GraphicObject copy() {
         return new GraphicImage(filePath.value, new Point(origin.x, origin.y), new Dimension(size.width, size.height),
                 opacity.value);
+    }
+
+    public String exportString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("IMAGE ");
+        sb.append(this.filePath.value);
+        sb.append("\n");
+        sb.append(ImEx.exportString(this.origin));
+        sb.append(" ");
+        sb.append(ImEx.exportString(this.size));
+        sb.append(" ");
+        sb.append(this.opacity.value);
+        return sb.toString();
+    }
+
+    public String exportCode() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicImage(\"");
+        sb.append(this.filePath.value);
+        sb.append("\", ");
+        sb.append(ImEx.exportCode(this.origin));
+        sb.append(", ");
+        sb.append(ImEx.exportCode(this.size));
+        sb.append(", ");
+        sb.append(this.opacity.value);
+        sb.append(")");
+        return sb.toString();
     }
 }
 
@@ -2664,118 +2903,20 @@ class EditingPanelFactory {
     }
 }
 
-class ImportExport {
+interface Exportable {
+    public String exportString();
+
+    public String exportCode();
+}
+
+class ImEx {
 
     public static String exportString(List<GraphicLayer> instructions) {
         StringBuilder sb = new StringBuilder();
         for (GraphicLayer layer : instructions) {
-            sb.append(exportString(layer));
+            sb.append(layer.exportString());
             sb.append("\n");
         }
-        return sb.toString();
-    }
-
-    public static String exportString(GraphicLayer layer) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("LAYER ");
-        sb.append(layer.name);
-        sb.append("\n");
-        sb.append("VISIBLE ");
-        sb.append(exportString(layer.shown));
-        sb.append("\n");
-        for (GraphicObject object : layer.objects) {
-            sb.append(exportString(object));
-            sb.append("\n");
-        }
-        sb.append("END");
-        return sb.toString();
-    }
-
-    public static String exportString(GraphicObject object) {
-        if (object instanceof GraphicPolyline) {
-            return exportString((GraphicPolyline) object);
-        } else if (object instanceof GraphicPolygon) {
-            return exportString((GraphicPolygon) object);
-        } else if (object instanceof GraphicPolyBezier) {
-            return exportString((GraphicPolyBezier) object);
-        } else if (object instanceof GraphicCircle) {
-            return exportString((GraphicCircle) object);
-        } else if (object instanceof GraphicImage) {
-            return exportString((GraphicImage) object);
-        } else {
-            return "";
-        }
-    }
-
-    public static String exportString(GraphicPolyline polyline) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("POLYLINE ");
-        sb.append(exportString(polyline.color.value));
-        sb.append(" ");
-        sb.append(polyline.thickness.value);
-        sb.append(" ");
-        sb.append(exportString(polyline.closed.value));
-        sb.append(" ");
-        for (Point point : polyline.points) {
-            sb.append(exportString(point));
-            sb.append(" ");
-        }
-        sb.append("END");
-        return sb.toString();
-    }
-
-    public static String exportString(GraphicPolygon polygon) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("POLYGON ");
-        sb.append(exportString(polygon.color.value));
-        sb.append(" ");
-        for (Point point : polygon.points) {
-            sb.append(exportString(point));
-            sb.append(" ");
-        }
-        sb.append("END");
-        return sb.toString();
-    }
-
-    public static String exportString(PolyBezierData pbd) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(exportString(pbd.p2));
-        sb.append(" ");
-        for (Point point : pbd.morePoints) {
-            sb.append(exportString(point));
-            sb.append(" ");
-        }
-        sb.append("END");
-        return sb.toString();
-    }
-
-    public static String exportString(GraphicPolyBezier polyBezier) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("POLYBEZIER ");
-        sb.append(exportString(polyBezier.color.value));
-        sb.append(" ");
-        sb.append(polyBezier.thickness.value);
-        sb.append(" ");
-        sb.append(exportString(polyBezier.p1));
-        sb.append("\n");
-        for (PolyBezierData pbd : polyBezier.data) {
-            sb.append(exportString(pbd));
-            sb.append("\n");
-        }
-        sb.append("END");
-        return sb.toString();
-    }
-
-    public static String exportString(GraphicCircle circle) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("CIRCLE ");
-        sb.append(exportString(circle.color.value));
-        sb.append(" ");
-        sb.append(circle.thickness.value);
-        sb.append(" ");
-        sb.append(exportString(circle.center));
-        sb.append(" ");
-        sb.append(circle.radius.value);
         return sb.toString();
     }
 
@@ -2799,19 +2940,6 @@ class ImportExport {
         return sb.toString();
     }
 
-    public static String exportString(GraphicImage image) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("IMAGE ");
-        sb.append(image.filePath.value);
-        sb.append("\n");
-        sb.append(exportString(image.origin));
-        sb.append(" ");
-        sb.append(exportString(image.size));
-        sb.append(" ");
-        sb.append(image.opacity.value);
-        return sb.toString();
-    }
-
     public static String exportString(boolean bool) {
         return bool ? "T" : "F";
     }
@@ -2820,110 +2948,9 @@ class ImportExport {
         StringBuilder sb = new StringBuilder();
         for (GraphicLayer layer : instructions) {
             sb.append("instructions.add(");
-            sb.append(exportCode(layer));
+            sb.append(layer.exportCode());
             sb.append(");\n");
         }
-        return sb.toString();
-    }
-
-    public static String exportCode(GraphicLayer layer) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicLayer(\"");
-        sb.append(layer.name);
-        sb.append("\")\n.setShown(");
-        sb.append(exportCode(layer.shown));
-        sb.append(")\n");
-        for (GraphicObject object : layer.objects) {
-            sb.append(".add(");
-            sb.append(exportCode(object));
-            sb.append(")\n");
-        }
-        return sb.toString();
-    }
-
-    public static String exportCode(GraphicObject object) {
-        if (object instanceof GraphicPolyline) {
-            return exportCode((GraphicPolyline) object);
-        } else if (object instanceof GraphicPolygon) {
-            return exportCode((GraphicPolygon) object);
-        } else if (object instanceof GraphicPolyBezier) {
-            return exportCode((GraphicPolyBezier) object);
-        } else if (object instanceof GraphicCircle) {
-            return exportCode((GraphicCircle) object);
-        } else if (object instanceof GraphicImage) {
-            return exportCode((GraphicImage) object);
-        } else {
-            return "";
-        }
-    }
-
-    public static String exportCode(GraphicPolyline polyline) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicPolyline(");
-        sb.append(exportCode(polyline.color.value));
-        sb.append(", ");
-        sb.append(polyline.thickness.value);
-        sb.append(", ");
-        sb.append(exportCode(polyline.closed.value));
-        for (Point point : polyline.points) {
-            sb.append(", ");
-            sb.append(exportCode(point));
-        }
-        sb.append(")");
-        return sb.toString();
-    }
-
-    public static String exportCode(GraphicPolygon polygon) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicPolygon(");
-        sb.append(exportCode(polygon.color.value));
-        for (Point point : polygon.points) {
-            sb.append(", ");
-            sb.append(exportCode(point));
-        }
-        sb.append(")");
-        return sb.toString();
-    }
-
-    public static String exportCode(PolyBezierData pbd) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new PolyBezierData(");
-        sb.append(exportCode(pbd.p2));
-        for (Point point : pbd.morePoints) {
-            sb.append(", ");
-            sb.append(exportCode(point));
-        }
-        sb.append(")");
-        return sb.toString();
-    }
-
-    public static String exportCode(GraphicPolyBezier polyBezier) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicPolyBezier(");
-        sb.append(exportCode(polyBezier.color.value));
-        sb.append(", ");
-        sb.append(polyBezier.thickness.value);
-        sb.append(", ");
-        sb.append(exportCode(polyBezier.p1));
-        for (PolyBezierData pbd : polyBezier.data) {
-            sb.append(",");
-            sb.append(exportCode(pbd));
-        }
-        sb.append(")");
-        return sb.toString();
-    }
-
-    public static String exportCode(GraphicCircle circle) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicCircle(");
-        sb.append(exportCode(circle.color.value));
-        sb.append(", ");
-        sb.append(circle.thickness.value);
-        sb.append(", ");
-        sb.append(exportCode(circle.center));
-        sb.append(", ");
-        sb.append(circle.radius.value);
-        sb.append(")");
         return sb.toString();
     }
 
@@ -2947,20 +2974,6 @@ class ImportExport {
         sb.append(dim.width);
         sb.append(",");
         sb.append(dim.height);
-        sb.append(")");
-        return sb.toString();
-    }
-
-    public static String exportCode(GraphicImage image) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicImage(\"");
-        sb.append(image.filePath.value);
-        sb.append("\", ");
-        sb.append(exportCode(image.origin));
-        sb.append(", ");
-        sb.append(exportCode(image.size));
-        sb.append(", ");
-        sb.append(image.opacity.value);
         sb.append(")");
         return sb.toString();
     }
