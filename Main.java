@@ -1082,8 +1082,10 @@ class Path2DLine extends Path2DData {
 
     @Override
     public String exportString() {
-        // TODO Auto-generated method stub
-        return "LINE";
+        StringBuilder sb = new StringBuilder();
+        sb.append("LINE ");
+        sb.append(ImEx.exportString(this.pNext));
+        return sb.toString();
     }
 
 }
@@ -1134,8 +1136,16 @@ class Path2DBezier extends Path2DData {
 
     @Override
     public String exportString() {
-        // TODO Auto-generated method stub
-        return "BEZIER";
+        StringBuilder sb = new StringBuilder();
+        sb.append("BEZIER ");
+        sb.append(ImEx.exportString(this.pNext));
+        sb.append(" ");
+        for (Point point : this.morePoints) {
+            sb.append(ImEx.exportString(point));
+            sb.append(" ");
+        }
+        sb.append("END");
+        return sb.toString();
     }
 
 }
@@ -1210,14 +1220,34 @@ class GraphicPath2D extends GraphicDrawFiller {
 
     @Override
     public String exportCode() {
-        // TODO Auto-generated method stub
+        // TODO: Auto-generated method stub
         return "PATH2D";
     }
 
     @Override
     public String exportString() {
-        // TODO Auto-generated method stub
-        return "PATH2D";
+        StringBuilder sb = new StringBuilder();
+        sb.append("PATH2D ");
+        sb.append(ImEx.exportString(this.stroke.value));
+        sb.append(" ");
+        sb.append(ImEx.exportString(this.strokeColor.value));
+        sb.append(" ");
+        sb.append(this.thickness.value);
+        sb.append(" ");
+        sb.append(ImEx.exportString(this.fill.value));
+        sb.append(" ");
+        sb.append(ImEx.exportString(this.fillColor.value));
+        sb.append(" ");
+        sb.append(ImEx.exportString(this.closed.value));
+        sb.append(" ");
+        sb.append(ImEx.exportString(this.p1));
+        sb.append("\n");
+        for (Path2DData p2d : this.data) {
+            sb.append(p2d.exportString());
+            sb.append("\n");
+        }
+        sb.append("END");
+        return sb.toString();
     }
 
 }
