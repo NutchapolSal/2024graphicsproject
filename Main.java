@@ -77,13 +77,6 @@ public class Main {
 
         List<GraphicLayer> instructions = new ArrayList<>();
         instructions.add(new GraphicLayer("third point six swing")
-                .add(new GraphicLine("#000000", 1, new Point(25, 550), new Point(575, 550)))
-                .add(new GraphicBezierCurve("#FF0000", 1,
-                        new Point(100, 500), new Point(100, 100),
-                        new Point(500, 100), new Point(500, 500)))
-                .add(new GraphicBezierCurve("#FF7700", 2,
-                        new Point(100, 500), new Point(500, 100),
-                        new Point(100, 500), new Point(500, 500)))
                 .add(new GraphicPolyline("#00FF00", 3, false,
                         new Point(150, 150), new Point(250, 100), new Point(325, 125),
                         new Point(375, 225), new Point(400, 325), new Point(275, 375), new Point(100, 300)))
@@ -106,7 +99,7 @@ public class Main {
 
         JFrame frame = new JFrame();
         frame.add(panel);
-        frame.setTitle("MMXXIV");
+        frame.setTitle("😋");
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
@@ -644,37 +637,6 @@ abstract class GraphicLinePlotter extends GraphicPlotter {
     }
 }
 
-class GraphicLine extends GraphicLinePlotter {
-    public Point p1, p2;
-
-    GraphicLine(String hexColor, int thickness, Point p1, Point p2) {
-        super(hexColor, thickness);
-        this.p1 = p1;
-        this.p2 = p2;
-    }
-
-    @Override
-    public void draw(BufferedImage buffer) {
-        Graphics g = buffer.createGraphics();
-        g.setColor(color.value);
-
-        plotLine(g, p1, p2);
-    }
-
-    @Override
-    public void debugDraw(Graphics g) {
-        debugCircle(g, p1.x, p1.y, debugging == 1);
-        debugCircle(g, p2.x, p2.y, debugging == 2);
-    }
-
-    @Override
-    public GraphicObject copy() {
-        return new GraphicLine(ColorHexer.encode(color.value), thickness.value, new Point(p1.x, p1.y),
-                new Point(p2.x, p2.y));
-    }
-
-}
-
 class GraphicPolygon extends GraphicPlotter {
     public List<Point> points;
 
@@ -791,67 +753,6 @@ abstract class GraphicBezierPlotter extends GraphicPlotter {
 
             plot(g, (int) Math.round(x), (int) Math.round(y), thickness.value);
         }
-    }
-}
-
-class GraphicBezierCurve extends GraphicBezierPlotter {
-    public Point p1, p2;
-    public List<Point> continuedPoints;
-
-    GraphicBezierCurve(String hexColor, int thickness, Point p1, Point p2, Point... continuedPoints) {
-        this(hexColor, thickness, p1, p2, new ArrayList<>(Arrays.asList(continuedPoints)));
-    }
-
-    GraphicBezierCurve(String hexColor, int thickness, Point p1, Point p2, List<Point> continuedPoints) {
-        super(hexColor, thickness);
-        this.p1 = p1;
-        this.p2 = p2;
-        this.continuedPoints = continuedPoints;
-    }
-
-    @Override
-    public void draw(BufferedImage buffer) {
-        Graphics g = buffer.createGraphics();
-        g.setColor(color.value);
-
-        plotBezier(g, p1, p2, continuedPoints.get(0), continuedPoints.get(1));
-        for (int i = 3; i < continuedPoints.size(); i += 2) {
-            Point pA = continuedPoints.get(i - 2);
-            Point pBtemp = continuedPoints.get(i - 3);
-            Point pB = new Point(pA.x + (pA.x - pBtemp.x), pA.y + (pA.y - pBtemp.y));
-            Point pC = continuedPoints.get(i - 1);
-            Point pD = continuedPoints.get(i);
-
-            plotBezier(g, pA, pB, pC, pD);
-        }
-    }
-
-    @Override
-    public void debugDraw(Graphics g) {
-        debugLine(g, p1.x, p1.y, p2.x, p2.y, debugging == 2);
-        debugCircle(g, p1.x, p1.y, debugging == 1);
-        debugDot(g, p2.x, p2.y, debugging == 2);
-        for (int i = 1; i < continuedPoints.size(); i += 2) {
-            Point controlP = continuedPoints.get(i - 1);
-            Point endP = continuedPoints.get(i);
-            Point controlEndP = endP;
-            if (i + 2 < continuedPoints.size()) {
-                controlEndP = new Point(endP.x + (endP.x - controlP.x), endP.y + (endP.y - controlP.y));
-            }
-            debugLine(g, controlP.x, controlP.y, controlEndP.x, controlEndP.y, debugging == i + 2);
-            debugDot(g, controlP.x, controlP.y, debugging == i + 2);
-            debugCircle(g, endP.x, endP.y, debugging == i + 3);
-        }
-    }
-
-    @Override
-    public GraphicObject copy() {
-        List<Point> newPoints = new ArrayList<>();
-        for (Point point : continuedPoints) {
-            newPoints.add(new Point(point.x, point.y));
-        }
-        return new GraphicBezierCurve(ColorHexer.encode(color.value), thickness.value, new Point(p1.x, p1.y),
-                new Point(p2.x, p2.y), newPoints);
     }
 }
 
@@ -1986,10 +1887,6 @@ class EditingPanelFactory {
             Predicate<? super GraphicObject> pred;
             GraphicObject defaultObj;
             switch ((String) comboBox.getSelectedItem()) {
-                case "GraphicLine":
-                    pred = obj -> obj instanceof GraphicLine;
-                    defaultObj = (new GraphicLine("#000000", 1, new Point(0, 0), new Point(50, 50)));
-                    break;
                 case "GraphicPolyline":
                     pred = obj -> obj instanceof GraphicPolyline;
                     defaultObj = new GraphicPolyline("#000000", 1, false,
@@ -1999,12 +1896,6 @@ class EditingPanelFactory {
                     pred = obj -> obj instanceof GraphicPolygon;
                     defaultObj = new GraphicPolygon("#000000",
                             new Point(0, 0), new Point(50, 50), new Point(0, 50));
-                    break;
-                case "GraphicBezierCurve":
-                    pred = obj -> obj instanceof GraphicBezierCurve;
-                    defaultObj = new GraphicBezierCurve("#000000", 1, new Point(0, 0), new Point(50, 0),
-                            new Point(50, 50),
-                            new Point(0, 50));
                     break;
                 case "GraphicPolyBezier":
                     pred = obj -> obj instanceof GraphicPolyBezier;
@@ -2037,13 +1928,6 @@ class EditingPanelFactory {
                 return;
             }
             switch ((String) comboBox.getSelectedItem()) {
-                case "GraphicLine": {
-                    var result = (GraphicLine) streamResult.get().copy();
-                    result.p1.translate(10, 10);
-                    result.p2.translate(10, 10);
-                    layer.add(result);
-                    break;
-                }
                 case "GraphicPolyline": {
                     var result = (GraphicPolyline) streamResult.get().copy();
                     result.points.subList(2, result.points.size()).clear();
@@ -2057,17 +1941,6 @@ class EditingPanelFactory {
                     var result = (GraphicPolygon) streamResult.get().copy();
                     result.points.subList(3, result.points.size()).clear();
                     for (Point point : result.points) {
-                        point.translate(10, 10);
-                    }
-                    layer.add(result);
-                    break;
-                }
-                case "GraphicBezierCurve": {
-                    var result = (GraphicBezierCurve) streamResult.get().copy();
-                    result.p1.translate(10, 10);
-                    result.p2.translate(10, 10);
-                    result.continuedPoints.subList(2, result.continuedPoints.size()).clear();
-                    for (Point point : result.continuedPoints) {
                         point.translate(10, 10);
                     }
                     layer.add(result);
@@ -2118,14 +1991,10 @@ class EditingPanelFactory {
     }
 
     public static JPanel create(GraphicObject object) {
-        if (object instanceof GraphicLine) {
-            return create((GraphicLine) object);
-        } else if (object instanceof GraphicPolyline) {
+        if (object instanceof GraphicPolyline) {
             return create((GraphicPolyline) object);
         } else if (object instanceof GraphicPolygon) {
             return create((GraphicPolygon) object);
-        } else if (object instanceof GraphicBezierCurve) {
-            return create((GraphicBezierCurve) object);
         } else if (object instanceof GraphicPolyBezier) {
             return create((GraphicPolyBezier) object);
         } else if (object instanceof GraphicCircle) {
@@ -2137,40 +2006,6 @@ class EditingPanelFactory {
         } else {
             return new JPanel();
         }
-    }
-
-    public static JPanel create(GraphicLine line) {
-        JPanel panel = new JPanel();
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        JLabel label = new JLabel("GraphicLine");
-        var colorPanel = create("color", line.color, line, 0);
-        var thicknessPanel = create("thickness", line.thickness, 1, 15, 1, line, 0);
-        var p1Panel = create("p1", line.p1, line, 1);
-        var p2Panel = create("p2", line.p2, line, 2);
-
-        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(label)
-                .addComponent(colorPanel)
-                .addComponent(thicknessPanel)
-                .addComponent(p1Panel)
-                .addComponent(p2Panel));
-        layout.setVerticalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addComponent(colorPanel)
-                .addGap(2)
-                .addComponent(thicknessPanel)
-                .addGap(2)
-                .addComponent(p1Panel)
-                .addGap(2)
-                .addComponent(p2Panel));
-
-        panel.addMouseListener(new DebuggingHoverListener(line, 0));
-        p1Panel.addMouseListener(new DebuggingHoverListener(line, 1));
-        p2Panel.addMouseListener(new DebuggingHoverListener(line, 2));
-
-        return panel;
     }
 
     public static JPanel create(GraphicPolyline polyline) {
@@ -2293,84 +2128,6 @@ class EditingPanelFactory {
                         .addComponent(minusButton)));
 
         panel.addMouseListener(new DebuggingHoverListener(polygon, 0));
-
-        return panel;
-    }
-
-    public static JPanel create(GraphicBezierCurve bezierCurve) {
-        JPanel panel = new JPanel();
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        JLabel label = new JLabel("GraphicBezierCurve");
-        var colorPanel = create("color", bezierCurve.color, bezierCurve, 0);
-        var thicknessPanel = create("thickness", bezierCurve.thickness, 1, 15, 1, bezierCurve, 0);
-        var p1Panel = create("p1", bezierCurve.p1, bezierCurve, 1);
-        var p2Panel = create("p2", bezierCurve.p2, bezierCurve, 2);
-
-        JButton addButton = new JButton("+");
-        JButton minusButton = new JButton("-");
-        addButton.addActionListener(e -> {
-            Point lastP2 = bezierCurve.continuedPoints.get(bezierCurve.continuedPoints.size() - 2);
-            Point lastP = bezierCurve.continuedPoints.get(bezierCurve.continuedPoints.size() - 1);
-
-            bezierCurve.continuedPoints.add(new Point(lastP2.x + 20, lastP2.y + 20));
-            bezierCurve.continuedPoints.add(new Point(lastP.x + 20, lastP.y + 20));
-            bezierCurve.changed = true;
-            GlobalState.needsUpdateEditor = true;
-        });
-        minusButton.addActionListener(e -> {
-            if (bezierCurve.continuedPoints.size() > 2) {
-                bezierCurve.continuedPoints.remove(bezierCurve.continuedPoints.size() - 1);
-                bezierCurve.continuedPoints.remove(bezierCurve.continuedPoints.size() - 1);
-                bezierCurve.changed = true;
-                GlobalState.needsUpdateEditor = true;
-            }
-        });
-        minusButton.setEnabled(bezierCurve.continuedPoints.size() > 2);
-
-        var hGroup = layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(label)
-                .addComponent(thicknessPanel)
-                .addComponent(colorPanel)
-                .addComponent(p1Panel)
-                .addComponent(p2Panel);
-
-        var vGroup = layout.createSequentialGroup()
-                .addComponent(label)
-                .addComponent(thicknessPanel)
-                .addGap(2)
-                .addComponent(colorPanel)
-                .addGap(2)
-                .addComponent(p1Panel)
-                .addGap(2)
-                .addComponent(p2Panel)
-                .addGap(2);
-
-        int i = 3;
-        for (Point point : bezierCurve.continuedPoints) {
-            var pointPanel = create("p" + i, point, bezierCurve, i);
-            hGroup.addComponent(pointPanel);
-            vGroup.addGap(2);
-            vGroup.addComponent(pointPanel);
-            pointPanel.addMouseListener(new DebuggingHoverListener(bezierCurve, i));
-
-            i++;
-        }
-
-        hGroup.addGroup(layout.createSequentialGroup()
-                .addComponent(addButton)
-                .addComponent(minusButton));
-        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER)
-                .addComponent(addButton)
-                .addComponent(minusButton));
-
-        layout.setHorizontalGroup(hGroup);
-        layout.setVerticalGroup(vGroup);
-
-        panel.addMouseListener(new DebuggingHoverListener(bezierCurve, 0));
-        p1Panel.addMouseListener(new DebuggingHoverListener(bezierCurve, 1));
-        p2Panel.addMouseListener(new DebuggingHoverListener(bezierCurve, 2));
 
         return panel;
     }
@@ -2648,14 +2405,10 @@ class ImportExport {
     }
 
     public static String exportString(GraphicObject object) {
-        if (object instanceof GraphicLine) {
-            return exportString((GraphicLine) object);
-        } else if (object instanceof GraphicPolyline) {
+        if (object instanceof GraphicPolyline) {
             return exportString((GraphicPolyline) object);
         } else if (object instanceof GraphicPolygon) {
             return exportString((GraphicPolygon) object);
-        } else if (object instanceof GraphicBezierCurve) {
-            return exportString((GraphicBezierCurve) object);
         } else if (object instanceof GraphicPolyBezier) {
             return exportString((GraphicPolyBezier) object);
         } else if (object instanceof GraphicCircle) {
@@ -2667,19 +2420,6 @@ class ImportExport {
         } else {
             return "";
         }
-    }
-
-    public static String exportString(GraphicLine line) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("LINE ");
-        sb.append(exportString(line.color.value));
-        sb.append(" ");
-        sb.append(line.thickness.value);
-        sb.append(" ");
-        sb.append(exportString(line.p1));
-        sb.append(" ");
-        sb.append(exportString(line.p2));
-        return sb.toString();
     }
 
     public static String exportString(GraphicPolyline polyline) {
@@ -2705,25 +2445,6 @@ class ImportExport {
         sb.append(exportString(polygon.color.value));
         sb.append(" ");
         for (Point point : polygon.points) {
-            sb.append(exportString(point));
-            sb.append(" ");
-        }
-        sb.append("END");
-        return sb.toString();
-    }
-
-    public static String exportString(GraphicBezierCurve bezierCurve) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("BEZIERCURVE ");
-        sb.append(exportString(bezierCurve.color.value));
-        sb.append(" ");
-        sb.append(bezierCurve.thickness.value);
-        sb.append(" ");
-        sb.append(exportString(bezierCurve.p1));
-        sb.append(" ");
-        sb.append(exportString(bezierCurve.p2));
-        sb.append(" ");
-        for (Point point : bezierCurve.continuedPoints) {
             sb.append(exportString(point));
             sb.append(" ");
         }
@@ -2845,14 +2566,10 @@ class ImportExport {
     }
 
     public static String exportCode(GraphicObject object) {
-        if (object instanceof GraphicLine) {
-            return exportCode((GraphicLine) object);
-        } else if (object instanceof GraphicPolyline) {
+        if (object instanceof GraphicPolyline) {
             return exportCode((GraphicPolyline) object);
         } else if (object instanceof GraphicPolygon) {
             return exportCode((GraphicPolygon) object);
-        } else if (object instanceof GraphicBezierCurve) {
-            return exportCode((GraphicBezierCurve) object);
         } else if (object instanceof GraphicPolyBezier) {
             return exportCode((GraphicPolyBezier) object);
         } else if (object instanceof GraphicCircle) {
@@ -2864,20 +2581,6 @@ class ImportExport {
         } else {
             return "";
         }
-    }
-
-    public static String exportCode(GraphicLine line) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicLine(");
-        sb.append(exportCode(line.color.value));
-        sb.append(", ");
-        sb.append(line.thickness.value);
-        sb.append(", ");
-        sb.append(exportCode(line.p1));
-        sb.append(", ");
-        sb.append(exportCode(line.p2));
-        sb.append(")");
-        return sb.toString();
     }
 
     public static String exportCode(GraphicPolyline polyline) {
@@ -2901,24 +2604,6 @@ class ImportExport {
         sb.append("new GraphicPolygon(");
         sb.append(exportCode(polygon.color.value));
         for (Point point : polygon.points) {
-            sb.append(", ");
-            sb.append(exportCode(point));
-        }
-        sb.append(")");
-        return sb.toString();
-    }
-
-    public static String exportCode(GraphicBezierCurve bezierCurve) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicBezierCurve(");
-        sb.append(exportCode(bezierCurve.color.value));
-        sb.append(", ");
-        sb.append(bezierCurve.thickness.value);
-        sb.append(", ");
-        sb.append(exportCode(bezierCurve.p1));
-        sb.append(", ");
-        sb.append(exportCode(bezierCurve.p2));
-        for (Point point : bezierCurve.continuedPoints) {
             sb.append(", ");
             sb.append(exportCode(point));
         }
@@ -3055,17 +2740,11 @@ class ImportExport {
                 break;
             }
             switch (type) {
-                case "LINE":
-                    objects.add(importLine(sc));
-                    break;
                 case "POLYLINE":
                     objects.add(importPolyline(sc));
                     break;
                 case "POLYGON":
                     objects.add(importPolygon(sc));
-                    break;
-                case "BEZIERCURVE":
-                    objects.add(importBezierCurve(sc));
                     break;
                 case "POLYBEZIER":
                     objects.add(importPolyBezier(sc));
@@ -3085,14 +2764,6 @@ class ImportExport {
         var layer = new GraphicLayer(layerName, objects);
         layer.shown = visible;
         return layer;
-    }
-
-    public static GraphicLine importLine(Scanner sc) {
-        String hexColor = sc.next();
-        int thickness = sc.nextInt();
-        Point p1 = importPoint(sc);
-        Point p2 = importPoint(sc);
-        return new GraphicLine(hexColor, thickness, p1, p2);
     }
 
     public static GraphicPolyline importPolyline(Scanner sc) {
@@ -3121,22 +2792,6 @@ class ImportExport {
             }
         }
         return new GraphicPolygon(hexColor, points);
-    }
-
-    public static GraphicBezierCurve importBezierCurve(Scanner sc) {
-        String hexColor = sc.next();
-        int thickness = sc.nextInt();
-        Point p1 = importPoint(sc);
-        Point p2 = importPoint(sc);
-        List<Point> points = new ArrayList<>();
-        while (true) {
-            points.add(importPoint(sc));
-            if (sc.hasNext("END")) {
-                sc.next();
-                break;
-            }
-        }
-        return new GraphicBezierCurve(hexColor, thickness, p1, p2, points);
     }
 
     public static PolyBezierData importPolyBezierData(Scanner sc) {
