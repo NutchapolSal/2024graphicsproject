@@ -20,17 +20,16 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
 import java.text.SimpleDateFormat;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Scanner;
 import java.util.function.Predicate;
 import java.util.prefs.Preferences;
@@ -89,7 +88,14 @@ public class Main {
                         new PolyBezierData(new Point(100, 300),
                                 new Point(250, 150), new Point(300, 250),
                                 new Point(450, 150), new Point(500, 250))))
-                .add(new GraphicFloodFill("#00FFFF", new Point(250, 250)))
+                .add(new GraphicPath2D(true, "#000000", 1, true, "#333", false,
+                        new Point(100, 100),
+                        new Path2DBezier(new Point(50, 130),
+                                new Point(150, 130), new Point(90, 160)),
+                        new Path2DBezier(new Point(100, 300),
+                                new Point(250, 150), new Point(300, 250),
+                                new Point(450, 150), new Point(500, 250)),
+                        new Path2DLine(new Point(500, 350))))
                 .add(new GraphicImage("null", new Point(10, 10), new Dimension(20, 20), 1.0))
                 .add(new GraphicCircle("#2266AA", 1, new Point(80, 40), 20))
 
@@ -449,8 +455,9 @@ class GraphicLayer {
         }
 
         BufferedImage buffer = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
+        Graphics g = buffer.createGraphics();
         for (GraphicObject object : objects) {
-            object.draw(buffer);
+            object.draw(g);
             object.changed = false;
         }
         this.changed = false;
@@ -486,7 +493,7 @@ class GraphicLayer {
 }
 
 abstract class GraphicObject {
-    abstract public void draw(BufferedImage buffer);
+    abstract public void draw(Graphics g);
 
     public int debugging = -1;
     public boolean changed = false;
@@ -494,6 +501,8 @@ abstract class GraphicObject {
     abstract public void debugDraw(Graphics g);
 
     abstract public GraphicObject copy();
+
+    // abstract public GraphicObject editorCopy();
 
     protected void debugCircle(Graphics g, int x, int y, boolean active) {
         var g2 = (Graphics2D) g.create();
@@ -650,8 +659,8 @@ class GraphicPolygon extends GraphicPlotter {
     }
 
     @Override
-    public void draw(BufferedImage buffer) {
-        Graphics2D g = buffer.createGraphics();
+    public void draw(Graphics gOuter) {
+        Graphics2D g = (Graphics2D) gOuter.create();
         g.setColor(color.value);
 
         Polygon poly = new Polygon();
@@ -677,6 +686,7 @@ class GraphicPolygon extends GraphicPlotter {
         }
         return new GraphicPolygon(ColorHexer.encode(color.value), newPoints);
     }
+
 }
 
 class GraphicPolyline extends GraphicLinePlotter {
@@ -694,8 +704,8 @@ class GraphicPolyline extends GraphicLinePlotter {
     }
 
     @Override
-    public void draw(BufferedImage buffer) {
-        Graphics g = buffer.createGraphics();
+    public void draw(Graphics gOuter) {
+        Graphics g = gOuter.create();
         g.setColor(color.value);
 
         for (int i = 1; i < points.size(); i++) {
@@ -793,8 +803,8 @@ class GraphicPolyBezier extends GraphicBezierPlotter {
     }
 
     @Override
-    public void draw(BufferedImage buffer) {
-        Graphics g = buffer.createGraphics();
+    public void draw(Graphics gOuter) {
+        Graphics g = gOuter.create();
         g.setColor(color.value);
 
         Point pNextA = p1;
@@ -851,6 +861,181 @@ class GraphicPolyBezier extends GraphicBezierPlotter {
 
 }
 
+abstract class GraphicDrawFiller extends GraphicObject {
+    public MutableBoolean stroke;
+    public MutableColor strokeColor;
+    public MutableInt thickness;
+    public MutableBoolean fill;
+    public MutableColor fillColor;
+
+    protected GraphicDrawFiller(boolean stroke, String hexStrokeColor, int thickness,
+            boolean fill, String hexFillColor) {
+        this.stroke = new MutableBoolean(stroke);
+        this.strokeColor = new MutableColor(ColorHexer.decode(hexStrokeColor));
+        this.thickness = new MutableInt(thickness);
+        this.fill = new MutableBoolean(fill);
+        this.fillColor = new MutableColor(ColorHexer.decode(hexFillColor));
+    }
+
+    protected boolean setupStroke(Graphics2D g) {
+        if (!stroke.value) {
+            return false;
+        }
+        g.setColor(strokeColor.value);
+        g.setStroke(new BasicStroke(thickness.value));
+        return true;
+    }
+
+    protected boolean setupFill(Graphics2D g) {
+        if (!fill.value) {
+            return false;
+        }
+        g.setColor(fillColor.value);
+        return true;
+    }
+}
+
+abstract class Path2DData {
+    abstract public void run(Path2D path);
+
+    abstract public int size();
+
+    abstract Point lastPoint();
+}
+
+class Path2DLine extends Path2DData {
+    public Point pNext;
+
+    Path2DLine(Point pNext) {
+        this.pNext = pNext;
+    }
+
+    @Override
+    public void run(Path2D path) {
+        path.lineTo(pNext.x, pNext.y);
+    }
+
+    @Override
+    public int size() {
+        return 1;
+    }
+
+    @Override
+    Point lastPoint() {
+        return pNext;
+    }
+}
+
+class Path2DBezier extends Path2DData {
+    public Point pNext;
+    public List<Point> morePoints;
+
+    Path2DBezier(Point pNext, Point... morePoints) {
+        this(pNext, new ArrayList<>(Arrays.asList(morePoints)));
+    }
+
+    Path2DBezier(Point pNext, List<Point> morePoints) {
+        this.pNext = pNext;
+        this.morePoints = morePoints;
+    }
+
+    @Override
+    public void run(Path2D path) {
+        path.curveTo(pNext.x, pNext.y, morePoints.get(0).x, morePoints.get(0).y, morePoints.get(1).x,
+                morePoints.get(1).y);
+        for (int i = 3; i < morePoints.size(); i += 2) {
+            Point pA = morePoints.get(i - 2);
+            Point pBtemp = morePoints.get(i - 3);
+            Point pB = new Point(pA.x + (pA.x - pBtemp.x), pA.y + (pA.y - pBtemp.y));
+            Point pC = morePoints.get(i - 1);
+            Point pD = morePoints.get(i);
+
+            path.curveTo(pB.x, pB.y, pC.x, pC.y, pD.x, pD.y);
+        }
+    }
+
+    @Override
+    public int size() {
+        return morePoints.size() + 1;
+    }
+
+    @Override
+    Point lastPoint() {
+        return morePoints.get(morePoints.size() - 1);
+    }
+
+}
+
+class GraphicPath2D extends GraphicDrawFiller {
+    public Point p1;
+    public List<Path2DData> data;
+    public MutableBoolean closed;
+
+    GraphicPath2D(boolean stroke, String strokeColor, int thickness, boolean fill, String fillColor,
+            boolean closed,
+            Point p1,
+            Path2DData... data) {
+        this(stroke, strokeColor, thickness, fill, fillColor, closed, p1, new ArrayList<>(Arrays.asList(data)));
+    }
+
+    GraphicPath2D(boolean stroke, String strokeColor, int thickness, boolean fill, String fillColor,
+            boolean closed,
+            Point p1,
+            List<Path2DData> data) {
+        super(stroke, strokeColor, thickness, fill, fillColor);
+        this.p1 = p1;
+        this.data = data;
+        this.closed = new MutableBoolean(closed);
+    }
+
+    @Override
+    public void draw(Graphics gOuter) {
+        Graphics2D g = (Graphics2D) gOuter.create();
+        g.setColor(Color.black);
+
+        Path2D path = new Path2D.Double();
+        path.moveTo(p1.x, p1.y);
+        for (Path2DData d : data) {
+            d.run(path);
+        }
+        if (closed.value) {
+            path.closePath();
+        }
+
+        if (setupFill(g)) {
+            g.fill(path);
+        }
+        if (setupStroke(g)) {
+            g.draw(path);
+        }
+    }
+
+    @Override
+    public void debugDraw(Graphics g) {
+        // TODO Auto-generated method stub
+
+    }
+
+    Point lastPoint() {
+        if (data.size() == 0) {
+            return (Point) p1.clone();
+        }
+        Path2DData last = data.get(data.size() - 1);
+        return (Point) last.lastPoint().clone();
+    }
+
+    @Override
+    public GraphicObject copy() {
+        List<Path2DData> newData = new ArrayList<>();
+        for (Path2DData d : data) {
+            newData.add(d);
+        }
+        return new GraphicPath2D(stroke.value, ColorHexer.encode(strokeColor.value), thickness.value,
+                fill.value, ColorHexer.encode(fillColor.value), closed.value, new Point(p1.x, p1.y), newData);
+    }
+
+}
+
 // https://stackoverflow.com/q/1734745/3623350
 class GraphicCircle extends GraphicBezierPlotter {
     private static final double BEZIER_CIRCLE_CONSTANT = 0.552284749831;
@@ -868,8 +1053,8 @@ class GraphicCircle extends GraphicBezierPlotter {
     }
 
     @Override
-    public void draw(BufferedImage buffer) {
-        Graphics g = buffer.createGraphics();
+    public void draw(Graphics gOuter) {
+        Graphics g = gOuter.create();
         g.setColor(color.value);
         double offset = radius.value * BEZIER_CIRCLE_CONSTANT;
         double perimeter = radius.value * 2 * Math.PI;
@@ -911,59 +1096,6 @@ class GraphicCircle extends GraphicBezierPlotter {
 
 }
 
-class GraphicFloodFill extends GraphicPlotter {
-    public Point point;
-
-    GraphicFloodFill(String hexColor, Point point) {
-        super(hexColor);
-        this.point = point;
-    }
-
-    @Override
-    public void draw(BufferedImage buffer) {
-        if (!(0 <= point.x &&
-                point.x < buffer.getWidth() &&
-                0 <= point.y &&
-                point.y < buffer.getHeight())) {
-            return;
-        }
-        if (buffer.getRGB(point.x, point.y) == color.value.getRGB()) {
-            return;
-        }
-
-        Queue<Point> q = new ArrayDeque<>();
-        q.add(point);
-        Color target_color = new Color(buffer.getRGB(point.x, point.y), true);
-
-        for (Point p = q.poll(); p != null; p = q.poll()) {
-            if (!(0 <= p.x &&
-                    p.x < buffer.getWidth() &&
-                    0 <= p.y &&
-                    p.y < buffer.getHeight())) {
-                continue;
-            }
-
-            if (buffer.getRGB(p.x, p.y) == target_color.getRGB()) {
-                buffer.setRGB(p.x, p.y, color.value.getRGB());
-                q.add(new Point(p.x + 1, p.y));
-                q.add(new Point(p.x - 1, p.y));
-                q.add(new Point(p.x, p.y + 1));
-                q.add(new Point(p.x, p.y - 1));
-            }
-        }
-    }
-
-    @Override
-    public void debugDraw(Graphics g) {
-        debugCircle(g, point.x, point.y, debugging == 1);
-    }
-
-    @Override
-    public GraphicObject copy() {
-        return new GraphicFloodFill(ColorHexer.encode(color.value), new Point(point.x, point.y));
-    }
-}
-
 class GraphicImage extends GraphicObject {
     public MutableString filePath;
     private String lastFilePath = "";
@@ -998,8 +1130,8 @@ class GraphicImage extends GraphicObject {
     }
 
     @Override
-    public void draw(BufferedImage buffer) {
-        Graphics2D g = (Graphics2D) buffer.createGraphics();
+    public void draw(Graphics gOuter) {
+        Graphics2D g = (Graphics2D) gOuter.create();
 
         updateImage();
 
@@ -1908,10 +2040,6 @@ class EditingPanelFactory {
                     pred = obj -> obj instanceof GraphicCircle;
                     defaultObj = new GraphicCircle("#000000", 1, new Point(0, 0), 50);
                     break;
-                case "GraphicFloodFill":
-                    pred = obj -> obj instanceof GraphicFloodFill;
-                    defaultObj = new GraphicFloodFill("#000000", new Point(0, 0));
-                    break;
                 case "GraphicImage":
                     pred = obj -> obj instanceof GraphicImage;
                     defaultObj = new GraphicImage("image.png", new Point(0, 0), new Dimension(50, 50), 1.0);
@@ -1966,11 +2094,6 @@ class EditingPanelFactory {
                     layer.add(result);
                     break;
                 }
-                case "GraphicFloodFill": {
-                    var result = (GraphicFloodFill) streamResult.get().copy();
-                    layer.add(result);
-                    break;
-                }
                 case "GraphicImage": {
                     var result = (GraphicImage) streamResult.get().copy();
                     result.origin.translate(10, 10);
@@ -1997,14 +2120,17 @@ class EditingPanelFactory {
             return create((GraphicPolygon) object);
         } else if (object instanceof GraphicPolyBezier) {
             return create((GraphicPolyBezier) object);
+        } else if (object instanceof GraphicPath2D) {
+            return create((GraphicPath2D) object);
         } else if (object instanceof GraphicCircle) {
             return create((GraphicCircle) object);
-        } else if (object instanceof GraphicFloodFill) {
-            return create((GraphicFloodFill) object);
         } else if (object instanceof GraphicImage) {
             return create((GraphicImage) object);
         } else {
-            return new JPanel();
+            JPanel jPanel = new JPanel();
+            JLabel label = new JLabel("⚠️\ufe0f " + object.getClass().getSimpleName());
+            jPanel.add(label);
+            return jPanel;
         }
     }
 
@@ -2268,6 +2394,191 @@ class EditingPanelFactory {
         return panel;
     }
 
+    public static JPanel create(Path2DLine data, GraphicPath2D p2d, int dataIndex, int debuggingStartI) {
+        JPanel panel = new JPanel();
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        char pointLetter = (char) (97 + (dataIndex + 15) % 26);
+
+        var pPanel = create(pointLetter + "", data.pNext, p2d, debuggingStartI);
+
+        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
+                .addComponent(pPanel));
+        layout.setVerticalGroup(layout.createSequentialGroup()
+                .addComponent(pPanel));
+
+        panel.addMouseListener(new DebuggingHoverListener(p2d, 0));
+        pPanel.addMouseListener(new DebuggingHoverListener(p2d, debuggingStartI));
+
+        return panel;
+    }
+
+    public static JPanel create(Path2DBezier data, GraphicPath2D p2d, int dataIndex, int debuggingStartI) {
+        JPanel panel = new JPanel();
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        char pointLetter = (char) (97 + (dataIndex + 15) % 26);
+
+        var hGroup = layout.createParallelGroup(Alignment.LEADING);
+        var vGroup = layout.createSequentialGroup();
+        layout.setHorizontalGroup(hGroup);
+        layout.setVerticalGroup(vGroup);
+
+        var p1Panel = create(pointLetter + "2", data.pNext, p2d, debuggingStartI);
+        hGroup.addComponent(p1Panel);
+        vGroup.addComponent(p1Panel);
+        p1Panel.addMouseListener(new DebuggingHoverListener(p2d, debuggingStartI));
+
+        for (int i = 0; i < data.morePoints.size(); i++) {
+            var pointPanel = create(pointLetter + "" + (i + 3), data.morePoints.get(i), p2d,
+                    i + debuggingStartI + 1);
+            hGroup.addComponent(pointPanel);
+            vGroup.addGap(2);
+            vGroup.addComponent(pointPanel);
+            pointPanel.addMouseListener(new DebuggingHoverListener(p2d, i + debuggingStartI + 1));
+        }
+
+        JButton addButton = new JButton("+");
+        JButton minusButton = new JButton("-");
+        addButton.addActionListener(e -> {
+            var newCp = new Point(data.morePoints.get(data.morePoints.size() - 2).x + 20,
+                    data.morePoints.get(data.morePoints.size() - 2).y + 20);
+            var newPp = new Point(data.morePoints.get(data.morePoints.size() - 1).x + 20,
+                    data.morePoints.get(data.morePoints.size() - 1).y + 20);
+            data.morePoints.add(newCp);
+            data.morePoints.add(newPp);
+            p2d.changed = true;
+            GlobalState.needsUpdateEditor = true;
+        });
+        minusButton.addActionListener(e -> {
+            if (data.morePoints.size() > 2) {
+                data.morePoints.remove(data.morePoints.size() - 1);
+                data.morePoints.remove(data.morePoints.size() - 1);
+                p2d.changed = true;
+                GlobalState.needsUpdateEditor = true;
+            }
+        });
+        minusButton.setEnabled(data.morePoints.size() > 2);
+
+        hGroup.addGroup(layout.createSequentialGroup()
+                .addComponent(addButton)
+                .addComponent(minusButton));
+        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER)
+                .addComponent(addButton)
+                .addComponent(minusButton));
+
+        panel.addMouseListener(new DebuggingHoverListener(p2d, 0));
+
+        return panel;
+    }
+
+    public static JPanel create(Path2DData p2d, GraphicPath2D obj, int dataIndex, int debugValue) {
+        if (p2d instanceof Path2DLine) {
+            return create((Path2DLine) p2d, obj, dataIndex, debugValue);
+        } else if (p2d instanceof Path2DBezier) {
+            return create((Path2DBezier) p2d, obj, dataIndex, debugValue);
+        } else {
+            JPanel jPanel = new JPanel();
+            JLabel label = new JLabel("⚠️\ufe0f " + p2d.getClass().getSimpleName());
+            jPanel.add(label);
+            return jPanel;
+        }
+    }
+
+    public static JPanel create(GraphicPath2D path2d) {
+        JPanel panel = new JPanel();
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        JLabel label = new JLabel("GraphicPath2D");
+        var strokePanel = create("stroke", path2d.stroke, path2d, 0);
+        var strokeColorPanel = create("color", path2d.strokeColor, path2d, 0);
+        var thicknessPanel = create("thickness", path2d.thickness, 1, 15, 1, path2d, 0);
+        var fillPanel = create("fill", path2d.fill, path2d, 0);
+        var fillColorPanel = create("color", path2d.fillColor, path2d, 0);
+        var closedPanel = create("closed", path2d.closed, path2d, 0);
+        var p1Panel = create("p", path2d.p1, path2d, 1);
+
+        var hGroup = layout.createParallelGroup(Alignment.LEADING)
+                .addComponent(label)
+                .addComponent(strokePanel)
+                .addComponent(strokeColorPanel)
+                .addComponent(thicknessPanel)
+                .addComponent(fillPanel)
+                .addComponent(fillColorPanel)
+                .addComponent(closedPanel)
+                .addComponent(p1Panel);
+        var vGroup = layout.createSequentialGroup()
+                .addComponent(label)
+                .addComponent(strokePanel)
+                .addGap(2)
+                .addComponent(strokeColorPanel)
+                .addGap(2)
+                .addComponent(thicknessPanel)
+                .addGap(2)
+                .addComponent(fillPanel)
+                .addGap(2)
+                .addComponent(fillColorPanel)
+                .addGap(2)
+                .addComponent(closedPanel)
+                .addGap(2)
+                .addComponent(p1Panel);
+
+        layout.setHorizontalGroup(hGroup);
+        layout.setVerticalGroup(vGroup);
+
+        int dataIndex = 1;
+        int debuggingStartI = 2;
+        for (var v : path2d.data) {
+            var dataPanel = create(v, path2d, dataIndex, debuggingStartI);
+            hGroup.addComponent(dataPanel);
+            vGroup.addGap(2);
+            vGroup.addComponent(dataPanel);
+            dataIndex++;
+            debuggingStartI += v.size();
+        }
+
+        JButton addLineButton = new JButton("++ Line");
+        JButton addBezierButton = new JButton("++ Bezier");
+        JButton minusButton = new JButton("--");
+        addLineButton.addActionListener(e -> {
+            var lastPoint = path2d.lastPoint();
+            path2d.data.add(new Path2DLine(new Point(lastPoint.x + 20, lastPoint.y + 20)));
+            path2d.changed = true;
+            GlobalState.needsUpdateEditor = true;
+        });
+        addBezierButton.addActionListener(e -> {
+            var lastPoint = path2d.lastPoint();
+            path2d.data.add(new Path2DBezier(new Point(lastPoint.x, lastPoint.y + 20),
+                    new Point(lastPoint.x + 20, lastPoint.y), new Point(lastPoint.x + 20, lastPoint.y + 20)));
+            path2d.changed = true;
+            GlobalState.needsUpdateEditor = true;
+        });
+        minusButton.addActionListener(e -> {
+            if (path2d.data.size() > 0) {
+                path2d.data.remove(path2d.data.size() - 1);
+                path2d.changed = true;
+                GlobalState.needsUpdateEditor = true;
+            }
+        });
+        minusButton.setEnabled(path2d.data.size() > 0);
+
+        hGroup.addGroup(layout.createSequentialGroup()
+                .addComponent(addLineButton)
+                .addComponent(addBezierButton)
+                .addComponent(minusButton));
+        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER)
+                .addComponent(addLineButton)
+                .addComponent(addBezierButton)
+                .addComponent(minusButton));
+
+        panel.addMouseListener(new DebuggingHoverListener(path2d, 0));
+
+        return panel;
+    }
+
     public static JPanel create(GraphicCircle circle) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
@@ -2298,30 +2609,6 @@ class EditingPanelFactory {
         panel.addMouseListener(new DebuggingHoverListener(circle, 0));
         pointPanel.addMouseListener(new DebuggingHoverListener(circle, 1));
         radiusPanel.addMouseListener(new DebuggingHoverListener(circle, 2));
-
-        return panel;
-    }
-
-    public static JPanel create(GraphicFloodFill floodFill) {
-        JPanel panel = new JPanel();
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        JLabel label = new JLabel("GraphicFloodFill");
-        var colorPanel = create("color", floodFill.color, floodFill, 0);
-        var pointPanel = create("point", floodFill.point, floodFill, 1);
-
-        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(label)
-                .addComponent(colorPanel)
-                .addComponent(pointPanel));
-        layout.setVerticalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addComponent(colorPanel)
-                .addComponent(pointPanel));
-
-        panel.addMouseListener(new DebuggingHoverListener(floodFill, 0));
-        pointPanel.addMouseListener(new DebuggingHoverListener(floodFill, 1));
 
         return panel;
     }
@@ -2413,8 +2700,6 @@ class ImportExport {
             return exportString((GraphicPolyBezier) object);
         } else if (object instanceof GraphicCircle) {
             return exportString((GraphicCircle) object);
-        } else if (object instanceof GraphicFloodFill) {
-            return exportString((GraphicFloodFill) object);
         } else if (object instanceof GraphicImage) {
             return exportString((GraphicImage) object);
         } else {
@@ -2494,15 +2779,6 @@ class ImportExport {
         return sb.toString();
     }
 
-    public static String exportString(GraphicFloodFill floodFill) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("FLOODFILL ");
-        sb.append(exportString(floodFill.color.value));
-        sb.append(" ");
-        sb.append(exportString(floodFill.point));
-        return sb.toString();
-    }
-
     public static String exportString(Color color) {
         return ColorHexer.encode(color);
     }
@@ -2574,8 +2850,6 @@ class ImportExport {
             return exportCode((GraphicPolyBezier) object);
         } else if (object instanceof GraphicCircle) {
             return exportCode((GraphicCircle) object);
-        } else if (object instanceof GraphicFloodFill) {
-            return exportCode((GraphicFloodFill) object);
         } else if (object instanceof GraphicImage) {
             return exportCode((GraphicImage) object);
         } else {
@@ -2649,16 +2923,6 @@ class ImportExport {
         sb.append(exportCode(circle.center));
         sb.append(", ");
         sb.append(circle.radius.value);
-        sb.append(")");
-        return sb.toString();
-    }
-
-    public static String exportCode(GraphicFloodFill floodFill) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicFloodFill(");
-        sb.append(exportCode(floodFill.color.value));
-        sb.append(", ");
-        sb.append(exportCode(floodFill.point));
         sb.append(")");
         return sb.toString();
     }
@@ -2752,9 +3016,6 @@ class ImportExport {
                 case "CIRCLE":
                     objects.add(importCircle(sc));
                     break;
-                case "FLOODFILL":
-                    objects.add(importFloodFill(sc));
-                    break;
                 case "IMAGE":
                     objects.add(importImage(sc));
                     break;
@@ -2833,12 +3094,6 @@ class ImportExport {
     public static Point importPoint(Scanner sc) {
         String[] coords = sc.next().split(",");
         return new Point(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
-    }
-
-    public static GraphicFloodFill importFloodFill(Scanner sc) {
-        String hexColor = sc.next();
-        Point point = importPoint(sc);
-        return new GraphicFloodFill(hexColor, point);
     }
 
     public static GraphicImage importImage(Scanner sc) {
