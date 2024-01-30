@@ -1196,7 +1196,35 @@ class GraphicPath2D extends GraphicDrawFiller {
 
     @Override
     public void debugDraw(Graphics g) {
-        // TODO Auto-generated method stub
+        debugCircle(g, p1.x, p1.y, debugging == 1);
+        Point pNextA = p1;
+        int i = 2;
+        for (Path2DData d : data) {
+            if (d instanceof Path2DLine) {
+                Path2DLine line = (Path2DLine) d;
+                // debugLine(g, pNextA.x, pNextA.y, line.pNext.x, line.pNext.y, debugging == i);
+                debugCircle(g, line.pNext.x, line.pNext.y, debugging == i);
+                i++;
+            } else if (d instanceof Path2DBezier) {
+                Path2DBezier bezier = (Path2DBezier) d;
+                debugLine(g, pNextA.x, pNextA.y, bezier.pNext.x, bezier.pNext.y, debugging == i);
+                debugDot(g, bezier.pNext.x, bezier.pNext.y, debugging == i);
+                i++;
+                for (int j = 1; j < bezier.morePoints.size(); j += 2) {
+                    Point controlP = bezier.morePoints.get(j - 1);
+                    Point endP = bezier.morePoints.get(j);
+                    Point controlEndP = endP;
+                    if (j + 2 < bezier.morePoints.size()) {
+                        controlEndP = new Point(endP.x + (endP.x - controlP.x), endP.y + (endP.y - controlP.y));
+                    }
+                    debugLine(g, controlP.x, controlP.y, controlEndP.x, controlEndP.y, debugging == i);
+                    debugDot(g, controlP.x, controlP.y, debugging == i);
+                    debugCircle(g, endP.x, endP.y, debugging == i + 1);
+                    i += 2;
+                }
+            }
+            pNextA = d.lastPoint();
+        }
 
     }
 
