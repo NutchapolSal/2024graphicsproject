@@ -50,6 +50,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
@@ -2691,14 +2692,56 @@ class EditingPanelFactory {
         return panel;
     }
 
+    static void p2DAddActionListeners(JMenuItem insertLineItem, JMenuItem insertBezierItem, JMenuItem deleteItem,
+            GraphicPath2D p2d, Path2DData data, int dataIndex) {
+        insertLineItem.addActionListener(e -> {
+            Point pRef;
+            if (dataIndex == 0) {
+                pRef = p2d.p1;
+            } else {
+                pRef = p2d.data.get(dataIndex - 1).lastPoint();
+            }
+            var newData = new Path2DLine(new Point(pRef.x + 20, pRef.y + 20));
+            p2d.data.add(dataIndex, newData);
+            p2d.changed = true;
+            GlobalState.needsUpdateEditor = true;
+        });
+        insertBezierItem.addActionListener(e -> {
+            Point pRef;
+            if (dataIndex == 0) {
+                pRef = p2d.p1;
+            } else {
+                pRef = p2d.data.get(dataIndex - 1).lastPoint();
+            }
+            var newData = new Path2DBezier(new Point((pRef.x), (pRef.y + 20)),
+                    new Point((pRef.x + 20), (pRef.y)),
+                    new Point((pRef.x + 20), (pRef.y + 20)));
+            p2d.data.add(dataIndex, newData);
+            p2d.changed = true;
+            GlobalState.needsUpdateEditor = true;
+        });
+        deleteItem.addActionListener(e -> {
+            p2d.data.remove(data);
+            p2d.changed = true;
+            GlobalState.needsUpdateEditor = true;
+        });
+    }
+
     public static JPanel create(Path2DLine data, GraphicPath2D p2d, int dataIndex, int debuggingStartI) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);
 
-        char pointLetter = (char) (97 + (dataIndex + 15) % 26);
+        char pointLetter = (char) (97 + (dataIndex + 16) % 26);
 
         var pPanel = create(pointLetter + "", data.pNext, p2d, debuggingStartI);
+
+        var popupMenu = new JPopupMenu();
+        var insertLineItem = popupMenu.add("Insert Line");
+        var insertBezierItem = popupMenu.add("Insert Bezier");
+        var deleteItem = popupMenu.add("Delete");
+        p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d, data, dataIndex);
+        pPanel.setComponentPopupMenu(popupMenu);
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(pPanel));
@@ -2716,17 +2759,24 @@ class EditingPanelFactory {
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);
 
-        char pointLetter = (char) (97 + (dataIndex + 15) % 26);
+        char pointLetter = (char) (97 + (dataIndex + 16) % 26);
 
         var hGroup = layout.createParallelGroup(Alignment.LEADING);
         var vGroup = layout.createSequentialGroup();
         layout.setHorizontalGroup(hGroup);
         layout.setVerticalGroup(vGroup);
 
+        var popupMenu = new JPopupMenu();
+        var insertLineItem = popupMenu.add("Insert Line");
+        var insertBezierItem = popupMenu.add("Insert Bezier");
+        var deleteItem = popupMenu.add("Delete");
+        p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d, data, dataIndex);
+
         var p1Panel = create(pointLetter + "2", data.pNext, p2d, debuggingStartI);
         hGroup.addComponent(p1Panel);
         vGroup.addComponent(p1Panel);
         p1Panel.addMouseListener(new DebuggingHoverListener(p2d, debuggingStartI));
+        p1Panel.setComponentPopupMenu(popupMenu);
 
         for (int i = 0; i < data.morePoints.size(); i++) {
             var pointPanel = create(pointLetter + "" + (i + 3), data.morePoints.get(i), p2d,
@@ -2735,6 +2785,7 @@ class EditingPanelFactory {
             vGroup.addGap(2);
             vGroup.addComponent(pointPanel);
             pointPanel.addMouseListener(new DebuggingHoverListener(p2d, i + debuggingStartI + 1));
+            pointPanel.setComponentPopupMenu(popupMenu);
         }
 
         JButton addButton = new JButton("+");
@@ -2826,7 +2877,7 @@ class EditingPanelFactory {
         layout.setHorizontalGroup(hGroup);
         layout.setVerticalGroup(vGroup);
 
-        int dataIndex = 1;
+        int dataIndex = 0;
         int debuggingStartI = 2;
         for (var v : path2d.data) {
             var dataPanel = create(v, path2d, dataIndex, debuggingStartI);
