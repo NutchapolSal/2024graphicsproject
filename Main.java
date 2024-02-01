@@ -440,22 +440,12 @@ class GraphicLayer implements Exportable {
         this.objects = objects;
     }
 
-    BufferedImage draw() {
-        var changed = this.changed || objects.stream().anyMatch(o -> o.changed);
-
-        if (!changed) {
-            return cache;
-        }
-
-        BufferedImage buffer = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
-        Graphics g = buffer.createGraphics();
+    void draw(Graphics g) {
         for (GraphicObject object : objects) {
             object.draw(g);
             object.changed = false;
         }
         this.changed = false;
-        cache = buffer;
-        return buffer;
     }
 
     void debugDraw(Graphics g) {
@@ -2604,19 +2594,27 @@ class GraphicsPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics gOuter) {
         super.paintComponent(gOuter);
-        BufferedImage debugBuffer = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
-        Graphics g = debugBuffer.createGraphics();
+        Graphics g = gOuter.create();
+        // g.translate(300, 300);
+        Graphics debugG = gOuter.create();
+        // debugG.translate(300, 300);
+
+        debugG.setColor(Color.red);
+        // debugG.drawRect(-301, -301, 601, 601);
+        debugG.fillRect(0, 0, 1, 1);
+        debugG.fillRect(599, 589, 1, 1);
+        debugG.fillRect(589, 599, 1, 1);
 
         for (GraphicLayer layer : instructions) {
             if (layer.shown) {
-                gOuter.drawImage(layer.draw(), 0, 0, null);
-            }
-            if (!GlobalState.pannerPanelDragging || GlobalState.pannerShowDebugging) {
-                layer.debugDraw(g);
+                layer.draw(g);
             }
         }
-
-        gOuter.drawImage(debugBuffer, 0, 0, null);
+        if (!GlobalState.pannerPanelDragging || GlobalState.pannerShowDebugging) {
+            for (GraphicLayer layer : instructions) {
+                layer.debugDraw(debugG);
+            }
+        }
     }
 
 }
