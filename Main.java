@@ -428,8 +428,6 @@ class GraphicLayer implements Exportable {
     public List<GraphicObject> objects;
     public boolean changed = true;
 
-    private BufferedImage cache = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
-
     GraphicLayer(String name) {
         this.name = new MutableString(name);
         this.objects = new ArrayList<>();
