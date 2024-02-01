@@ -438,18 +438,18 @@ class GraphicLayer implements Exportable {
         this.objects = objects;
     }
 
-    void draw(Graphics g) {
+    void draw(Graphics g, double time) {
         for (GraphicObject object : objects) {
-            object.draw(g);
+            object.draw(g, time);
             object.changed = false;
         }
         this.changed = false;
     }
 
-    void debugDraw(Graphics g) {
+    void debugDraw(Graphics g, double time) {
         for (GraphicObject object : objects) {
             if (object.debugging != -1) {
-                object.debugDraw(g);
+                object.debugDraw(g, time);
             }
         }
     }
@@ -505,12 +505,12 @@ class GraphicLayer implements Exportable {
 }
 
 abstract class GraphicObject implements Exportable {
-    abstract public void draw(Graphics g);
+    abstract public void draw(Graphics g, double time);
 
     public int debugging = -1;
     public boolean changed = false;
 
-    abstract public void debugDraw(Graphics g);
+    abstract public void debugDraw(Graphics g, double time);
 
     abstract public GraphicObject copy();
 
@@ -853,7 +853,7 @@ class GraphicPath2D extends GraphicDrawFiller {
     }
 
     @Override
-    public void draw(Graphics gOuter) {
+    public void draw(Graphics gOuter, double time) {
         Graphics2D g = (Graphics2D) gOuter.create();
         g.setColor(Color.black);
 
@@ -875,7 +875,7 @@ class GraphicPath2D extends GraphicDrawFiller {
     }
 
     @Override
-    public void debugDraw(Graphics g) {
+    public void debugDraw(Graphics g, double time) {
         debugCircle(g, p1.x, p1.y, debugging == 1);
         Point pNextA = p1;
         int i = 2;
@@ -977,7 +977,7 @@ class GraphicCircle extends GraphicBezierPlotter {
     }
 
     @Override
-    public void draw(Graphics gOuter) {
+    public void draw(Graphics gOuter, double time) {
         Graphics g = gOuter.create();
         g.setColor(color.value);
         double offset = radius.value * BEZIER_CIRCLE_CONSTANT;
@@ -1006,7 +1006,7 @@ class GraphicCircle extends GraphicBezierPlotter {
     }
 
     @Override
-    public void debugDraw(Graphics g) {
+    public void debugDraw(Graphics g, double time) {
         debugLine(g, center.x, center.y, center.x + radius.value, center.y, debugging == 2);
         debugDot(g, center.x + radius.value, center.y, debugging == 2);
         debugCircle(g, center.x, center.y, debugging == 1);
@@ -1080,7 +1080,7 @@ class GraphicImage extends GraphicObject {
     }
 
     @Override
-    public void draw(Graphics gOuter) {
+    public void draw(Graphics gOuter, double time) {
         Graphics2D g = (Graphics2D) gOuter.create();
 
         updateImage();
@@ -1091,7 +1091,7 @@ class GraphicImage extends GraphicObject {
     }
 
     @Override
-    public void debugDraw(Graphics g) {
+    public void debugDraw(Graphics g, double time) {
         debugLine(g, origin.x, origin.y, origin.x + size.width, origin.y + size.height, debugging == 2);
         debugDot(g, origin.x + size.width, origin.y + size.height, debugging == 2);
         debugCircle(g, origin.x, origin.y, debugging == 1);
@@ -2603,14 +2603,16 @@ class GraphicsPanel extends JPanel {
         debugG.fillRect(599, 589, 1, 1);
         debugG.fillRect(589, 599, 1, 1);
 
+        double time = 0;
+
         for (GraphicLayer layer : instructions) {
             if (layer.shown) {
-                layer.draw(g);
+                layer.draw(g, time);
             }
         }
         if (!GlobalState.pannerPanelDragging || GlobalState.pannerShowDebugging) {
             for (GraphicLayer layer : instructions) {
-                layer.debugDraw(debugG);
+                layer.debugDraw(debugG, time);
             }
         }
     }
