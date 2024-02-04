@@ -116,7 +116,10 @@ public class Main {
 
         new EditorFrame(frame, instructions);
 
+        // long startTime = System.nanoTime();
         new Timer(1000 / 60, e -> {
+            // long currTime = System.nanoTime();
+            // panel.time = (currTime - startTime) / 1_000_000_000.0;
             panel.repaint();
         }).start();
 
@@ -3083,6 +3086,7 @@ class ImEx {
 
 class GraphicsPanel extends JPanel {
     List<GraphicLayer> instructions;
+    double time = 0;
 
     GraphicsPanel(List<GraphicLayer> instructions) {
         super();
@@ -3104,8 +3108,6 @@ class GraphicsPanel extends JPanel {
         debugG.fillRect(0, 0, 1, 1);
         debugG.fillRect(599, 589, 1, 1);
         debugG.fillRect(589, 599, 1, 1);
-
-        double time = 0;
 
         for (GraphicLayer layer : instructions) {
             if (layer.shown) {
