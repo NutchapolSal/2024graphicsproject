@@ -72,7 +72,7 @@ import javax.swing.event.DocumentListener;
 public class Main {
 
     private static void runTests() {
-        AnimatedValue.test();
+        AnimTest.test();
         System.out.println();
     }
 
@@ -444,7 +444,7 @@ class EasingFunctions {
     }
 }
 
-class AnimatedValue {
+abstract class AnimatedValue {
     static class Timepoint {
         public double time;
         public DoubleUnaryOperator easingToNext;
@@ -472,18 +472,20 @@ class AnimatedValue {
 
     public List<Timepoint> timepoints = new ArrayList<>();
 
-    public boolean addTimepoint(double time, DoubleUnaryOperator easingToNext) {
+    /**
+     * @return index of added timepoint or -1 if timepoint already exists
+     */
+    protected int addTimepoint(double time, DoubleUnaryOperator easingToNext) {
         int index = Collections.binarySearch(timepoints, new Timepoint(time, null),
                 (a, b) -> Double.compare(a.time, b.time));
         if (index < 0) {
             index = ~index;
         } else {
-            return false;
+            return -1;
         }
 
         timepoints.add(index, new Timepoint(time, easingToNext));
-        return true;
-        // timepoints.sort((a, b) -> Double.compare(a.time, b.time));
+        return index;
     }
 
     protected StepValue getValue(double time) {
@@ -508,10 +510,12 @@ class AnimatedValue {
         double frac = (time - timeBefore) / (timeAfter - timeBefore);
         return new StepValue(iBeforeTime, timepoints.get(iBeforeTime).easingToNext.applyAsDouble(frac));
     }
+}
 
+class AnimTest extends AnimatedValue {
     public static void test() {
         System.out.println("AnimatedValue test");
-        var animvalue = new AnimatedValue();
+        var animvalue = new AnimTest();
         System.out.println(animvalue.getValue(0.5)); // 0, 0.0
         System.out.println("---");
         animvalue.addTimepoint(0, EasingFunctions.linear());
@@ -533,7 +537,7 @@ class AnimatedValue {
         System.out.println(animvalue.getValue(3)); // 2, 0.0
         System.out.println(animvalue.getValue(4)); // 2, 0.0
         System.out.println("---");
-        animvalue = new AnimatedValue();
+        animvalue = new AnimTest();
         animvalue.addTimepoint(0, EasingFunctions.linear());
         animvalue.addTimepoint(3, EasingFunctions.linear());
         System.out.println(animvalue.getValue(1)); // 0, ~0.33
@@ -547,15 +551,20 @@ class AnimatedValue {
 class AnimBoolean extends AnimatedValue {
     public List<Boolean> valuepoints = new ArrayList<>();
 
-    public void add(double time, boolean value, DoubleUnaryOperator easingToNext) {
-        super.addTimepoint(time, EasingFunctions.snap());
-        valuepoints.add(value);
+    public AnimBoolean add(double time, boolean value, DoubleUnaryOperator easingToNext) {
+        var i = super.addTimepoint(time, EasingFunctions.snap());
+        if (i == -1) {
+            return this;
+        }
+        valuepoints.add(i, value);
+        return this;
     }
 
-    public void remove(double time) {
+    public AnimBoolean remove(double time) {
         var stepValue = getValue(time);
         valuepoints.remove(stepValue.index);
         timepoints.remove(stepValue.index);
+        return this;
     }
 
     public boolean get(double time) {
@@ -571,15 +580,20 @@ class AnimBoolean extends AnimatedValue {
 class AnimDouble extends AnimatedValue {
     public List<Double> valuepoints = new ArrayList<>();
 
-    public void add(double time, double value, DoubleUnaryOperator easingToNext) {
-        super.addTimepoint(time, easingToNext);
+    public AnimDouble add(double time, double value, DoubleUnaryOperator easingToNext) {
+        var i = super.addTimepoint(time, easingToNext);
+        if (i == -1) {
+            return this;
+        }
         valuepoints.add(value);
+        return this;
     }
 
-    public void remove(double time) {
+    public AnimDouble remove(double time) {
         var stepValue = getValue(time);
         valuepoints.remove(stepValue.index);
         timepoints.remove(stepValue.index);
+        return this;
     }
 
     public double get(double time) {
@@ -595,15 +609,20 @@ class AnimDouble extends AnimatedValue {
 class AnimInt extends AnimatedValue {
     public List<Integer> valuepoints = new ArrayList<>();
 
-    public void add(double time, int value, DoubleUnaryOperator easingToNext) {
-        super.addTimepoint(time, easingToNext);
+    public AnimInt add(double time, int value, DoubleUnaryOperator easingToNext) {
+        var i = super.addTimepoint(time, easingToNext);
+        if (i == -1) {
+            return this;
+        }
         valuepoints.add(value);
+        return this;
     }
 
-    public void remove(double time) {
+    public AnimInt remove(double time) {
         var stepValue = getValue(time);
         valuepoints.remove(stepValue.index);
         timepoints.remove(stepValue.index);
+        return this;
     }
 
     public int get(double time) {
@@ -619,15 +638,20 @@ class AnimInt extends AnimatedValue {
 class AnimColor extends AnimatedValue {
     public List<Color> valuepoints = new ArrayList<>();
 
-    public void add(double time, Color value, DoubleUnaryOperator easingToNext) {
-        super.addTimepoint(time, easingToNext);
+    public AnimColor add(double time, Color value, DoubleUnaryOperator easingToNext) {
+        var i = super.addTimepoint(time, easingToNext);
+        if (i == -1) {
+            return this;
+        }
         valuepoints.add(value);
+        return this;
     }
 
-    public void remove(double time) {
+    public AnimColor remove(double time) {
         var stepValue = getValue(time);
         valuepoints.remove(stepValue.index);
         timepoints.remove(stepValue.index);
+        return this;
     }
 
     public Color get(double time) {
@@ -637,6 +661,37 @@ class AnimColor extends AnimatedValue {
         var stepValue = getValue(time);
 
         return Lerp.run(valuepoints.get(stepValue.index), stepValue.frac, valuepoints.get(stepValue.index + 1));
+    }
+}
+
+class AnimPoint extends AnimatedValue {
+    public List<Point> valuepoints = new ArrayList<>();
+
+    public AnimPoint add(double time, Point value, DoubleUnaryOperator easingToNext) {
+        var i = super.addTimepoint(time, easingToNext);
+        if (i == -1) {
+            return this;
+        }
+        valuepoints.add(value);
+        return this;
+    }
+
+    public AnimPoint remove(double time) {
+        var stepValue = getValue(time);
+        valuepoints.remove(stepValue.index);
+        timepoints.remove(stepValue.index);
+        return this;
+    }
+
+    public Point get(double time) {
+        if (timepoints.isEmpty()) {
+            return new Point(0, 0);
+        }
+        var stepValue = getValue(time);
+
+        return new Point(
+                Lerp.run(valuepoints.get(stepValue.index).x, stepValue.frac, valuepoints.get(stepValue.index + 1).x),
+                Lerp.run(valuepoints.get(stepValue.index).y, stepValue.frac, valuepoints.get(stepValue.index + 1).y));
     }
 }
 
