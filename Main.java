@@ -13,6 +13,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
@@ -3039,7 +3040,8 @@ class GraphicsPanel extends JPanel {
         super.paintComponent(gOuter);
         Graphics g = gOuter.create();
         // g.translate(300, 300);
-        Graphics debugG = gOuter.create();
+        var debugG = (Graphics2D) gOuter.create();
+        debugG.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         // debugG.translate(300, 300);
 
         debugG.setColor(Color.red);
