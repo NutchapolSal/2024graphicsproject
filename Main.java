@@ -1575,7 +1575,7 @@ class GraphicImage extends GraphicObject {
             g.setColor(Color.red);
             g.fillRect(0, 0, 50, 50);
             g.setColor(Color.white);
-            g.drawString("ERROR", 0, 0);
+            g.drawString("ERROR", 0, 10);
         }
         lastFilePath = filePath.value;
     }
