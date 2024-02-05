@@ -86,7 +86,12 @@ public class Main {
         }
 
         List<GraphicLayer> instructions = new ArrayList<>();
-        instructions.add(new GraphicLayer("third point six swing")
+        instructions.add(new GraphicLayer("third point six swing",
+                new AnimBoolean().add(0, true, EasingFunction.snap).add(6, false, EasingFunction.snap),
+                new AnimPoint().add(0, new Point(), EasingFunction.easeInOutPower2)
+                        .add(2, new Point(50, 50), EasingFunction.easeInOutPower2),
+                new AnimPoint().add(0, new Point(), EasingFunction.snap),
+                new AnimDouble().add(3, 0.0, EasingFunction.linear).add(5, 360.0, EasingFunction.linear))
                 .add(new GraphicPath2D(true, "#000000", 1, true, "#333", false,
                         new Point(100, 100),
                         new Path2DBezier(new Point(50, 130),
@@ -116,10 +121,10 @@ public class Main {
 
         new EditorFrame(frame, instructions);
 
-        // long startTime = System.nanoTime();
+        long startTime = System.nanoTime();
         new Timer(1000 / 60, e -> {
-            // long currTime = System.nanoTime();
-            // panel.time = (currTime - startTime) / 1_000_000_000.0;
+            long currTime = System.nanoTime();
+            panel.time = (currTime - startTime) / 1_000_000_000.0;
             panel.repaint();
         }).start();
 
@@ -164,7 +169,7 @@ class EditorFrame {
 
         JButton addLayerButton = new JButton("add layer");
         addLayerButton.addActionListener(e -> {
-            this.instructions.add(new GraphicLayer("new layer", new ArrayList<>()));
+            this.instructions.add(new GraphicLayer());
             updateLayerListPanel();
         });
         JButton layerUpButton = new JButton("^");
@@ -337,10 +342,8 @@ class EditorFrame {
         layerPane.setLayout(layerLayout);
 
         var layerVGroup = layerLayout.createSequentialGroup();
-        var layerCheckboxHGroup = layerLayout.createParallelGroup();
         var layerRadioHGroup = layerLayout.createParallelGroup();
         layerLayout.setHorizontalGroup(layerLayout.createSequentialGroup()
-                .addGroup(layerCheckboxHGroup)
                 .addGroup(layerRadioHGroup));
         layerLayout.setVerticalGroup(layerVGroup);
 
@@ -350,11 +353,6 @@ class EditorFrame {
 
         int layerI = 0;
         for (GraphicLayer layer : instructions) {
-            var layerVisibleCheckbox = new JCheckBox();
-            layerVisibleCheckbox.setSelected(layer.shown);
-            layerVisibleCheckbox.addActionListener(e -> {
-                layer.shown = layerVisibleCheckbox.isSelected();
-            });
 
             var layerEditRadio = new JRadioButton(layer.name.value);
             if (layerI == currentLayer.value) {
@@ -368,10 +366,8 @@ class EditorFrame {
 
             layerVGroup.addGroup(
                     layerLayout.createParallelGroup(Alignment.CENTER)
-                            .addComponent(layerVisibleCheckbox)
                             .addComponent(layerEditRadio));
             layerVGroup.addPreferredGap(ComponentPlacement.RELATED);
-            layerCheckboxHGroup.addComponent(layerVisibleCheckbox);
             layerRadioHGroup.addComponent(layerEditRadio);
 
             JPopupMenu layerPopupMenu = new JPopupMenu();
@@ -389,70 +385,81 @@ class EditorFrame {
     }
 }
 
-class EasingFunctions {
-    private EasingFunctions() {
-    }
+enum EasingFunction implements DoubleUnaryOperator {
 
-    public static DoubleUnaryOperator linear() {
-        return x -> x;
-    }
+    linear(x -> x),
+    easeOutSine(x -> Math.sin((x * Math.PI) / 2.0)),
+    easeInSine(x -> 1 - Math.cos((x * Math.PI) / 2.0)),
+    easeInOutSine(x -> -(Math.cos(Math.PI * x) - 1) / 2),
+    /** quad */
+    easeInPower2(constructEaseInPower(2)),
+    /** quad */
+    easeOutPower2(constructEaseOutPower(2)),
+    /** quad */
+    easeInOutPower2(constructEaseInOutPower(2)),
+    /** cubic */
+    easeInPower3(constructEaseInPower(3)),
+    /** cubic */
+    easeOutPower3(constructEaseOutPower(3)),
+    /** cubic */
+    easeInOutPower3(constructEaseInOutPower(3)),
+    /** quart */
+    easeInPower4(constructEaseInPower(4)),
+    /** quart */
+    easeOutPower4(constructEaseOutPower(4)),
+    /** quart */
+    easeInOutPower4(constructEaseInOutPower(4)),
+    /** quint */
+    easeInPower5(constructEaseInPower(5)),
+    /** quint */
+    easeOutPower5(constructEaseOutPower(5)),
+    /** quint */
+    easeInOutPower5(constructEaseInOutPower(5)),
+    easeInExpo(x -> x <= 0 ? 0 : Math.pow(2, 10 * x - 10)),
+    easeOutExpo(x -> 1.0 <= x ? 1.0 : 1 - Math.pow(2, -10 * x)),
+    easeInOutExpo(
+            x -> {
+                if (x <= 0) {
+                    return 0;
+                }
+                if (1 <= x) {
+                    return 1;
+                }
+                return x < 0.5 ? Math.pow(2, 20 * x - 10) / 2
+                        : (2 - Math.pow(2, -20 * x + 10)) / 2;
+            }),
+    snap(x -> x < 1 ? 0 : 1);
 
-    public static DoubleUnaryOperator easeOutSine() {
-        return x -> Math.sin((x * Math.PI) / 2.0);
-    }
-
-    public static DoubleUnaryOperator easeInSine() {
-        return x -> 1 - Math.cos((x * Math.PI) / 2.0);
-    }
-
-    public static DoubleUnaryOperator easeInOutSine() {
-        return x -> -(Math.cos(Math.PI * x) - 1) / 2;
-    }
-
-    public static DoubleUnaryOperator easeInPower(double power) {
+    private static DoubleUnaryOperator constructEaseInPower(double power) {
         return x -> Math.pow(x, power);
     }
 
-    public static DoubleUnaryOperator easeOutPower(double power) {
+    private static DoubleUnaryOperator constructEaseOutPower(double power) {
         return x -> 1 - Math.pow((1 - x), power);
     }
 
-    public static DoubleUnaryOperator easeInOutPower(double power) {
+    private static DoubleUnaryOperator constructEaseInOutPower(double power) {
         return x -> x < 0.5 ? 2 * Math.pow(x, power) : 1 - Math.pow(-2 * x + 2, 2) / 2;
     }
 
-    public static DoubleUnaryOperator easeInExpo() {
-        return x -> x <= 0 ? 0 : Math.pow(2, 10 * x - 10);
+    private final DoubleUnaryOperator easing;
+
+    EasingFunction(DoubleUnaryOperator easing) {
+        this.easing = easing;
     }
 
-    public static DoubleUnaryOperator easeOutExpo() {
-        return x -> 1.0 <= x ? 1.0 : 1 - Math.pow(2, -10 * x);
+    public double applyAsDouble(double x) {
+        return easing.applyAsDouble(x);
     }
 
-    public static DoubleUnaryOperator easeInOutExpo() {
-        return x -> {
-            if (x <= 0) {
-                return 0;
-            }
-            if (1 <= x) {
-                return 1;
-            }
-            return x < 0.5 ? Math.pow(2, 20 * x - 10) / 2
-                    : (2 - Math.pow(2, -20 * x + 10)) / 2;
-        };
-    }
-
-    public static DoubleUnaryOperator snap() {
-        return x -> x < 1 ? 0 : 1;
-    }
 }
 
 abstract class AnimatedValue {
     static class Timepoint {
         public double time;
-        public DoubleUnaryOperator easingToNext;
+        public EasingFunction easingToNext;
 
-        Timepoint(double time, DoubleUnaryOperator easingToNext) {
+        Timepoint(double time, EasingFunction easingToNext) {
             this.time = time;
             this.easingToNext = easingToNext;
         }
@@ -478,7 +485,7 @@ abstract class AnimatedValue {
     /**
      * @return index of added timepoint or -1 if timepoint already exists
      */
-    protected int addTimepoint(double time, DoubleUnaryOperator easingToNext) {
+    protected int addTimepoint(double time, EasingFunction easingToNext) {
         int index = Collections.binarySearch(timepoints, new Timepoint(time, null),
                 (a, b) -> Double.compare(a.time, b.time));
         if (index < 0) {
@@ -521,19 +528,19 @@ class AnimTest extends AnimatedValue {
         var animvalue = new AnimTest();
         System.out.println(animvalue.getValue(0.5)); // 0, 0.0
         System.out.println("---");
-        animvalue.addTimepoint(0, EasingFunctions.linear());
+        animvalue.addTimepoint(0, EasingFunction.linear);
         System.out.println(animvalue.getValue(-1)); // 0, 0.0
         System.out.println(animvalue.getValue(0)); // 0, 0.0
         System.out.println(animvalue.getValue(1)); // 0, 0.0
         System.out.println("---");
-        animvalue.addTimepoint(1, EasingFunctions.linear());
+        animvalue.addTimepoint(1, EasingFunction.linear);
         System.out.println(animvalue.getValue(0)); // 0, 0.0
         System.out.println(animvalue.getValue(0.33)); // 0, ~0.33
         System.out.println(animvalue.getValue(0.66)); // 0, ~0.66
         System.out.println(animvalue.getValue(1)); // 1, 0.0
         System.out.println(animvalue.getValue(1.33)); // 1, 0.0
         System.out.println("---");
-        animvalue.addTimepoint(3, EasingFunctions.linear());
+        animvalue.addTimepoint(3, EasingFunction.linear);
         System.out.println(animvalue.getValue(1)); // 1, 0.0
         System.out.println(animvalue.getValue(1.66)); // 1, ~0.33
         System.out.println(animvalue.getValue(2.33)); // 1, ~0.66
@@ -541,12 +548,12 @@ class AnimTest extends AnimatedValue {
         System.out.println(animvalue.getValue(4)); // 2, 0.0
         System.out.println("---");
         animvalue = new AnimTest();
-        animvalue.addTimepoint(0, EasingFunctions.linear());
-        animvalue.addTimepoint(3, EasingFunctions.linear());
+        animvalue.addTimepoint(0, EasingFunction.linear);
+        animvalue.addTimepoint(3, EasingFunction.linear);
         System.out.println(animvalue.getValue(1)); // 0, ~0.33
-        animvalue.addTimepoint(1, EasingFunctions.linear());
-        animvalue.addTimepoint(1, EasingFunctions.linear());
-        animvalue.addTimepoint(1, EasingFunctions.linear());
+        animvalue.addTimepoint(1, EasingFunction.linear);
+        animvalue.addTimepoint(1, EasingFunction.linear);
+        animvalue.addTimepoint(1, EasingFunction.linear);
         System.out.println(animvalue.getValue(1)); // 1, 0.0
     }
 }
@@ -555,7 +562,7 @@ class AnimBoolean extends AnimatedValue {
     public List<Boolean> valuepoints = new ArrayList<>();
 
     public AnimBoolean add(double time, boolean value, DoubleUnaryOperator easingToNext) {
-        var i = super.addTimepoint(time, EasingFunctions.snap());
+        var i = super.addTimepoint(time, EasingFunction.snap);
         if (i == -1) {
             return this;
         }
@@ -575,6 +582,9 @@ class AnimBoolean extends AnimatedValue {
             return false;
         }
         var stepValue = getValue(time);
+        if (stepValue.frac == 0) {
+            return valuepoints.get(stepValue.index);
+        }
 
         return Lerp.run(valuepoints.get(stepValue.index), stepValue.frac, valuepoints.get(stepValue.index + 1));
     }
@@ -583,7 +593,7 @@ class AnimBoolean extends AnimatedValue {
 class AnimDouble extends AnimatedValue {
     public List<Double> valuepoints = new ArrayList<>();
 
-    public AnimDouble add(double time, double value, DoubleUnaryOperator easingToNext) {
+    public AnimDouble add(double time, double value, EasingFunction easingToNext) {
         var i = super.addTimepoint(time, easingToNext);
         if (i == -1) {
             return this;
@@ -604,6 +614,9 @@ class AnimDouble extends AnimatedValue {
             return 0;
         }
         var stepValue = getValue(time);
+        if (stepValue.frac == 0) {
+            return valuepoints.get(stepValue.index);
+        }
 
         return Lerp.run(valuepoints.get(stepValue.index), stepValue.frac, valuepoints.get(stepValue.index + 1));
     }
@@ -612,7 +625,7 @@ class AnimDouble extends AnimatedValue {
 class AnimInt extends AnimatedValue {
     public List<Integer> valuepoints = new ArrayList<>();
 
-    public AnimInt add(double time, int value, DoubleUnaryOperator easingToNext) {
+    public AnimInt add(double time, int value, EasingFunction easingToNext) {
         var i = super.addTimepoint(time, easingToNext);
         if (i == -1) {
             return this;
@@ -633,6 +646,9 @@ class AnimInt extends AnimatedValue {
             return 0;
         }
         var stepValue = getValue(time);
+        if (stepValue.frac == 0) {
+            return valuepoints.get(stepValue.index);
+        }
 
         return Lerp.run(valuepoints.get(stepValue.index), stepValue.frac, valuepoints.get(stepValue.index + 1));
     }
@@ -641,7 +657,7 @@ class AnimInt extends AnimatedValue {
 class AnimColor extends AnimatedValue {
     public List<Color> valuepoints = new ArrayList<>();
 
-    public AnimColor add(double time, Color value, DoubleUnaryOperator easingToNext) {
+    public AnimColor add(double time, Color value, EasingFunction easingToNext) {
         var i = super.addTimepoint(time, easingToNext);
         if (i == -1) {
             return this;
@@ -662,6 +678,9 @@ class AnimColor extends AnimatedValue {
             return Color.black;
         }
         var stepValue = getValue(time);
+        if (stepValue.frac == 0) {
+            return valuepoints.get(stepValue.index);
+        }
 
         return Lerp.run(valuepoints.get(stepValue.index), stepValue.frac, valuepoints.get(stepValue.index + 1));
     }
@@ -670,7 +689,7 @@ class AnimColor extends AnimatedValue {
 class AnimPoint extends AnimatedValue {
     public List<Point> valuepoints = new ArrayList<>();
 
-    public AnimPoint add(double time, Point value, DoubleUnaryOperator easingToNext) {
+    public AnimPoint add(double time, Point value, EasingFunction easingToNext) {
         var i = super.addTimepoint(time, easingToNext);
         if (i == -1) {
             return this;
@@ -691,6 +710,9 @@ class AnimPoint extends AnimatedValue {
             return new Point(0, 0);
         }
         var stepValue = getValue(time);
+        if (stepValue.frac == 0) {
+            return valuepoints.get(stepValue.index);
+        }
 
         return new Point(
                 Lerp.run(valuepoints.get(stepValue.index).x, stepValue.frac, valuepoints.get(stepValue.index + 1).x),
@@ -927,22 +949,42 @@ class MutableString {
 }
 
 class GraphicLayer implements Exportable {
-    public boolean shown = true;
     public MutableString name;
+    public AnimBoolean shown;
+    public AnimPoint translate;
+    public AnimPoint rotateOrigin;
+    public AnimDouble rotate;
     public List<GraphicObject> objects;
     public boolean changed = true;
 
-    GraphicLayer(String name) {
-        this.name = new MutableString(name);
-        this.objects = new ArrayList<>();
+    GraphicLayer() {
+        this("new layer", new AnimBoolean(), new AnimPoint(), new AnimPoint(), new AnimDouble(),
+                new ArrayList<>());
     }
 
-    GraphicLayer(String name, List<GraphicObject> objects) {
+    GraphicLayer(String name, AnimBoolean shown, AnimPoint translate, AnimPoint rotateOrigin, AnimDouble rotate) {
+        this(name, shown, translate, rotateOrigin, rotate, new ArrayList<>());
+    }
+
+    GraphicLayer(String name, AnimBoolean shown, AnimPoint translate, AnimPoint rotateOrigin, AnimDouble rotate,
+            List<GraphicObject> objects) {
         this.name = new MutableString(name);
+        this.shown = shown;
+        this.translate = translate;
+        this.rotate = rotate;
+        this.rotateOrigin = rotateOrigin;
         this.objects = objects;
     }
 
-    void draw(Graphics g, double time) {
+    Graphics2D transform(Graphics gOuter, double time) {
+        Graphics2D g = (Graphics2D) gOuter.create();
+        g.translate(translate.get(time).x, translate.get(time).y);
+        g.rotate(rotate.get(time) * Math.PI / 180.0, rotateOrigin.get(time).x, rotateOrigin.get(time).y);
+        return g;
+    }
+
+    void draw(Graphics gOuter, double time) {
+        Graphics2D g = transform(gOuter, time);
         for (GraphicObject object : objects) {
             object.draw(g, time);
             object.changed = false;
@@ -950,17 +992,13 @@ class GraphicLayer implements Exportable {
         this.changed = false;
     }
 
-    void debugDraw(Graphics g, double time) {
+    void debugDraw(Graphics gOuter, double time) {
+        Graphics2D g = transform(gOuter, time);
         for (GraphicObject object : objects) {
             if (object.debugging != -1) {
                 object.debugDraw(g, time);
             }
         }
-    }
-
-    GraphicLayer setShown(boolean shown) {
-        this.shown = shown;
-        return this;
     }
 
     GraphicLayer add(GraphicObject object) {
@@ -981,7 +1019,7 @@ class GraphicLayer implements Exportable {
         sb.append(this.name);
         sb.append("\n");
         sb.append("VISIBLE ");
-        sb.append(ImEx.exportString(this.shown));
+        // sb.append(ImEx.exportString(this.shown));
         sb.append("\n");
         for (GraphicObject object : this.objects) {
             sb.append(object.exportString());
@@ -996,7 +1034,7 @@ class GraphicLayer implements Exportable {
         sb.append("new GraphicLayer(\"");
         sb.append(this.name);
         sb.append("\")\n.setShown(");
-        sb.append(ImEx.exportCode(this.shown));
+        // sb.append(ImEx.exportCode(this.shown));
         sb.append(")\n");
         for (GraphicObject object : this.objects) {
             sb.append(".add(");
@@ -3006,9 +3044,7 @@ class ImEx {
             }
         }
         sc.skip("[ \\n\\r]*");
-        var layer = new GraphicLayer(layerName, objects);
-        layer.shown = visible;
-        return layer;
+        return new GraphicLayer(); // TODO
     }
 
     public static Path2DLine importPath2DLine(Scanner sc) {
@@ -3110,7 +3146,7 @@ class GraphicsPanel extends JPanel {
         debugG.fillRect(589, 599, 1, 1);
 
         for (GraphicLayer layer : instructions) {
-            if (layer.shown) {
+            if (layer.shown.get(time)) {
                 layer.draw(g, time);
             }
         }
