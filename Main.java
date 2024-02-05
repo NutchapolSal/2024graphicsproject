@@ -657,6 +657,10 @@ class AnimInt extends AnimatedValue {
 class AnimColor extends AnimatedValue {
     public List<Color> valuepoints = new ArrayList<>();
 
+    public AnimColor add(double time, String value, EasingFunction easingToNext) {
+        return add(time, Color.decode(value), easingToNext);
+    }
+
     public AnimColor add(double time, Color value, EasingFunction easingToNext) {
         var i = super.addTimepoint(time, easingToNext);
         if (i == -1) {
@@ -1142,10 +1146,10 @@ class ColorHexer {
 }
 
 abstract class GraphicPlotter extends GraphicObject {
-    public MutableColor color;
+    public AnimColor color;
 
-    protected GraphicPlotter(String hexColor) {
-        this.color = new MutableColor(ColorHexer.decode(hexColor));
+    protected GraphicPlotter(AnimColor color) {
+        this.color = color;
     }
 
     protected void plot(Graphics g, int x, int y, int size) {
@@ -1154,14 +1158,14 @@ abstract class GraphicPlotter extends GraphicObject {
 }
 
 abstract class GraphicLinePlotter extends GraphicPlotter {
-    public MutableInt thickness;
+    public AnimInt thickness;
 
-    protected GraphicLinePlotter(String hexColor, int thickness) {
-        super(hexColor);
-        this.thickness = new MutableInt(thickness);
+    protected GraphicLinePlotter(AnimColor color, AnimInt thickness) {
+        super(color);
+        this.thickness = thickness;
     }
 
-    protected void plotLine(Graphics g, Point p1, Point p2) {
+    protected void plotLine(Graphics g, double time, Point p1, Point p2) {
         int dx = Math.abs(p2.x - p1.x);
         int dy = Math.abs(p2.y - p1.y);
 
@@ -1180,7 +1184,7 @@ abstract class GraphicLinePlotter extends GraphicPlotter {
         int x = p1.x;
         int y = p1.y;
         for (int i = 1; i <= dx; i++) {
-            plot(g, x, y, thickness.value);
+            plot(g, x, y, thickness.get(time));
             if (D >= 0) {
                 if (isSwap) {
                     x += sx;
@@ -1202,18 +1206,18 @@ abstract class GraphicLinePlotter extends GraphicPlotter {
 
 abstract class GraphicBezierPlotter extends GraphicPlotter {
     private static final int BEZIER_ITERATIONS = 2000;
-    public MutableInt thickness;
+    public AnimInt thickness;
 
-    protected GraphicBezierPlotter(String hexColor, int thickness) {
-        super(hexColor);
-        this.thickness = new MutableInt(thickness);
+    protected GraphicBezierPlotter(AnimColor color, AnimInt thickness) {
+        super(color);
+        this.thickness = thickness;
     }
 
-    protected void plotBezier(Graphics g, Point pA, Point pB, Point pC, Point pD) {
-        plotBezier(g, pA, pB, pC, pD, BEZIER_ITERATIONS);
+    protected void plotBezier(Graphics g, double time, Point pA, Point pB, Point pC, Point pD) {
+        plotBezier(g, time, pA, pB, pC, pD, BEZIER_ITERATIONS);
     }
 
-    protected void plotBezier(Graphics g, Point pA, Point pB, Point pC, Point pD, int iterations) {
+    protected void plotBezier(Graphics g, double time, Point pA, Point pB, Point pC, Point pD, int iterations) {
         for (int i = 0; i < iterations; i++) {
             double t = i / (double) iterations;
 
@@ -1227,63 +1231,63 @@ abstract class GraphicBezierPlotter extends GraphicPlotter {
                     3 * Math.pow(t, 2) * (1 - t) * pC.y
                     + Math.pow(t, 3) * pD.y;
 
-            plot(g, (int) Math.round(x), (int) Math.round(y), thickness.value);
+            plot(g, (int) Math.round(x), (int) Math.round(y), thickness.get(time));
         }
     }
 }
 
 abstract class GraphicDrawFiller extends GraphicObject {
-    public MutableBoolean stroke;
-    public MutableColor strokeColor;
-    public MutableInt thickness;
-    public MutableBoolean fill;
-    public MutableColor fillColor;
+    public AnimBoolean stroke;
+    public AnimColor strokeColor;
+    public AnimInt thickness;
+    public AnimBoolean fill;
+    public AnimColor fillColor;
 
-    protected GraphicDrawFiller(boolean stroke, String hexStrokeColor, int thickness,
-            boolean fill, String hexFillColor) {
-        this.stroke = new MutableBoolean(stroke);
-        this.strokeColor = new MutableColor(ColorHexer.decode(hexStrokeColor));
-        this.thickness = new MutableInt(thickness);
-        this.fill = new MutableBoolean(fill);
-        this.fillColor = new MutableColor(ColorHexer.decode(hexFillColor));
+    protected GraphicDrawFiller(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill,
+            AnimColor fillColor) {
+        this.stroke = stroke;
+        this.strokeColor = strokeColor;
+        this.thickness = thickness;
+        this.fill = fill;
+        this.fillColor = fillColor;
     }
 
-    protected boolean setupStroke(Graphics2D g) {
-        if (!stroke.value) {
+    protected boolean setupStroke(Graphics2D g, double time) {
+        if (!stroke.get(time)) {
             return false;
         }
-        g.setColor(strokeColor.value);
-        g.setStroke(new BasicStroke(thickness.value));
+        g.setColor(strokeColor.get(time));
+        g.setStroke(new BasicStroke(thickness.get(time)));
         return true;
     }
 
-    protected boolean setupFill(Graphics2D g) {
-        if (!fill.value) {
+    protected boolean setupFill(Graphics2D g, double time) {
+        if (!fill.get(time)) {
             return false;
         }
-        g.setColor(fillColor.value);
+        g.setColor(fillColor.get(time));
         return true;
     }
 }
 
 abstract class Path2DData implements Exportable {
-    abstract public void run(Path2D path);
+    abstract public void run(Path2D path, double time);
 
     abstract public int size();
 
-    abstract Point lastPoint();
+    abstract AnimPoint lastPoint();
 }
 
 class Path2DLine extends Path2DData {
-    public Point pNext;
+    public AnimPoint pNext;
 
-    Path2DLine(Point pNext) {
+    Path2DLine(AnimPoint pNext) {
         this.pNext = pNext;
     }
 
     @Override
-    public void run(Path2D path) {
-        path.lineTo(pNext.x, pNext.y);
+    public void run(Path2D path, double time) {
+        path.lineTo(pNext.get(time).x, pNext.get(time).y);
     }
 
     @Override
@@ -1292,7 +1296,7 @@ class Path2DLine extends Path2DData {
     }
 
     @Override
-    Point lastPoint() {
+    AnimPoint lastPoint() {
         return pNext;
     }
 
@@ -1313,28 +1317,29 @@ class Path2DLine extends Path2DData {
 }
 
 class Path2DBezier extends Path2DData {
-    public Point pNext;
-    public List<Point> morePoints;
+    public AnimPoint pNext;
+    public List<AnimPoint> morePoints;
 
-    Path2DBezier(Point pNext, Point... morePoints) {
+    Path2DBezier(AnimPoint pNext, AnimPoint... morePoints) {
         this(pNext, new ArrayList<>(Arrays.asList(morePoints)));
     }
 
-    Path2DBezier(Point pNext, List<Point> morePoints) {
+    Path2DBezier(AnimPoint pNext, List<AnimPoint> morePoints) {
         this.pNext = pNext;
         this.morePoints = morePoints;
     }
 
     @Override
-    public void run(Path2D path) {
-        path.curveTo(pNext.x, pNext.y, morePoints.get(0).x, morePoints.get(0).y, morePoints.get(1).x,
-                morePoints.get(1).y);
+    public void run(Path2D path, double time) {
+        path.curveTo(pNext.get(time).x, pNext.get(time).y, morePoints.get(0).get(time).x, morePoints.get(0).get(time).y,
+                morePoints.get(1).get(time).x,
+                morePoints.get(1).get(time).y);
         for (int i = 3; i < morePoints.size(); i += 2) {
-            Point pA = morePoints.get(i - 2);
-            Point pBtemp = morePoints.get(i - 3);
+            Point pA = morePoints.get(i - 2).get(time);
+            Point pBtemp = morePoints.get(i - 3).get(time);
             Point pB = new Point(pA.x + (pA.x - pBtemp.x), pA.y + (pA.y - pBtemp.y));
-            Point pC = morePoints.get(i - 1);
-            Point pD = morePoints.get(i);
+            Point pC = morePoints.get(i - 1).get(time);
+            Point pD = morePoints.get(i).get(time);
 
             path.curveTo(pB.x, pB.y, pC.x, pC.y, pD.x, pD.y);
         }
@@ -1346,7 +1351,7 @@ class Path2DBezier extends Path2DData {
     }
 
     @Override
-    Point lastPoint() {
+    AnimPoint lastPoint() {
         return morePoints.get(morePoints.size() - 1);
     }
 
@@ -1373,25 +1378,30 @@ class Path2DBezier extends Path2DData {
 }
 
 class GraphicPath2D extends GraphicDrawFiller {
-    public Point p1;
+    public AnimPoint p1;
     public List<Path2DData> data;
-    public MutableBoolean closed;
+    public AnimBoolean closed;
 
-    GraphicPath2D(boolean stroke, String strokeColor, int thickness, boolean fill, String fillColor,
-            boolean closed,
-            Point p1,
+    GraphicPath2D() {
+        this(new AnimBoolean(), new AnimColor(), new AnimInt(), new AnimBoolean(), new AnimColor(), new AnimBoolean(),
+                new AnimPoint(), new ArrayList<>());
+    }
+
+    GraphicPath2D(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill, AnimColor fillColor,
+            AnimBoolean closed,
+            AnimPoint p1,
             Path2DData... data) {
         this(stroke, strokeColor, thickness, fill, fillColor, closed, p1, new ArrayList<>(Arrays.asList(data)));
     }
 
-    GraphicPath2D(boolean stroke, String strokeColor, int thickness, boolean fill, String fillColor,
-            boolean closed,
-            Point p1,
+    GraphicPath2D(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill, AnimColor fillColor,
+            AnimBoolean closed,
+            AnimPoint p1,
             List<Path2DData> data) {
         super(stroke, strokeColor, thickness, fill, fillColor);
         this.p1 = p1;
         this.data = data;
-        this.closed = new MutableBoolean(closed);
+        this.closed = closed;
     }
 
     @Override
@@ -1400,41 +1410,40 @@ class GraphicPath2D extends GraphicDrawFiller {
         g.setColor(Color.black);
 
         Path2D path = new Path2D.Double();
-        path.moveTo(p1.x, p1.y);
+        path.moveTo(p1.get(time).x, p1.get(time).y);
         for (Path2DData d : data) {
-            d.run(path);
+            d.run(path, time);
         }
-        if (closed.value) {
+        if (closed.get(time)) {
             path.closePath();
         }
 
-        if (setupFill(g)) {
+        if (setupFill(g, time)) {
             g.fill(path);
         }
-        if (setupStroke(g)) {
+        if (setupStroke(g, time)) {
             g.draw(path);
         }
     }
 
     @Override
     public void debugDraw(Graphics g, double time) {
-        debugCircle(g, p1.x, p1.y, debugging == 1);
-        Point pNextA = p1;
+        debugCircle(g, p1.get(time).x, p1.get(time).y, debugging == 1);
+        Point pNextA = p1.get(time);
         int i = 2;
         for (Path2DData d : data) {
             if (d instanceof Path2DLine) {
                 Path2DLine line = (Path2DLine) d;
-                // debugLine(g, pNextA.x, pNextA.y, line.pNext.x, line.pNext.y, debugging == i);
-                debugCircle(g, line.pNext.x, line.pNext.y, debugging == i);
+                debugCircle(g, line.pNext.get(time).x, line.pNext.get(time).y, debugging == i);
                 i++;
             } else if (d instanceof Path2DBezier) {
                 Path2DBezier bezier = (Path2DBezier) d;
-                debugLine(g, pNextA.x, pNextA.y, bezier.pNext.x, bezier.pNext.y, debugging == i);
-                debugDot(g, bezier.pNext.x, bezier.pNext.y, debugging == i);
+                debugLine(g, pNextA.x, pNextA.y, bezier.pNext.get(time).x, bezier.pNext.get(time).y, debugging == i);
+                debugDot(g, bezier.pNext.get(time).x, bezier.pNext.get(time).y, debugging == i);
                 i++;
                 for (int j = 1; j < bezier.morePoints.size(); j += 2) {
-                    Point controlP = bezier.morePoints.get(j - 1);
-                    Point endP = bezier.morePoints.get(j);
+                    Point controlP = bezier.morePoints.get(j - 1).get(time);
+                    Point endP = bezier.morePoints.get(j).get(time);
                     Point controlEndP = endP;
                     if (j + 2 < bezier.morePoints.size()) {
                         controlEndP = new Point(endP.x + (endP.x - controlP.x), endP.y + (endP.y - controlP.y));
@@ -1445,27 +1454,18 @@ class GraphicPath2D extends GraphicDrawFiller {
                     i += 2;
                 }
             }
-            pNextA = d.lastPoint();
+            pNextA = d.lastPoint().get(time);
         }
 
     }
 
     Point lastPoint() {
-        if (data.size() == 0) {
-            return (Point) p1.clone();
-        }
-        Path2DData last = data.get(data.size() - 1);
-        return (Point) last.lastPoint().clone();
+        // TODO
     }
 
     @Override
     public GraphicObject copy() {
-        List<Path2DData> newData = new ArrayList<>();
-        for (Path2DData d : data) {
-            newData.add(d);
-        }
-        return new GraphicPath2D(stroke.value, ColorHexer.encode(strokeColor.value), thickness.value,
-                fill.value, ColorHexer.encode(fillColor.value), closed.value, new Point(p1.x, p1.y), newData);
+        // TODO
     }
 
     @Override
@@ -1505,13 +1505,17 @@ class GraphicPath2D extends GraphicDrawFiller {
 // https://stackoverflow.com/q/1734745/3623350
 class GraphicCircle extends GraphicBezierPlotter {
     private static final double BEZIER_CIRCLE_CONSTANT = 0.552284749831;
-    public Point center;
-    public MutableInt radius;
+    public AnimPoint center;
+    public AnimInt radius;
 
-    GraphicCircle(String hexColor, int thickness, Point center, int radius) {
+    GraphicCircle() {
+        this(new AnimColor(), new AnimInt(), new AnimPoint(), new AnimInt());
+    }
+
+    GraphicCircle(AnimColor hexColor, AnimInt thickness, AnimPoint center, AnimInt radius) {
         super(hexColor, thickness);
         this.center = center;
-        this.radius = new MutableInt(radius);
+        this.radius = radius;
     }
 
     private Point roundPoint(double x, double y) {
@@ -1521,43 +1525,47 @@ class GraphicCircle extends GraphicBezierPlotter {
     @Override
     public void draw(Graphics gOuter, double time) {
         Graphics g = gOuter.create();
-        g.setColor(color.value);
-        double offset = radius.value * BEZIER_CIRCLE_CONSTANT;
-        double perimeter = radius.value * 2 * Math.PI;
+        g.setColor(color.get(time));
+
+        Point center = this.center.get(time);
+        int radius = this.radius.get(time);
+        double offset = radius * BEZIER_CIRCLE_CONSTANT;
+        double perimeter = radius * 2 * Math.PI;
         int iters = (int) Math.round(perimeter);
 
-        plotBezier(g, roundPoint(center.x, center.y - radius.value),
-                roundPoint(center.x + offset, center.y - radius.value),
-                roundPoint(center.x + radius.value, center.y - offset),
-                roundPoint(center.x + radius.value, center.y), iters);
+        plotBezier(g, time, roundPoint(center.x, center.y - radius),
+                roundPoint(center.x + offset, center.y - radius),
+                roundPoint(center.x + radius, center.y - offset),
+                roundPoint(center.x + radius, center.y), iters);
 
-        plotBezier(g, roundPoint(center.x, center.y + radius.value),
-                roundPoint(center.x + offset, center.y + radius.value),
-                roundPoint(center.x + radius.value, center.y + offset),
-                roundPoint(center.x + radius.value, center.y), iters);
+        plotBezier(g, time, roundPoint(center.x, center.y + radius),
+                roundPoint(center.x + offset, center.y + radius),
+                roundPoint(center.x + radius, center.y + offset),
+                roundPoint(center.x + radius, center.y), iters);
 
-        plotBezier(g, roundPoint(center.x, center.y + radius.value),
-                roundPoint(center.x - offset, center.y + radius.value),
-                roundPoint(center.x - radius.value, center.y + offset),
-                roundPoint(center.x - radius.value, center.y), iters);
+        plotBezier(g, time, roundPoint(center.x, center.y + radius),
+                roundPoint(center.x - offset, center.y + radius),
+                roundPoint(center.x - radius, center.y + offset),
+                roundPoint(center.x - radius, center.y), iters);
 
-        plotBezier(g, roundPoint(center.x, center.y - radius.value),
-                roundPoint(center.x - offset, center.y - radius.value),
-                roundPoint(center.x - radius.value, center.y - offset),
-                roundPoint(center.x - radius.value, center.y), iters);
+        plotBezier(g, time, roundPoint(center.x, center.y - radius),
+                roundPoint(center.x - offset, center.y - radius),
+                roundPoint(center.x - radius, center.y - offset),
+                roundPoint(center.x - radius, center.y), iters);
     }
 
     @Override
     public void debugDraw(Graphics g, double time) {
-        debugLine(g, center.x, center.y, center.x + radius.value, center.y, debugging == 2);
-        debugDot(g, center.x + radius.value, center.y, debugging == 2);
+        Point center = this.center.get(time);
+        int radius = this.radius.get(time);
+        debugLine(g, center.x, center.y, center.x + radius, center.y, debugging == 2);
+        debugDot(g, center.x + radius, center.y, debugging == 2);
         debugCircle(g, center.x, center.y, debugging == 1);
     }
 
     @Override
     public GraphicObject copy() {
-        return new GraphicCircle(ColorHexer.encode(color.value), thickness.value, new Point(center.x, center.y),
-                radius.value);
+        // TODO
     }
 
     public String exportString() {
