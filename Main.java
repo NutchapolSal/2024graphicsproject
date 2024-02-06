@@ -36,6 +36,7 @@ import java.util.Scanner;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Predicate;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
@@ -92,22 +93,42 @@ public class Main {
                         .add(2, new Point(50, 50), EasingFunction.easeInOutPower2),
                 new AnimPoint().add(0, new Point(), EasingFunction.snap),
                 new AnimDouble().add(3, 0.0, EasingFunction.linear).add(5, 360.0, EasingFunction.linear))
-                .add(new GraphicPath2D(true, "#000000", 1, true, "#333", false,
-                        new Point(100, 100),
-                        new Path2DBezier(new Point(50, 130),
-                                new Point(150, 130), new Point(90, 160)),
-                        new Path2DBezier(new Point(100, 300),
-                                new Point(250, 150), new Point(300, 250),
-                                new Point(450, 150), new Point(500, 250)),
-                        new Path2DLine(new Point(500, 350))))
-                .add(new GraphicImage("null", new Point(10, 10), new Dimension(20, 20), 1.0))
-                .add(new GraphicCircle("#2266AA", 1, new Point(80, 40), 20))
+                .add(new GraphicPath2D(
+                        new AnimBoolean().add(0, true, EasingFunction.snap),
+                        new AnimColor().add(0, "#000000", EasingFunction.snap),
+                        new AnimInt().add(0, 1, EasingFunction.snap),
+                        new AnimBoolean().add(0, true, EasingFunction.snap),
+                        new AnimColor().add(0, "#333333", EasingFunction.snap),
+                        new AnimBoolean().add(0, false, EasingFunction.snap),
+                        new AnimPoint().add(0, new Point(-200, -200), EasingFunction.snap),
+                        new Path2DBezier(
+                                new AnimPoint().add(0, new Point(-250, -170), EasingFunction.easeInOutPower2),
+                                new AnimPoint().add(0, new Point(-150, -170), EasingFunction.easeInOutPower2),
+                                new AnimPoint().add(0, new Point(-210, -140), EasingFunction.easeInOutPower2)),
+                        new Path2DBezier(
+                                new AnimPoint().add(0, new Point(-200, 0), EasingFunction.easeInOutPower2),
+                                new AnimPoint().add(0, new Point(-150, -250), EasingFunction.easeInOutPower2),
+                                new AnimPoint().add(0, new Point(0, -150), EasingFunction.easeInOutPower2),
+                                new AnimPoint().add(0, new Point(150, -250), EasingFunction.easeInOutPower2),
+                                new AnimPoint().add(0, new Point(200, -150), EasingFunction.easeInOutPower2))))
+                .add(new GraphicImage(
+                        "null",
+                        new AnimPoint().add(0, new Point(-290, -290), EasingFunction.snap),
+                        new AnimDimension().add(0, new Dimension(20, 20), EasingFunction.snap),
+                        new AnimDouble().add(0, 1.0, EasingFunction.snap)))
+                .add(new GraphicCircle(
+                        new AnimColor().add(0, "#2266AA", EasingFunction.snap),
+                        new AnimInt().add(0, 1, EasingFunction.snap),
+                        new AnimPoint().add(0, new Point(-220, -260), EasingFunction.snap),
+                        new AnimInt().add(0, 20, EasingFunction.snap)))
 
         );
 
         var exx = ImEx.exportString(instructions);
         System.out.println(exx);
-        System.out.println(ImEx.exportString(ImEx.importString(exx)));
+
+        // System.out.println(ImEx.exportString(ImEx.importString(exx)));
+        System.out.println(ImEx.exportCode(instructions));
 
         GraphicsPanel panel = new GraphicsPanel(instructions);
 
@@ -119,7 +140,7 @@ public class Main {
         frame.pack();
         frame.setVisible(true);
 
-        new EditorFrame(frame, instructions);
+        // new EditorFrame(frame, instructions);
 
         long startTime = System.nanoTime();
         new Timer(1000 / 60, e -> {
@@ -132,258 +153,271 @@ public class Main {
 
 }
 
-class EditorFrame {
+// class EditorFrame {
 
-    static Preferences prefs = Preferences.userRoot().node("2024graphicsprojecteditor");
+// static Preferences prefs =
+// Preferences.userRoot().node("2024graphicsprojecteditor");
 
-    private List<GraphicLayer> instructions;
+// private List<GraphicLayer> instructions;
 
-    private MutableInt currentLayer = new MutableInt(-1);
-    private MutableString savePath = new MutableString(null);
+// private MutableInt currentLayer = new MutableInt(-1);
+// private MutableString savePath = new MutableString(null);
 
-    private JScrollPane layerScrollPane = new JScrollPane();
-    private JScrollPane editorScrollPane = new JScrollPane();
+// private JScrollPane layerScrollPane = new JScrollPane();
+// private JScrollPane editorScrollPane = new JScrollPane();
 
-    private JFrame frame2 = new JFrame();
+// private JFrame frame2 = new JFrame();
 
-    EditorFrame(JFrame frame, List<GraphicLayer> instructions) {
-        this.instructions = instructions;
+// EditorFrame(JFrame frame, List<GraphicLayer> instructions) {
+// this.instructions = instructions;
 
-        frame2.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
-        frame2.setTitle("editor");
-        frame2.setSize(600, 600);
+// frame2.setLocation(frame.getLocation().x + frame.getWidth(),
+// frame.getLocation().y);
+// frame2.setTitle("editor");
+// frame2.setSize(600, 600);
 
-        JPanel panel2 = new JPanel();
-        frame2.setContentPane(panel2);
+// JPanel panel2 = new JPanel();
+// frame2.setContentPane(panel2);
 
-        GroupLayout layout = new GroupLayout(panel2);
-        panel2.setLayout(layout);
+// GroupLayout layout = new GroupLayout(panel2);
+// panel2.setLayout(layout);
 
-        layerScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        layerScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+// layerScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+// layerScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 
-        editorScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        editorScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+// editorScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+// editorScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 
-        updateLayerListPanel();
+// updateLayerListPanel();
 
-        JButton addLayerButton = new JButton("add layer");
-        addLayerButton.addActionListener(e -> {
-            this.instructions.add(new GraphicLayer());
-            updateLayerListPanel();
-        });
-        JButton layerUpButton = new JButton("^");
-        layerUpButton.addActionListener(e -> {
-            if (currentLayer.value > 0) {
-                var temp = instructions.get(currentLayer.value - 1);
-                instructions.set(currentLayer.value - 1, instructions.get(currentLayer.value));
-                instructions.set(currentLayer.value, temp);
-                currentLayer.value--;
-                updateLayerListPanel();
-            }
-        });
+// JButton addLayerButton = new JButton("add layer");
+// addLayerButton.addActionListener(e -> {
+// this.instructions.add(new GraphicLayer());
+// updateLayerListPanel();
+// });
+// JButton layerUpButton = new JButton("^");
+// layerUpButton.addActionListener(e -> {
+// if (currentLayer.value > 0) {
+// var temp = instructions.get(currentLayer.value - 1);
+// instructions.set(currentLayer.value - 1,
+// instructions.get(currentLayer.value));
+// instructions.set(currentLayer.value, temp);
+// currentLayer.value--;
+// updateLayerListPanel();
+// }
+// });
 
-        JButton layerDownButton = new JButton("v");
-        layerDownButton.addActionListener(e -> {
-            if (currentLayer.value < instructions.size() - 1) {
-                var temp = instructions.get(currentLayer.value + 1);
-                instructions.set(currentLayer.value + 1, instructions.get(currentLayer.value));
-                instructions.set(currentLayer.value, temp);
-                currentLayer.value++;
-                updateLayerListPanel();
-            }
-        });
+// JButton layerDownButton = new JButton("v");
+// layerDownButton.addActionListener(e -> {
+// if (currentLayer.value < instructions.size() - 1) {
+// var temp = instructions.get(currentLayer.value + 1);
+// instructions.set(currentLayer.value + 1,
+// instructions.get(currentLayer.value));
+// instructions.set(currentLayer.value, temp);
+// currentLayer.value++;
+// updateLayerListPanel();
+// }
+// });
 
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(Alignment.LEADING, false)
-                        .addComponent(layerScrollPane)
-                        .addGroup(layout.createSequentialGroup()
-                                .addComponent(addLayerButton)
-                                .addComponent(layerUpButton)
-                                .addComponent(layerDownButton)))
-                .addComponent(editorScrollPane));
-        layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addGroup(layout.createSequentialGroup()
-                        .addComponent(layerScrollPane)
-                        .addGroup(layout.createParallelGroup(Alignment.BASELINE)
-                                .addComponent(addLayerButton)
-                                .addComponent(layerUpButton)
-                                .addComponent(layerDownButton)))
-                .addComponent(editorScrollPane));
+// layout.setHorizontalGroup(layout.createSequentialGroup()
+// .addGroup(layout.createParallelGroup(Alignment.LEADING, false)
+// .addComponent(layerScrollPane)
+// .addGroup(layout.createSequentialGroup()
+// .addComponent(addLayerButton)
+// .addComponent(layerUpButton)
+// .addComponent(layerDownButton)))
+// .addComponent(editorScrollPane));
+// layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING)
+// .addGroup(layout.createSequentialGroup()
+// .addComponent(layerScrollPane)
+// .addGroup(layout.createParallelGroup(Alignment.BASELINE)
+// .addComponent(addLayerButton)
+// .addComponent(layerUpButton)
+// .addComponent(layerDownButton)))
+// .addComponent(editorScrollPane));
 
-        JMenuBar menuBar = new JMenuBar();
-        frame2.setJMenuBar(menuBar);
+// JMenuBar menuBar = new JMenuBar();
+// frame2.setJMenuBar(menuBar);
 
-        var fileMenu = new JMenu("File");
-        menuBar.add(fileMenu);
+// var fileMenu = new JMenu("File");
+// menuBar.add(fileMenu);
 
-        var saveMenuItem = fileMenu.add("Save");
-        var saveAsMenuItem = fileMenu.add("Save as...");
-        var loadMenuItem = fileMenu.add("Load");
-        fileMenu.addSeparator();
-        var exportCodeMenuItem = fileMenu.add("Export code...");
+// var saveMenuItem = fileMenu.add("Save");
+// var saveAsMenuItem = fileMenu.add("Save as...");
+// var loadMenuItem = fileMenu.add("Load");
+// fileMenu.addSeparator();
+// var exportCodeMenuItem = fileMenu.add("Export code...");
 
-        JFileChooser fileChooser = new JFileChooser(prefs.get("lastSavePath", System.getProperty("user.home")));
+// JFileChooser fileChooser = new JFileChooser(prefs.get("lastSavePath",
+// System.getProperty("user.home")));
 
-        saveMenuItem.addActionListener(e -> {
-            if (this.savePath.value == null) {
-                if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
-                    this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
-                    prefs.put("lastSavePath", fileChooser.getCurrentDirectory().getAbsolutePath());
-                }
-            }
-            if (this.savePath.value != null) {
-                try {
-                    FileWriter fw = new FileWriter(this.savePath.value);
-                    fw.write(ImEx.exportString(instructions));
-                    fw.close();
-                    frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
-                            + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
-                    prefs.put("lastSavePath", this.savePath.value);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
+// saveMenuItem.addActionListener(e -> {
+// if (this.savePath.value == null) {
+// if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
+// this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+// prefs.put("lastSavePath",
+// fileChooser.getCurrentDirectory().getAbsolutePath());
+// }
+// }
+// if (this.savePath.value != null) {
+// try {
+// FileWriter fw = new FileWriter(this.savePath.value);
+// fw.write(ImEx.exportString(instructions));
+// fw.close();
+// frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
+// + new SimpleDateFormat("yyyy/MM/dd
+// HH:mm:ss").format(Calendar.getInstance().getTime()));
+// prefs.put("lastSavePath", this.savePath.value);
+// } catch (Exception ex) {
+// ex.printStackTrace();
+// }
+// }
+// });
 
-        saveAsMenuItem.addActionListener(e -> {
-            if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
-                this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
-                prefs.put("lastSavePath", fileChooser.getCurrentDirectory().getAbsolutePath());
+// saveAsMenuItem.addActionListener(e -> {
+// if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
+// this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+// prefs.put("lastSavePath",
+// fileChooser.getCurrentDirectory().getAbsolutePath());
 
-                try {
-                    FileWriter fw = new FileWriter(this.savePath.value);
-                    fw.write(ImEx.exportString(instructions));
-                    fw.close();
-                    frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
-                            + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
+// try {
+// FileWriter fw = new FileWriter(this.savePath.value);
+// fw.write(ImEx.exportString(instructions));
+// fw.close();
+// frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
+// + new SimpleDateFormat("yyyy/MM/dd
+// HH:mm:ss").format(Calendar.getInstance().getTime()));
+// } catch (Exception ex) {
+// ex.printStackTrace();
+// }
+// }
+// });
 
-        loadMenuItem.addActionListener(e -> {
-            if (fileChooser.showOpenDialog(frame2) == JFileChooser.APPROVE_OPTION) {
-                this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
-                prefs.put("lastSavePath", fileChooser.getCurrentDirectory().getAbsolutePath());
+// loadMenuItem.addActionListener(e -> {
+// if (fileChooser.showOpenDialog(frame2) == JFileChooser.APPROVE_OPTION) {
+// this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+// prefs.put("lastSavePath",
+// fileChooser.getCurrentDirectory().getAbsolutePath());
 
-                try {
-                    var file = new File(this.savePath.value);
-                    Scanner scanner = new Scanner(file);
-                    instructions.clear();
-                    var newInstructions = ImEx.importLayers(scanner);
-                    instructions.addAll(newInstructions);
-                    scanner.close();
-                    frame2.setTitle("editor - " + file.getName());
-                    updateLayerListPanel();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
+// try {
+// var file = new File(this.savePath.value);
+// Scanner scanner = new Scanner(file);
+// instructions.clear();
+// var newInstructions = ImEx.importLayers(scanner);
+// instructions.addAll(newInstructions);
+// scanner.close();
+// frame2.setTitle("editor - " + file.getName());
+// updateLayerListPanel();
+// } catch (Exception ex) {
+// ex.printStackTrace();
+// }
+// }
+// });
 
-        exportCodeMenuItem.addActionListener(e -> {
-            if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
-                prefs.put("lastSavePath", fileChooser.getCurrentDirectory().getAbsolutePath());
+// exportCodeMenuItem.addActionListener(e -> {
+// if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
+// prefs.put("lastSavePath",
+// fileChooser.getCurrentDirectory().getAbsolutePath());
 
-                try {
-                    FileWriter fw = new FileWriter(fileChooser.getSelectedFile().getAbsolutePath());
-                    fw.write(ImEx.exportCode(instructions));
-                    fw.close();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
+// try {
+// FileWriter fw = new
+// FileWriter(fileChooser.getSelectedFile().getAbsolutePath());
+// fw.write(ImEx.exportCode(instructions));
+// fw.close();
+// } catch (Exception ex) {
+// ex.printStackTrace();
+// }
+// }
+// });
 
-        saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
-                InputEvent.CTRL_DOWN_MASK));
-        saveAsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
-                InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
-        loadMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,
-                InputEvent.CTRL_DOWN_MASK));
+// saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+// InputEvent.CTRL_DOWN_MASK));
+// saveAsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+// InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
+// loadMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,
+// InputEvent.CTRL_DOWN_MASK));
 
-        frame2.setVisible(true);
+// frame2.setVisible(true);
 
-        new Timer(250, e -> {
-            if (GlobalState.needsUpdateEditor) {
-                changeEditorPane(this.currentLayer.value);
-                GlobalState.needsUpdateEditor = false;
-            }
-            if (GlobalState.needsUpdateLayers) {
-                updateLayerListPanel();
-                GlobalState.needsUpdateLayers = false;
-            }
-        }).start();
-    }
+// new Timer(250, e -> {
+// if (GlobalState.needsUpdateEditor) {
+// changeEditorPane(this.currentLayer.value);
+// GlobalState.needsUpdateEditor = false;
+// }
+// if (GlobalState.needsUpdateLayers) {
+// updateLayerListPanel();
+// GlobalState.needsUpdateLayers = false;
+// }
+// }).start();
+// }
 
-    private void changeEditorPane(int layerIndex) {
-        if (layerIndex < 0 || layerIndex >= instructions.size()) {
-            editorScrollPane.setViewportView(new JPanel());
-            this.currentLayer.value = layerIndex;
-            return;
-        }
-        boolean sameLayer = layerIndex == this.currentLayer.value;
-        int scrollPos = editorScrollPane.getVerticalScrollBar().getValue();
-        editorScrollPane
-                .setViewportView(EditingPanelFactory.create(this.instructions.get(layerIndex)));
-        if (sameLayer) {
-            editorScrollPane.getVerticalScrollBar().setValue(scrollPos);
-        } else {
-            editorScrollPane.getVerticalScrollBar().setValue(0);
-        }
-        this.currentLayer.value = layerIndex;
-    }
+// private void changeEditorPane(int layerIndex) {
+// if (layerIndex < 0 || layerIndex >= instructions.size()) {
+// editorScrollPane.setViewportView(new JPanel());
+// this.currentLayer.value = layerIndex;
+// return;
+// }
+// boolean sameLayer = layerIndex == this.currentLayer.value;
+// int scrollPos = editorScrollPane.getVerticalScrollBar().getValue();
+// editorScrollPane
+// .setViewportView(EditingPanelFactory.create(this.instructions.get(layerIndex)));
+// if (sameLayer) {
+// editorScrollPane.getVerticalScrollBar().setValue(scrollPos);
+// } else {
+// editorScrollPane.getVerticalScrollBar().setValue(0);
+// }
+// this.currentLayer.value = layerIndex;
+// }
 
-    private void updateLayerListPanel() {
-        JPanel layerPane = new JPanel();
-        GroupLayout layerLayout = new GroupLayout(layerPane);
-        layerPane.setLayout(layerLayout);
+// private void updateLayerListPanel() {
+// JPanel layerPane = new JPanel();
+// GroupLayout layerLayout = new GroupLayout(layerPane);
+// layerPane.setLayout(layerLayout);
 
-        var layerVGroup = layerLayout.createSequentialGroup();
-        var layerRadioHGroup = layerLayout.createParallelGroup();
-        layerLayout.setHorizontalGroup(layerLayout.createSequentialGroup()
-                .addGroup(layerRadioHGroup));
-        layerLayout.setVerticalGroup(layerVGroup);
+// var layerVGroup = layerLayout.createSequentialGroup();
+// var layerRadioHGroup = layerLayout.createParallelGroup();
+// layerLayout.setHorizontalGroup(layerLayout.createSequentialGroup()
+// .addGroup(layerRadioHGroup));
+// layerLayout.setVerticalGroup(layerVGroup);
 
-        ButtonGroup layerButtonGroup = new ButtonGroup();
+// ButtonGroup layerButtonGroup = new ButtonGroup();
 
-        changeEditorPane(Math.max(0, Math.min(this.currentLayer.value, instructions.size() - 1)));
+// changeEditorPane(Math.max(0, Math.min(this.currentLayer.value,
+// instructions.size() - 1)));
 
-        int layerI = 0;
-        for (GraphicLayer layer : instructions) {
+// int layerI = 0;
+// for (GraphicLayer layer : instructions) {
 
-            var layerEditRadio = new JRadioButton(layer.name.value);
-            if (layerI == currentLayer.value) {
-                layerEditRadio.setSelected(true);
-            }
-            final int layerI2 = layerI;
-            layerEditRadio.addActionListener(e -> {
-                changeEditorPane(layerI2);
-            });
-            layerButtonGroup.add(layerEditRadio);
+// var layerEditRadio = new JRadioButton(layer.name.value);
+// if (layerI == currentLayer.value) {
+// layerEditRadio.setSelected(true);
+// }
+// final int layerI2 = layerI;
+// layerEditRadio.addActionListener(e -> {
+// changeEditorPane(layerI2);
+// });
+// layerButtonGroup.add(layerEditRadio);
 
-            layerVGroup.addGroup(
-                    layerLayout.createParallelGroup(Alignment.CENTER)
-                            .addComponent(layerEditRadio));
-            layerVGroup.addPreferredGap(ComponentPlacement.RELATED);
-            layerRadioHGroup.addComponent(layerEditRadio);
+// layerVGroup.addGroup(
+// layerLayout.createParallelGroup(Alignment.CENTER)
+// .addComponent(layerEditRadio));
+// layerVGroup.addPreferredGap(ComponentPlacement.RELATED);
+// layerRadioHGroup.addComponent(layerEditRadio);
 
-            JPopupMenu layerPopupMenu = new JPopupMenu();
-            var layerDeleteMenuItem = layerPopupMenu.add("Delete");
-            layerDeleteMenuItem.addActionListener(e -> {
-                instructions.remove(layer);
-                GlobalState.needsUpdateLayers = true;
-            });
+// JPopupMenu layerPopupMenu = new JPopupMenu();
+// var layerDeleteMenuItem = layerPopupMenu.add("Delete");
+// layerDeleteMenuItem.addActionListener(e -> {
+// instructions.remove(layer);
+// GlobalState.needsUpdateLayers = true;
+// });
 
-            layerEditRadio.setComponentPopupMenu(layerPopupMenu);
+// layerEditRadio.setComponentPopupMenu(layerPopupMenu);
 
-            layerI++;
-        }
-        layerScrollPane.setViewportView(layerPane);
-    }
-}
+// layerI++;
+// }
+// layerScrollPane.setViewportView(layerPane);
+// }
+// }
 
 enum EasingFunction implements DoubleUnaryOperator {
 
@@ -428,6 +462,7 @@ enum EasingFunction implements DoubleUnaryOperator {
                 return x < 0.5 ? Math.pow(2, 20 * x - 10) / 2
                         : (2 - Math.pow(2, -20 * x + 10)) / 2;
             }),
+
     snap(x -> x < 1 ? 0 : 1);
 
     private static DoubleUnaryOperator constructEaseInPower(double power) {
@@ -454,7 +489,7 @@ enum EasingFunction implements DoubleUnaryOperator {
 
 }
 
-abstract class AnimatedValue {
+abstract class AnimatedValue implements Exportable {
     static class Timepoint {
         public double time;
         public EasingFunction easingToNext;
@@ -463,6 +498,7 @@ abstract class AnimatedValue {
             this.time = time;
             this.easingToNext = easingToNext;
         }
+
     }
 
     static class StepValue {
@@ -520,6 +556,36 @@ abstract class AnimatedValue {
         double frac = (time - timeBefore) / (timeAfter - timeBefore);
         return new StepValue(iBeforeTime, timepoints.get(iBeforeTime).easingToNext.applyAsDouble(frac));
     }
+
+    protected String exportString(List<String> valuepoints) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < timepoints.size(); i++) {
+            sb.append(timepoints.get(i).time);
+            sb.append(" ");
+            sb.append(valuepoints.get(i));
+            sb.append(" ");
+            sb.append(timepoints.get(i).easingToNext);
+            sb.append(" ");
+        }
+        sb.append("END");
+        return sb.toString();
+    }
+
+    protected String exportCode(String className, List<String> valuepoints) {
+        StringBuilder sb = new StringBuilder("new ");
+        sb.append(className);
+        sb.append("()");
+        for (int i = 0; i < timepoints.size(); i++) {
+            sb.append("\n.add(");
+            sb.append(timepoints.get(i).time);
+            sb.append(", ");
+            sb.append(valuepoints.get(i));
+            sb.append(", EasingFunction.");
+            sb.append(timepoints.get(i).easingToNext);
+            sb.append(")");
+        }
+        return sb.toString();
+    }
 }
 
 class AnimTest extends AnimatedValue {
@@ -556,6 +622,14 @@ class AnimTest extends AnimatedValue {
         animvalue.addTimepoint(1, EasingFunction.linear);
         System.out.println(animvalue.getValue(1)); // 1, 0.0
     }
+
+    public String exportString() {
+        return "";
+    }
+
+    public String exportCode() {
+        return "";
+    }
 }
 
 class AnimBoolean extends AnimatedValue {
@@ -587,6 +661,26 @@ class AnimBoolean extends AnimatedValue {
         }
 
         return Lerp.run(valuepoints.get(stepValue.index), stepValue.frac, valuepoints.get(stepValue.index + 1));
+    }
+
+    public AnimBoolean copy() {
+        var anim = new AnimBoolean();
+        for (int i = 0; i < timepoints.size(); i++) {
+            var tp = timepoints.get(i);
+            var value = valuepoints.get(i);
+            anim.add(tp.time, value, tp.easingToNext);
+        }
+        return anim;
+    }
+
+    public String exportString() {
+        var strings = valuepoints.stream().map(ImEx::exportString).collect(Collectors.toList());
+        return super.exportString(strings);
+    }
+
+    public String exportCode() {
+        var strings = valuepoints.stream().map(ImEx::exportCode).collect(Collectors.toList());
+        return super.exportCode("AnimBoolean", strings);
     }
 }
 
@@ -620,6 +714,26 @@ class AnimDouble extends AnimatedValue {
 
         return Lerp.run(valuepoints.get(stepValue.index), stepValue.frac, valuepoints.get(stepValue.index + 1));
     }
+
+    public AnimDouble copy() {
+        var anim = new AnimDouble();
+        for (int i = 0; i < timepoints.size(); i++) {
+            var tp = timepoints.get(i);
+            var value = valuepoints.get(i);
+            anim.add(tp.time, value, tp.easingToNext);
+        }
+        return anim;
+    }
+
+    public String exportString() {
+        var strings = valuepoints.stream().map(ImEx::exportString).collect(Collectors.toList());
+        return super.exportString(strings);
+    }
+
+    public String exportCode() {
+        var strings = valuepoints.stream().map(ImEx::exportCode).collect(Collectors.toList());
+        return super.exportCode("AnimDouble", strings);
+    }
 }
 
 class AnimInt extends AnimatedValue {
@@ -651,6 +765,26 @@ class AnimInt extends AnimatedValue {
         }
 
         return Lerp.run(valuepoints.get(stepValue.index), stepValue.frac, valuepoints.get(stepValue.index + 1));
+    }
+
+    public AnimInt copy() {
+        var anim = new AnimInt();
+        for (int i = 0; i < timepoints.size(); i++) {
+            var tp = timepoints.get(i);
+            var value = valuepoints.get(i);
+            anim.add(tp.time, value, tp.easingToNext);
+        }
+        return anim;
+    }
+
+    public String exportString() {
+        var strings = valuepoints.stream().map(ImEx::exportString).collect(Collectors.toList());
+        return super.exportString(strings);
+    }
+
+    public String exportCode() {
+        var strings = valuepoints.stream().map(ImEx::exportCode).collect(Collectors.toList());
+        return super.exportCode("AnimInt", strings);
     }
 }
 
@@ -688,6 +822,26 @@ class AnimColor extends AnimatedValue {
 
         return Lerp.run(valuepoints.get(stepValue.index), stepValue.frac, valuepoints.get(stepValue.index + 1));
     }
+
+    public AnimColor copy() {
+        var anim = new AnimColor();
+        for (int i = 0; i < timepoints.size(); i++) {
+            var tp = timepoints.get(i);
+            var value = valuepoints.get(i);
+            anim.add(tp.time, value, tp.easingToNext);
+        }
+        return anim;
+    }
+
+    public String exportString() {
+        var strings = valuepoints.stream().map(ImEx::exportString).collect(Collectors.toList());
+        return super.exportString(strings);
+    }
+
+    public String exportCode() {
+        var strings = valuepoints.stream().map(ImEx::exportCode).collect(Collectors.toList());
+        return super.exportCode("AnimColor", strings);
+    }
 }
 
 class AnimPoint extends AnimatedValue {
@@ -719,8 +873,66 @@ class AnimPoint extends AnimatedValue {
         }
 
         return new Point(
-                Lerp.run(valuepoints.get(stepValue.index).x, stepValue.frac, valuepoints.get(stepValue.index + 1).x),
-                Lerp.run(valuepoints.get(stepValue.index).y, stepValue.frac, valuepoints.get(stepValue.index + 1).y));
+                Lerp.run(valuepoints.get(stepValue.index).x, stepValue.frac,
+                        valuepoints.get(stepValue.index + 1).x),
+                Lerp.run(valuepoints.get(stepValue.index).y, stepValue.frac,
+                        valuepoints.get(stepValue.index + 1).y));
+    }
+
+    public String exportString() {
+        var strings = valuepoints.stream().map(ImEx::exportString).collect(Collectors.toList());
+        return super.exportString(strings);
+    }
+
+    public String exportCode() {
+        var strings = valuepoints.stream().map(ImEx::exportCode).collect(Collectors.toList());
+        return super.exportCode("AnimPoint", strings);
+    }
+}
+
+class AnimDimension extends AnimatedValue {
+    public List<Dimension> valuepoints = new ArrayList<>();
+
+    public AnimDimension add(double time, Dimension value, EasingFunction easingToNext) {
+        var i = super.addTimepoint(time, easingToNext);
+        if (i == -1) {
+            return this;
+        }
+        valuepoints.add(value);
+        return this;
+    }
+
+    public AnimDimension remove(double time) {
+        var stepValue = getValue(time);
+        valuepoints.remove(stepValue.index);
+        timepoints.remove(stepValue.index);
+        return this;
+    }
+
+    public Dimension get(double time) {
+        if (timepoints.isEmpty()) {
+            return new Dimension(0, 0);
+        }
+        var stepValue = getValue(time);
+        if (stepValue.frac == 0) {
+            return valuepoints.get(stepValue.index);
+        }
+
+        return new Dimension(
+                (int) Lerp.run(valuepoints.get(stepValue.index).width, stepValue.frac,
+                        valuepoints.get(stepValue.index + 1).width),
+                (int) Lerp.run(valuepoints.get(stepValue.index).height, stepValue.frac,
+                        valuepoints.get(stepValue.index + 1).height));
+    }
+
+    public String exportString() {
+        var strings = valuepoints.stream().map(ImEx::exportString).collect(Collectors.toList());
+        return super.exportString(strings);
+    }
+
+    public String exportCode() {
+        var strings = valuepoints.stream().map(ImEx::exportCode).collect(Collectors.toList());
+        return super.exportCode("AnimDimension", strings);
     }
 }
 
@@ -952,14 +1164,50 @@ class MutableString {
     }
 }
 
-class GraphicLayer implements Exportable {
+interface Debuggable {
+    public void setDebugging(int index);
+
+    public void unsetDebugging();
+
+    public void debugDraw(Graphics g, double time);
+
+    default void debugCircle(Graphics g, int x, int y, boolean active) {
+        var g2 = (Graphics2D) g.create();
+        g2.setColor(Color.black);
+        g2.setStroke(new BasicStroke(4));
+        g2.drawOval(x - 5, y - 5, 11, 11);
+        g2.setColor(active ? Color.green : Color.red);
+        g2.setStroke(new BasicStroke(2));
+        g2.drawOval(x - 5, y - 5, 11, 11);
+    }
+
+    default void debugDot(Graphics g, int x, int y, boolean active) {
+        var g2 = (Graphics2D) g.create();
+        g2.setColor(Color.black);
+        g2.fillRect(x - 2, y - 2, 5, 5);
+        g2.setColor(active ? Color.green : Color.red);
+        g2.fillRect(x - 1, y - 1, 3, 3);
+    }
+
+    default void debugLine(Graphics g, int x1, int y1, int x2, int y2, boolean active) {
+        var g2 = (Graphics2D) g.create();
+        g2.setColor(Color.black);
+        g2.setStroke(new BasicStroke(3));
+        g2.drawLine(x1, y1, x2, y2);
+        g2.setColor(active ? Color.green : Color.red);
+        g2.setStroke(new BasicStroke(1));
+        g2.drawLine(x1, y1, x2, y2);
+    }
+}
+
+class GraphicLayer implements Exportable, Debuggable {
     public MutableString name;
     public AnimBoolean shown;
     public AnimPoint translate;
     public AnimPoint rotateOrigin;
     public AnimDouble rotate;
     public List<GraphicObject> objects;
-    public boolean changed = true;
+    private int debugging = -1;
 
     GraphicLayer() {
         this("new layer", new AnimBoolean(), new AnimPoint(), new AnimPoint(), new AnimDouble(),
@@ -991,13 +1239,16 @@ class GraphicLayer implements Exportable {
         Graphics2D g = transform(gOuter, time);
         for (GraphicObject object : objects) {
             object.draw(g, time);
-            object.changed = false;
         }
-        this.changed = false;
     }
 
-    void debugDraw(Graphics gOuter, double time) {
+    @Override
+    public void debugDraw(Graphics gOuter, double time) {
         Graphics2D g = transform(gOuter, time);
+        if (this.debugging != -1) {
+            debugDrawSelf(g, time);
+        }
+
         for (GraphicObject object : objects) {
             if (object.debugging != -1) {
                 object.debugDraw(g, time);
@@ -1005,16 +1256,37 @@ class GraphicLayer implements Exportable {
         }
     }
 
+    private void debugDrawSelf(Graphics2D g, double time) {
+        var translate = this.translate.get(time);
+        var rotateOrigin = this.rotateOrigin.get(time);
+        var rotate = this.rotate.get(time);
+        debugCircle(g, translate.x, translate.y, debugging == 1);
+        debugDot(g, rotateOrigin.x, rotateOrigin.y, debugging == 2);
+        debugLine(g, rotateOrigin.x, rotateOrigin.y,
+                (int) (Math.sin(rotate * Math.PI / 180) * 20 + rotateOrigin.x),
+                (int) (Math.cos(rotate * Math.PI / 180) * 20 + rotateOrigin.y),
+                debugging == 3);
+
+    }
+
     GraphicLayer add(GraphicObject object) {
         objects.add(object);
-        this.changed = true;
         return this;
     }
 
     GraphicLayer remove(GraphicObject object) {
         objects.remove(object);
-        this.changed = true;
         return this;
+    }
+
+    @Override
+    public void setDebugging(int index) {
+        this.debugging = index;
+    }
+
+    @Override
+    public void unsetDebugging() {
+        this.debugging = -1;
     }
 
     public String exportString() {
@@ -1022,8 +1294,13 @@ class GraphicLayer implements Exportable {
         sb.append("LAYER ");
         sb.append(this.name);
         sb.append("\n");
-        sb.append("VISIBLE ");
-        // sb.append(ImEx.exportString(this.shown));
+        sb.append(ImEx.exportString(this.shown));
+        sb.append("\n");
+        sb.append(ImEx.exportString(this.translate));
+        sb.append("\n");
+        sb.append(ImEx.exportString(this.rotateOrigin));
+        sb.append("\n");
+        sb.append(ImEx.exportString(this.rotate));
         sb.append("\n");
         for (GraphicObject object : this.objects) {
             sb.append(object.exportString());
@@ -1037,8 +1314,14 @@ class GraphicLayer implements Exportable {
         StringBuilder sb = new StringBuilder();
         sb.append("new GraphicLayer(\"");
         sb.append(this.name);
-        sb.append("\")\n.setShown(");
-        // sb.append(ImEx.exportCode(this.shown));
+        sb.append("\", ");
+        sb.append(ImEx.exportCode(this.shown));
+        sb.append(", ");
+        sb.append(ImEx.exportCode(this.translate));
+        sb.append(", ");
+        sb.append(ImEx.exportCode(this.rotateOrigin));
+        sb.append(", ");
+        sb.append(ImEx.exportCode(this.rotate));
         sb.append(")\n");
         for (GraphicObject object : this.objects) {
             sb.append(".add(");
@@ -1050,45 +1333,25 @@ class GraphicLayer implements Exportable {
 
 }
 
-abstract class GraphicObject implements Exportable {
+abstract class GraphicObject implements Exportable, Debuggable {
     abstract public void draw(Graphics g, double time);
 
-    public int debugging = -1;
-    public boolean changed = false;
-
-    abstract public void debugDraw(Graphics g, double time);
+    protected int debugging = -1;
 
     abstract public GraphicObject copy();
 
+    @Override
+    public void setDebugging(int index) {
+        this.debugging = index;
+    }
+
+    @Override
+    public void unsetDebugging() {
+        this.debugging = -1;
+    }
+
     // abstract public GraphicObject editorCopy();
 
-    protected void debugCircle(Graphics g, int x, int y, boolean active) {
-        var g2 = (Graphics2D) g.create();
-        g2.setColor(Color.black);
-        g2.setStroke(new BasicStroke(4));
-        g2.drawOval(x - 5, y - 5, 11, 11);
-        g2.setColor(active ? Color.green : Color.red);
-        g2.setStroke(new BasicStroke(2));
-        g2.drawOval(x - 5, y - 5, 11, 11);
-    }
-
-    protected void debugDot(Graphics g, int x, int y, boolean active) {
-        var g2 = (Graphics2D) g.create();
-        g2.setColor(Color.black);
-        g2.fillRect(x - 2, y - 2, 5, 5);
-        g2.setColor(active ? Color.green : Color.red);
-        g2.fillRect(x - 1, y - 1, 3, 3);
-    }
-
-    protected void debugLine(Graphics g, int x1, int y1, int x2, int y2, boolean active) {
-        var g2 = (Graphics2D) g.create();
-        g2.setColor(Color.black);
-        g2.setStroke(new BasicStroke(3));
-        g2.drawLine(x1, y1, x2, y2);
-        g2.setColor(active ? Color.green : Color.red);
-        g2.setStroke(new BasicStroke(1));
-        g2.drawLine(x1, y1, x2, y2);
-    }
 }
 
 class ColorHexer {
@@ -1154,6 +1417,14 @@ abstract class GraphicPlotter extends GraphicObject {
 
     protected void plot(Graphics g, int x, int y, int size) {
         g.fillRect(x - size / 2, y - size / 2, size, size);
+    }
+
+    protected String exportParamString() {
+        return ImEx.exportString(color);
+    }
+
+    protected String exportParamCode() {
+        return ImEx.exportCode(color);
     }
 }
 
@@ -1234,6 +1505,14 @@ abstract class GraphicBezierPlotter extends GraphicPlotter {
             plot(g, (int) Math.round(x), (int) Math.round(y), thickness.get(time));
         }
     }
+
+    protected String exportParamString() {
+        return super.exportParamString() + " " + ImEx.exportString(thickness);
+    }
+
+    protected String exportParamCode() {
+        return super.exportParamCode() + ", " + ImEx.exportCode(thickness);
+    }
 }
 
 abstract class GraphicDrawFiller extends GraphicObject {
@@ -1267,6 +1546,34 @@ abstract class GraphicDrawFiller extends GraphicObject {
         }
         g.setColor(fillColor.get(time));
         return true;
+    }
+
+    protected String exportParamString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ImEx.exportString(stroke));
+        sb.append(" ");
+        sb.append(ImEx.exportString(strokeColor));
+        sb.append(" ");
+        sb.append(ImEx.exportString(thickness));
+        sb.append(" ");
+        sb.append(ImEx.exportString(fill));
+        sb.append(" ");
+        sb.append(ImEx.exportString(fillColor));
+        return sb.toString();
+    }
+
+    protected String exportParamCode() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ImEx.exportCode(stroke));
+        sb.append(", ");
+        sb.append(ImEx.exportCode(strokeColor));
+        sb.append(", ");
+        sb.append(ImEx.exportCode(thickness));
+        sb.append(", ");
+        sb.append(ImEx.exportCode(fill));
+        sb.append(", ");
+        sb.append(ImEx.exportCode(fillColor));
+        return sb.toString();
     }
 }
 
@@ -1302,8 +1609,7 @@ class Path2DLine extends Path2DData {
 
     @Override
     public String exportCode() {
-        // TODO Auto-generated method stub
-        return "LINE";
+        return "new Path2DLine(" + ImEx.exportCode(this.pNext) + ")";
     }
 
     @Override
@@ -1331,7 +1637,8 @@ class Path2DBezier extends Path2DData {
 
     @Override
     public void run(Path2D path, double time) {
-        path.curveTo(pNext.get(time).x, pNext.get(time).y, morePoints.get(0).get(time).x, morePoints.get(0).get(time).y,
+        path.curveTo(pNext.get(time).x, pNext.get(time).y, morePoints.get(0).get(time).x,
+                morePoints.get(0).get(time).y,
                 morePoints.get(1).get(time).x,
                 morePoints.get(1).get(time).y);
         for (int i = 3; i < morePoints.size(); i += 2) {
@@ -1357,8 +1664,15 @@ class Path2DBezier extends Path2DData {
 
     @Override
     public String exportCode() {
-        // TODO Auto-generated method stub
-        return "BEZIER";
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Path2DBezier(");
+        sb.append(ImEx.exportCode(this.pNext));
+        for (var point : this.morePoints) {
+            sb.append(", ");
+            sb.append(ImEx.exportCode(point));
+        }
+        sb.append(")");
+        return sb.toString();
     }
 
     @Override
@@ -1367,7 +1681,7 @@ class Path2DBezier extends Path2DData {
         sb.append("BEZIER ");
         sb.append(ImEx.exportString(this.pNext));
         sb.append(" ");
-        for (Point point : this.morePoints) {
+        for (var point : this.morePoints) {
             sb.append(ImEx.exportString(point));
             sb.append(" ");
         }
@@ -1383,18 +1697,21 @@ class GraphicPath2D extends GraphicDrawFiller {
     public AnimBoolean closed;
 
     GraphicPath2D() {
-        this(new AnimBoolean(), new AnimColor(), new AnimInt(), new AnimBoolean(), new AnimColor(), new AnimBoolean(),
+        this(new AnimBoolean(), new AnimColor(), new AnimInt(), new AnimBoolean(), new AnimColor(),
+                new AnimBoolean(),
                 new AnimPoint(), new ArrayList<>());
     }
 
-    GraphicPath2D(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill, AnimColor fillColor,
+    GraphicPath2D(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill,
+            AnimColor fillColor,
             AnimBoolean closed,
             AnimPoint p1,
             Path2DData... data) {
         this(stroke, strokeColor, thickness, fill, fillColor, closed, p1, new ArrayList<>(Arrays.asList(data)));
     }
 
-    GraphicPath2D(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill, AnimColor fillColor,
+    GraphicPath2D(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill,
+            AnimColor fillColor,
             AnimBoolean closed,
             AnimPoint p1,
             List<Path2DData> data) {
@@ -1438,7 +1755,8 @@ class GraphicPath2D extends GraphicDrawFiller {
                 i++;
             } else if (d instanceof Path2DBezier) {
                 Path2DBezier bezier = (Path2DBezier) d;
-                debugLine(g, pNextA.x, pNextA.y, bezier.pNext.get(time).x, bezier.pNext.get(time).y, debugging == i);
+                debugLine(g, pNextA.x, pNextA.y, bezier.pNext.get(time).x, bezier.pNext.get(time).y,
+                        debugging == i);
                 debugDot(g, bezier.pNext.get(time).x, bezier.pNext.get(time).y, debugging == i);
                 i++;
                 for (int j = 1; j < bezier.morePoints.size(); j += 2) {
@@ -1461,34 +1779,22 @@ class GraphicPath2D extends GraphicDrawFiller {
 
     Point lastPoint() {
         // TODO
+        return new Point(0, 0);
     }
 
     @Override
     public GraphicObject copy() {
         // TODO
-    }
-
-    @Override
-    public String exportCode() {
-        // TODO: Auto-generated method stub
-        return "PATH2D";
+        return null;
     }
 
     @Override
     public String exportString() {
         StringBuilder sb = new StringBuilder();
         sb.append("PATH2D ");
-        sb.append(ImEx.exportString(this.stroke.value));
+        sb.append(super.exportParamString());
         sb.append(" ");
-        sb.append(ImEx.exportString(this.strokeColor.value));
-        sb.append(" ");
-        sb.append(this.thickness.value);
-        sb.append(" ");
-        sb.append(ImEx.exportString(this.fill.value));
-        sb.append(" ");
-        sb.append(ImEx.exportString(this.fillColor.value));
-        sb.append(" ");
-        sb.append(ImEx.exportString(this.closed.value));
+        sb.append(ImEx.exportString(this.closed));
         sb.append(" ");
         sb.append(ImEx.exportString(this.p1));
         sb.append("\n");
@@ -1497,6 +1803,23 @@ class GraphicPath2D extends GraphicDrawFiller {
             sb.append("\n");
         }
         sb.append("END");
+        return sb.toString();
+    }
+
+    @Override
+    public String exportCode() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new GraphicPath2D(");
+        sb.append(super.exportParamCode());
+        sb.append(", ");
+        sb.append(ImEx.exportCode(this.closed));
+        sb.append(", ");
+        sb.append(ImEx.exportCode(this.p1));
+        for (Path2DData p2d : this.data) {
+            sb.append(", ");
+            sb.append(p2d.exportCode());
+        }
+        sb.append(")");
         return sb.toString();
     }
 
@@ -1565,32 +1888,28 @@ class GraphicCircle extends GraphicBezierPlotter {
 
     @Override
     public GraphicObject copy() {
-        // TODO
+        return null; // TODO
     }
 
     public String exportString() {
         StringBuilder sb = new StringBuilder();
         sb.append("CIRCLE ");
-        sb.append(ImEx.exportString(this.color.value));
-        sb.append(" ");
-        sb.append(this.thickness.value);
+        sb.append(super.exportParamString());
         sb.append(" ");
         sb.append(ImEx.exportString(this.center));
         sb.append(" ");
-        sb.append(this.radius.value);
+        sb.append(ImEx.exportString(this.radius));
         return sb.toString();
     }
 
     public String exportCode() {
         StringBuilder sb = new StringBuilder();
         sb.append("new GraphicCircle(");
-        sb.append(ImEx.exportCode(this.color.value));
-        sb.append(", ");
-        sb.append(this.thickness.value);
+        sb.append(super.exportParamCode());
         sb.append(", ");
         sb.append(ImEx.exportCode(this.center));
         sb.append(", ");
-        sb.append(this.radius.value);
+        sb.append(ImEx.exportCode(this.radius));
         sb.append(")");
         return sb.toString();
     }
@@ -1600,15 +1919,15 @@ class GraphicImage extends GraphicObject {
     public MutableString filePath;
     private String lastFilePath = "";
     public BufferedImage image;
-    public Point origin;
-    public Dimension size;
-    public MutableDouble opacity;
+    public AnimPoint origin;
+    public AnimDimension size;
+    public AnimDouble opacity;
 
-    GraphicImage(String filePath, Point origin, Dimension size, double opacity) {
+    GraphicImage(String filePath, AnimPoint origin, AnimDimension size, AnimDouble opacity) {
         this.filePath = new MutableString(filePath);
         this.origin = origin;
         this.size = size;
-        this.opacity = new MutableDouble(opacity);
+        this.opacity = opacity;
         updateImage();
     }
 
@@ -1632,16 +1951,20 @@ class GraphicImage extends GraphicObject {
     @Override
     public void draw(Graphics gOuter, double time) {
         Graphics2D g = (Graphics2D) gOuter.create();
+        var origin = this.origin.get(time);
+        var size = this.size.get(time);
 
         updateImage();
 
-        AlphaComposite alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) opacity.value);
+        AlphaComposite alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) opacity.get(time));
         g.setComposite(alphaComposite);
         g.drawImage(image, origin.x, origin.y, size.width, size.height, null);
     }
 
     @Override
     public void debugDraw(Graphics g, double time) {
+        var origin = this.origin.get(time);
+        var size = this.size.get(time);
         debugLine(g, origin.x, origin.y, origin.x + size.width, origin.y + size.height, debugging == 2);
         debugDot(g, origin.x + size.width, origin.y + size.height, debugging == 2);
         debugCircle(g, origin.x, origin.y, debugging == 1);
@@ -1649,8 +1972,8 @@ class GraphicImage extends GraphicObject {
 
     @Override
     public GraphicObject copy() {
-        return new GraphicImage(filePath.value, new Point(origin.x, origin.y), new Dimension(size.width, size.height),
-                opacity.value);
+        return new GraphicImage(filePath.value, origin, size,
+                opacity);
     }
 
     public String exportString() {
@@ -1662,7 +1985,7 @@ class GraphicImage extends GraphicObject {
         sb.append(" ");
         sb.append(ImEx.exportString(this.size));
         sb.append(" ");
-        sb.append(this.opacity.value);
+        sb.append(ImEx.exportString(this.opacity));
         return sb.toString();
     }
 
@@ -1675,7 +1998,7 @@ class GraphicImage extends GraphicObject {
         sb.append(", ");
         sb.append(ImEx.exportCode(this.size));
         sb.append(", ");
-        sb.append(this.opacity.value);
+        sb.append(ImEx.exportCode(this.opacity));
         sb.append(")");
         return sb.toString();
     }
@@ -1996,10 +2319,10 @@ class GlobalState {
 }
 
 class DebuggingHoverListener implements MouseListener {
-    private GraphicObject obj;
+    private Debuggable obj;
     private int debugValue;
 
-    DebuggingHoverListener(GraphicObject obj, int debugValue) {
+    DebuggingHoverListener(Debuggable obj, int debugValue) {
         this.obj = obj;
         this.debugValue = debugValue;
     }
@@ -2013,7 +2336,7 @@ class DebuggingHoverListener implements MouseListener {
         if (GlobalState.pannerPanelDragging) {
             return;
         }
-        obj.debugging = debugValue;
+        obj.setDebugging(debugValue);
     }
 
     @Override
@@ -2021,7 +2344,7 @@ class DebuggingHoverListener implements MouseListener {
         if (GlobalState.pannerPanelDragging) {
             return;
         }
-        obj.debugging = -1;
+        obj.unsetDebugging();
     }
 
     @Override
@@ -2077,854 +2400,870 @@ class ColorButton extends JButton {
     }
 }
 
-class EditingPanelFactory {
-
-    private EditingPanelFactory() {
-    }
-
-    private static void addPannerKeybinds(JComponent comp) {
-        var inputMap = comp.getInputMap();
-        var actionMap = comp.getActionMap();
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), "slow pressed");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "slow released");
-
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, false), "debug pressed");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "debug released");
-
-        actionMap.put("slow pressed", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                GlobalState.pannerPanelSlow = true;
-            }
-        });
-
-        actionMap.put("slow released", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                GlobalState.pannerPanelSlow = false;
-            }
-        });
-
-        actionMap.put("debug pressed", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                GlobalState.pannerShowDebugging = true;
-            }
-        });
-
-        actionMap.put("debug released", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                GlobalState.pannerShowDebugging = false;
-            }
-        });
-
-    }
-
-    public static JPanel create(String labelText, Point point, GraphicObject obj, int debugValue) {
-        JPanel panel = new JPanel();
-        JLabel label = new JLabel(labelText);
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        SpinnerNumberModel xModel = new SpinnerNumberModel();
-        xModel.setValue(point.x);
-        SpinnerNumberModel yModel = new SpinnerNumberModel();
-        yModel.setValue(point.y);
-        JSpinner xSpinner = new JSpinner(xModel);
-        xSpinner.addChangeListener(e -> {
-            point.x = (int) xSpinner.getValue();
-            obj.changed = true;
-        });
-        JSpinner ySpinner = new JSpinner(yModel);
-        ySpinner.addChangeListener(e -> {
-            point.y = (int) ySpinner.getValue();
-            obj.changed = true;
-        });
-
-        JPanel pannerPanel = new JPanel();
-        pannerPanel.setPreferredSize(new Dimension(20, 20));
-        pannerPanel.setMaximumSize(new Dimension(20, 20));
-        pannerPanel.setMinimumSize(new Dimension(20, 20));
-        pannerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
-        pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
-        pannerPanel.setFocusable(true);
-        addPannerKeybinds(pannerPanel);
-
-        JPanel pannerXPanel = new JPanel();
-        pannerXPanel.setPreferredSize(new Dimension(20, 8));
-        pannerXPanel.setMaximumSize(new Dimension(20, 8));
-        pannerXPanel.setMinimumSize(new Dimension(20, 8));
-        pannerXPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
-        pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
-        pannerXPanel.setFocusable(true);
-        addPannerKeybinds(pannerXPanel);
-
-        JPanel pannerYPanel = new JPanel();
-        pannerYPanel.setPreferredSize(new Dimension(8, 20));
-        pannerYPanel.setMaximumSize(new Dimension(8, 20));
-        pannerYPanel.setMinimumSize(new Dimension(8, 20));
-        pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
-        pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
-        pannerYPanel.setFocusable(true);
-        addPannerKeybinds(pannerYPanel);
-
-        var xListener = new PannerPanelXListener(xSpinner, point);
-        var yListener = new PannerPanelYListener(ySpinner, point);
-        pannerPanel.addMouseListener(xListener);
-        pannerPanel.addMouseListener(yListener);
-        pannerPanel.addMouseMotionListener(xListener);
-        pannerPanel.addMouseMotionListener(yListener);
-        pannerXPanel.addMouseListener(xListener);
-        pannerXPanel.addMouseMotionListener(xListener);
-        pannerYPanel.addMouseListener(yListener);
-        pannerYPanel.addMouseMotionListener(yListener);
-
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(xSpinner)
-                .addComponent(ySpinner)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(pannerYPanel)
-                .addGroup(layout.createParallelGroup(Alignment.CENTER)
-                        .addComponent(pannerPanel)
-                        .addComponent(pannerXPanel)));
-        layout.setVerticalGroup(
-                layout.createSequentialGroup()
-                        .addComponent(pannerXPanel)
-                        .addGroup(layout.createParallelGroup(Alignment.BASELINE)
-                                .addComponent(label)
-                                .addComponent(xSpinner)
-                                .addComponent(ySpinner)
-                                .addComponent(pannerYPanel)
-                                .addComponent(pannerPanel)));
-
-        return panel;
-    }
-
-    public static JPanel create(String labelText, Dimension dim, GraphicObject obj, int debugValue) {
-        JPanel panel = new JPanel();
-        JLabel label = new JLabel(labelText);
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        SpinnerNumberModel wModel = new SpinnerNumberModel();
-        wModel.setValue(dim.width);
-        SpinnerNumberModel hModel = new SpinnerNumberModel();
-        hModel.setValue(dim.height);
-        JSpinner wSpinner = new JSpinner(wModel);
-
-        wSpinner.addChangeListener(e -> {
-            dim.width = (int) wSpinner.getValue();
-            obj.changed = true;
-        });
-
-        JSpinner hSpinner = new JSpinner(hModel);
-        hSpinner.addChangeListener(e -> {
-            dim.height = (int) hSpinner.getValue();
-            obj.changed = true;
-        });
-
-        JPanel pannerPanel = new JPanel();
-        pannerPanel.setPreferredSize(new Dimension(20, 20));
-        pannerPanel.setMaximumSize(new Dimension(20, 20));
-        pannerPanel.setMinimumSize(new Dimension(20, 20));
-        pannerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
-        pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
-        addPannerKeybinds(pannerPanel);
-
-        JPanel pannerXPanel = new JPanel();
-        pannerXPanel.setPreferredSize(new Dimension(20, 8));
-        pannerXPanel.setMaximumSize(new Dimension(20, 8));
-        pannerXPanel.setMinimumSize(new Dimension(20, 8));
-        pannerXPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
-        pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
-        addPannerKeybinds(pannerXPanel);
-
-        JPanel pannerYPanel = new JPanel();
-        pannerYPanel.setPreferredSize(new Dimension(8, 20));
-        pannerYPanel.setMaximumSize(new Dimension(8, 20));
-        pannerYPanel.setMinimumSize(new Dimension(8, 20));
-        pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
-        pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
-        addPannerKeybinds(pannerYPanel);
-
-        var xListener = new PannerPanelWListener(wSpinner, dim);
-        var yListener = new PannerPanelHListener(hSpinner, dim);
-        pannerPanel.addMouseListener(xListener);
-        pannerPanel.addMouseListener(yListener);
-        pannerPanel.addMouseMotionListener(xListener);
-        pannerPanel.addMouseMotionListener(yListener);
-        pannerXPanel.addMouseListener(xListener);
-        pannerXPanel.addMouseMotionListener(xListener);
-        pannerYPanel.addMouseListener(yListener);
-        pannerYPanel.addMouseMotionListener(yListener);
-
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(wSpinner)
-                .addComponent(hSpinner)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(pannerYPanel)
-                .addGroup(layout.createParallelGroup(Alignment.CENTER)
-                        .addComponent(pannerPanel)
-                        .addComponent(pannerXPanel)));
-        layout.setVerticalGroup(
-                layout.createSequentialGroup()
-                        .addComponent(pannerXPanel)
-                        .addGroup(layout.createParallelGroup(Alignment.BASELINE)
-                                .addComponent(label)
-                                .addComponent(wSpinner)
-                                .addComponent(hSpinner)
-                                .addComponent(pannerYPanel)
-                                .addComponent(pannerPanel)));
-
-        return panel;
-    }
-
-    public static JPanel create(String labelText, MutableString str, GraphicObject obj, int debugValue) {
-        JPanel panel = new JPanel();
-        JLabel label = new JLabel(labelText);
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        JTextField textField = new JTextField(str.value);
-        if (obj == null) {
-            textField.addActionListener(e -> {
-                str.value = textField.getText();
-                GlobalState.needsUpdateLayers = true;
-            });
-        } else {
-            textField.addActionListener(e -> {
-                str.value = textField.getText();
-                obj.changed = true;
-            });
-        }
-
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(textField));
-        layout.setVerticalGroup(
-                layout.createParallelGroup(Alignment.BASELINE)
-                        .addComponent(label)
-                        .addComponent(textField));
-
-        return panel;
-    }
-
-    public static JPanel create(String labelText, MutableDouble doub, double min, double max, double stepSize,
-            GraphicObject obj, int debugValue) {
-        JPanel panel = new JPanel();
-        JLabel label = new JLabel(labelText);
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        int sliderSteps = (int) ((max - min) / stepSize);
-        JSlider slider = new JSlider(0, sliderSteps, (int) ((doub.value - min) / stepSize));
-        JSpinner spinner = new JSpinner(new SpinnerNumberModel(doub.value, min, max, stepSize));
-        spinner.addChangeListener(e -> {
-            doub.value = (double) spinner.getValue();
-            slider.setValue((int) ((doub.value - min) / stepSize));
-            obj.changed = true;
-        });
-        slider.addChangeListener(e -> {
-            spinner.setValue(slider.getValue() * stepSize + min);
-            obj.changed = true;
-        });
-
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(slider)
-                .addComponent(spinner));
-        layout.setVerticalGroup(
-                layout.createParallelGroup(Alignment.BASELINE)
-                        .addComponent(label)
-                        .addComponent(slider)
-                        .addComponent(spinner));
-
-        slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
-
-        return panel;
-    }
-
-    public static JPanel create(String labelText, MutableInt integer, int min, int max, int stepSize, GraphicObject obj,
-            int debugValue) {
-        JPanel panel = new JPanel();
-        JLabel label = new JLabel(labelText);
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        int sliderSteps = (max - min) / stepSize;
-        JSlider slider = new JSlider(0, sliderSteps, (integer.value - min) / stepSize);
-        JSpinner spinner = new JSpinner(new SpinnerNumberModel(integer.value, min, Integer.MAX_VALUE, stepSize));
-        ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(2);
-        spinner.addChangeListener(e -> {
-            integer.value = (int) spinner.getValue();
-            slider.setValue((integer.value - min) / stepSize);
-            obj.changed = true;
-        });
-        slider.addChangeListener(e -> {
-            spinner.setValue(slider.getValue() * stepSize + min);
-            obj.changed = true;
-        });
-
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(slider)
-                .addComponent(spinner));
-        layout.setVerticalGroup(
-                layout.createParallelGroup(Alignment.BASELINE)
-                        .addComponent(label)
-                        .addComponent(slider)
-                        .addComponent(spinner));
-
-        slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
-
-        return panel;
-    }
-
-    public static JPanel create(String labelText, MutableColor color, GraphicObject obj, int debugValue) {
-        JPanel panel = new JPanel();
-        JLabel label = new JLabel(labelText);
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        ColorButton button = new ColorButton();
-        button.setColor(color.value);
-
-        JTextField textField = new JTextField(ColorHexer.encode(color.value));
-
-        button.addActionListener(e -> {
-            Color newColor = JColorChooser.showDialog(null, "Choose a color", color.value);
-            if (newColor != null) {
-                color.value = newColor;
-                button.setColor(color.value);
-                textField.setText(ColorHexer.encode(color.value));
-                obj.changed = true;
-            }
-        });
-
-        Runnable newColorFunction = () -> {
-            var parsedColor = ColorHexer.decodeOptional(textField.getText());
-            if (parsedColor.isPresent()) {
-                color.value = parsedColor.get();
-                button.setColor(parsedColor.get());
-                obj.changed = true;
-            } else {
-                button.setInvalid();
-            }
-        };
-        textField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                newColorFunction.run();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                newColorFunction.run();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                newColorFunction.run();
-            }
-        });
-        textField.addActionListener(e -> {
-            var parsedColor = ColorHexer.decodeOptional(textField.getText());
-            if (parsedColor.isPresent()) {
-                button.setColor(color.value);
-            } else {
-                button.setInvalid();
-            }
-            color.value = parsedColor.orElse(Color.black);
-            obj.changed = true;
-        });
-
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(button)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(textField));
-
-        layout.setVerticalGroup(
-                layout.createParallelGroup(Alignment.BASELINE)
-                        .addComponent(label)
-                        .addComponent(button)
-                        .addComponent(textField));
-
-        button.addMouseListener(new DebuggingHoverListener(obj, debugValue));
-
-        return panel;
-    }
-
-    public static JPanel create(String labelText, MutableBoolean bool, GraphicObject obj, int debugValue) {
-        JPanel panel = new JPanel();
-        JLabel label = new JLabel(labelText);
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        JCheckBox checkBox = new JCheckBox();
-        checkBox.setSelected(bool.value);
-        checkBox.addActionListener(e -> {
-            bool.value = checkBox.isSelected();
-            obj.changed = true;
-        });
-
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(checkBox));
-        layout.setVerticalGroup(
-                layout.createParallelGroup(Alignment.BASELINE)
-                        .addComponent(label)
-                        .addComponent(checkBox));
-
-        checkBox.addMouseListener(new DebuggingHoverListener(obj, debugValue));
-
-        return panel;
-    }
-
-    public static JPanel create(GraphicLayer layer) {
-        JPanel panel = new JPanel();
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-        var vGroup = layout.createSequentialGroup();
-        var hGroup = layout.createParallelGroup();
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addGap(10)
-                .addGroup(hGroup)
-                .addGap(10));
-        vGroup.addGap(5);
-        layout.setVerticalGroup(vGroup);
-
-        var layerNamePanel = create("layer", layer.name, null, 0);
-        vGroup.addComponent(layerNamePanel);
-        hGroup.addComponent(layerNamePanel);
-        for (var gObj : layer.objects) {
-            var objPanel = create(gObj);
-            JPopupMenu popupMenu = new JPopupMenu();
-            var deleteItem = popupMenu.add("Delete");
-            deleteItem.addActionListener(e -> {
-                layer.remove(gObj);
-                GlobalState.needsUpdateEditor = true;
-            });
-            objPanel.setComponentPopupMenu(popupMenu);
-
-            vGroup.addPreferredGap(ComponentPlacement.RELATED);
-            vGroup.addComponent(objPanel);
-            hGroup.addComponent(objPanel);
-        }
-
-        JComboBox<String> comboBox = new JComboBox<String>();
-        comboBox.addItem("GraphicLine");
-        comboBox.addItem("GraphicPolyline");
-        comboBox.addItem("GraphicPolygon");
-        comboBox.addItem("GraphicBezierCurve");
-        comboBox.addItem("GraphicPolyBezier");
-        comboBox.addItem("GraphicCircle");
-        comboBox.addItem("GraphicFloodFill");
-        comboBox.addItem("GraphicImage");
-
-        comboBox.setSelectedIndex(GlobalState.lastSelectedNewObjI);
-
-        JButton addButton = new JButton("+");
-        addButton.addActionListener(e -> {
-            GlobalState.lastSelectedNewObjI = comboBox.getSelectedIndex();
-            Predicate<? super GraphicObject> pred;
-            GraphicObject defaultObj;
-            switch ((String) comboBox.getSelectedItem()) {
-                case "GraphicCircle":
-                    pred = obj -> obj instanceof GraphicCircle;
-                    defaultObj = new GraphicCircle("#000000", 1, new Point(0, 0), 50);
-                    break;
-                case "GraphicImage":
-                    pred = obj -> obj instanceof GraphicImage;
-                    defaultObj = new GraphicImage("image.png", new Point(0, 0), new Dimension(50, 50), 1.0);
-                    break;
-                default:
-                    return;
-            }
-
-            GlobalState.needsUpdateEditor = true;
-
-            var streamResult = layer.objects.stream().filter(pred).reduce((a, b) -> b);
-            if (!streamResult.isPresent()) {
-                layer.objects.add(defaultObj);
-                return;
-            }
-            switch ((String) comboBox.getSelectedItem()) {
-                case "GraphicCircle": {
-                    var result = (GraphicCircle) streamResult.get().copy();
-                    result.center.translate(10, 10);
-                    layer.add(result);
-                    break;
-                }
-                case "GraphicImage": {
-                    var result = (GraphicImage) streamResult.get().copy();
-                    result.origin.translate(10, 10);
-                    layer.add(result);
-                    break;
-                }
-            }
-        });
-
-        vGroup.addPreferredGap(ComponentPlacement.RELATED);
-        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER, false)
-                .addComponent(comboBox)
-                .addComponent(addButton));
-        hGroup.addGroup(layout.createSequentialGroup()
-                .addComponent(comboBox)
-                .addComponent(addButton));
-        return panel;
-    }
-
-    public static JPanel create(GraphicObject object) {
-        if (object instanceof GraphicPath2D) {
-            return create((GraphicPath2D) object);
-        } else if (object instanceof GraphicCircle) {
-            return create((GraphicCircle) object);
-        } else if (object instanceof GraphicImage) {
-            return create((GraphicImage) object);
-        } else {
-            JPanel jPanel = new JPanel();
-            JLabel label = new JLabel("⚠️\ufe0f " + object.getClass().getSimpleName());
-            jPanel.add(label);
-            return jPanel;
-        }
-    }
-
-    static void p2DAddActionListeners(JMenuItem insertLineItem, JMenuItem insertBezierItem, JMenuItem deleteItem,
-            GraphicPath2D p2d, Path2DData data, int dataIndex) {
-        insertLineItem.addActionListener(e -> {
-            Point pRef;
-            if (dataIndex == 0) {
-                pRef = p2d.p1;
-            } else {
-                pRef = p2d.data.get(dataIndex - 1).lastPoint();
-            }
-            var newData = new Path2DLine(new Point(pRef.x + 20, pRef.y + 20));
-            p2d.data.add(dataIndex, newData);
-            p2d.changed = true;
-            GlobalState.needsUpdateEditor = true;
-        });
-        insertBezierItem.addActionListener(e -> {
-            Point pRef;
-            if (dataIndex == 0) {
-                pRef = p2d.p1;
-            } else {
-                pRef = p2d.data.get(dataIndex - 1).lastPoint();
-            }
-            var newData = new Path2DBezier(new Point((pRef.x), (pRef.y + 20)),
-                    new Point((pRef.x + 20), (pRef.y)),
-                    new Point((pRef.x + 20), (pRef.y + 20)));
-            p2d.data.add(dataIndex, newData);
-            p2d.changed = true;
-            GlobalState.needsUpdateEditor = true;
-        });
-        deleteItem.addActionListener(e -> {
-            p2d.data.remove(data);
-            p2d.changed = true;
-            GlobalState.needsUpdateEditor = true;
-        });
-    }
-
-    public static JPanel create(Path2DLine data, GraphicPath2D p2d, int dataIndex, int debuggingStartI) {
-        JPanel panel = new JPanel();
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        char pointLetter = (char) (97 + (dataIndex + 16) % 26);
-
-        var pPanel = create(pointLetter + "", data.pNext, p2d, debuggingStartI);
-
-        var popupMenu = new JPopupMenu();
-        var insertLineItem = popupMenu.add("Insert Line");
-        var insertBezierItem = popupMenu.add("Insert Bezier");
-        var deleteItem = popupMenu.add("Delete");
-        p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d, data, dataIndex);
-        pPanel.setComponentPopupMenu(popupMenu);
-
-        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(pPanel));
-        layout.setVerticalGroup(layout.createSequentialGroup()
-                .addComponent(pPanel));
-
-        panel.addMouseListener(new DebuggingHoverListener(p2d, 0));
-        pPanel.addMouseListener(new DebuggingHoverListener(p2d, debuggingStartI));
-
-        return panel;
-    }
-
-    public static JPanel create(Path2DBezier data, GraphicPath2D p2d, int dataIndex, int debuggingStartI) {
-        JPanel panel = new JPanel();
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        char pointLetter = (char) (97 + (dataIndex + 16) % 26);
-
-        var hGroup = layout.createParallelGroup(Alignment.LEADING);
-        var vGroup = layout.createSequentialGroup();
-        layout.setHorizontalGroup(hGroup);
-        layout.setVerticalGroup(vGroup);
-
-        var popupMenu = new JPopupMenu();
-        var insertLineItem = popupMenu.add("Insert Line");
-        var insertBezierItem = popupMenu.add("Insert Bezier");
-        var deleteItem = popupMenu.add("Delete");
-        p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d, data, dataIndex);
-
-        var p1Panel = create(pointLetter + "2", data.pNext, p2d, debuggingStartI);
-        hGroup.addComponent(p1Panel);
-        vGroup.addComponent(p1Panel);
-        p1Panel.addMouseListener(new DebuggingHoverListener(p2d, debuggingStartI));
-        p1Panel.setComponentPopupMenu(popupMenu);
-
-        for (int i = 0; i < data.morePoints.size(); i++) {
-            var pointPanel = create(pointLetter + "" + (i + 3), data.morePoints.get(i), p2d,
-                    i + debuggingStartI + 1);
-            hGroup.addComponent(pointPanel);
-            vGroup.addGap(2);
-            vGroup.addComponent(pointPanel);
-            pointPanel.addMouseListener(new DebuggingHoverListener(p2d, i + debuggingStartI + 1));
-            pointPanel.setComponentPopupMenu(popupMenu);
-        }
-
-        JButton addButton = new JButton("+");
-        JButton minusButton = new JButton("-");
-        addButton.addActionListener(e -> {
-            var newCp = new Point(data.morePoints.get(data.morePoints.size() - 2).x + 20,
-                    data.morePoints.get(data.morePoints.size() - 2).y + 20);
-            var newPp = new Point(data.morePoints.get(data.morePoints.size() - 1).x + 20,
-                    data.morePoints.get(data.morePoints.size() - 1).y + 20);
-            data.morePoints.add(newCp);
-            data.morePoints.add(newPp);
-            p2d.changed = true;
-            GlobalState.needsUpdateEditor = true;
-        });
-        minusButton.addActionListener(e -> {
-            if (data.morePoints.size() > 2) {
-                data.morePoints.remove(data.morePoints.size() - 1);
-                data.morePoints.remove(data.morePoints.size() - 1);
-                p2d.changed = true;
-                GlobalState.needsUpdateEditor = true;
-            }
-        });
-        minusButton.setEnabled(data.morePoints.size() > 2);
-
-        hGroup.addGroup(layout.createSequentialGroup()
-                .addComponent(addButton)
-                .addComponent(minusButton));
-        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER)
-                .addComponent(addButton)
-                .addComponent(minusButton));
-
-        panel.addMouseListener(new DebuggingHoverListener(p2d, 0));
-
-        return panel;
-    }
-
-    public static JPanel create(Path2DData p2d, GraphicPath2D obj, int dataIndex, int debugValue) {
-        if (p2d instanceof Path2DLine) {
-            return create((Path2DLine) p2d, obj, dataIndex, debugValue);
-        } else if (p2d instanceof Path2DBezier) {
-            return create((Path2DBezier) p2d, obj, dataIndex, debugValue);
-        } else {
-            JPanel jPanel = new JPanel();
-            JLabel label = new JLabel("⚠️\ufe0f " + p2d.getClass().getSimpleName());
-            jPanel.add(label);
-            return jPanel;
-        }
-    }
-
-    public static JPanel create(GraphicPath2D path2d) {
-        JPanel panel = new JPanel();
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        JLabel label = new JLabel("GraphicPath2D");
-        var strokePanel = create("stroke", path2d.stroke, path2d, 0);
-        var strokeColorPanel = create("color", path2d.strokeColor, path2d, 0);
-        var thicknessPanel = create("thickness", path2d.thickness, 1, 15, 1, path2d, 0);
-        var fillPanel = create("fill", path2d.fill, path2d, 0);
-        var fillColorPanel = create("color", path2d.fillColor, path2d, 0);
-        var closedPanel = create("closed", path2d.closed, path2d, 0);
-        var p1Panel = create("p", path2d.p1, path2d, 1);
-
-        var hGroup = layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(label)
-                .addComponent(strokePanel)
-                .addComponent(strokeColorPanel)
-                .addComponent(thicknessPanel)
-                .addComponent(fillPanel)
-                .addComponent(fillColorPanel)
-                .addComponent(closedPanel)
-                .addComponent(p1Panel);
-        var vGroup = layout.createSequentialGroup()
-                .addComponent(label)
-                .addComponent(strokePanel)
-                .addGap(2)
-                .addComponent(strokeColorPanel)
-                .addGap(2)
-                .addComponent(thicknessPanel)
-                .addGap(2)
-                .addComponent(fillPanel)
-                .addGap(2)
-                .addComponent(fillColorPanel)
-                .addGap(2)
-                .addComponent(closedPanel)
-                .addGap(2)
-                .addComponent(p1Panel);
-
-        layout.setHorizontalGroup(hGroup);
-        layout.setVerticalGroup(vGroup);
-
-        int dataIndex = 0;
-        int debuggingStartI = 2;
-        for (var v : path2d.data) {
-            var dataPanel = create(v, path2d, dataIndex, debuggingStartI);
-            hGroup.addComponent(dataPanel);
-            vGroup.addGap(2);
-            vGroup.addComponent(dataPanel);
-            dataIndex++;
-            debuggingStartI += v.size();
-        }
-
-        JButton addLineButton = new JButton("++ Line");
-        JButton addBezierButton = new JButton("++ Bezier");
-        JButton minusButton = new JButton("--");
-        addLineButton.addActionListener(e -> {
-            var lastPoint = path2d.lastPoint();
-            path2d.data.add(new Path2DLine(new Point(lastPoint.x + 20, lastPoint.y + 20)));
-            path2d.changed = true;
-            GlobalState.needsUpdateEditor = true;
-        });
-        addBezierButton.addActionListener(e -> {
-            var lastPoint = path2d.lastPoint();
-            path2d.data.add(new Path2DBezier(new Point(lastPoint.x, lastPoint.y + 20),
-                    new Point(lastPoint.x + 20, lastPoint.y), new Point(lastPoint.x + 20, lastPoint.y + 20)));
-            path2d.changed = true;
-            GlobalState.needsUpdateEditor = true;
-        });
-        minusButton.addActionListener(e -> {
-            if (path2d.data.size() > 0) {
-                path2d.data.remove(path2d.data.size() - 1);
-                path2d.changed = true;
-                GlobalState.needsUpdateEditor = true;
-            }
-        });
-        minusButton.setEnabled(path2d.data.size() > 0);
-
-        hGroup.addGroup(layout.createSequentialGroup()
-                .addComponent(addLineButton)
-                .addComponent(addBezierButton)
-                .addComponent(minusButton));
-        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER)
-                .addComponent(addLineButton)
-                .addComponent(addBezierButton)
-                .addComponent(minusButton));
-
-        panel.addMouseListener(new DebuggingHoverListener(path2d, 0));
-
-        return panel;
-    }
-
-    public static JPanel create(GraphicCircle circle) {
-        JPanel panel = new JPanel();
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        JLabel label = new JLabel("GraphicCircle");
-        var colorPanel = create("color", circle.color, circle, 0);
-        var thicknessPanel = create("thickness", circle.thickness, 1, 15, 1, circle, 0);
-        var pointPanel = create("center", circle.center, circle, 1);
-        var radiusPanel = create("radius", circle.radius, 0, 50, 1, circle, 2);
-
-        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(label)
-                .addComponent(colorPanel)
-                .addComponent(thicknessPanel)
-                .addComponent(pointPanel)
-                .addComponent(radiusPanel));
-        layout.setVerticalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addComponent(colorPanel)
-                .addGap(2)
-                .addComponent(thicknessPanel)
-                .addGap(2)
-                .addComponent(pointPanel)
-                .addGap(2)
-                .addComponent(radiusPanel));
-
-        panel.addMouseListener(new DebuggingHoverListener(circle, 0));
-        pointPanel.addMouseListener(new DebuggingHoverListener(circle, 1));
-        radiusPanel.addMouseListener(new DebuggingHoverListener(circle, 2));
-
-        return panel;
-    }
-
-    public static JPanel create(GraphicImage image) {
-        JPanel panel = new JPanel();
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
-
-        JLabel label = new JLabel("GraphicImage");
-
-        var filePathPanel = create("file path", image.filePath, image, 0);
-
-        var originPanel = create("origin", image.origin, image, 1);
-        var sizePanel = create("size", image.size, image, 2);
-
-        var opacityPanel = create("opacity", image.opacity, 0.0, 1.0, 0.01, image, 0);
-
-        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(label)
-                .addComponent(filePathPanel)
-                .addComponent(originPanel)
-                .addComponent(sizePanel)
-                .addComponent(opacityPanel));
-        layout.setVerticalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addComponent(filePathPanel)
-                .addGap(2)
-                .addComponent(originPanel)
-                .addGap(2)
-                .addComponent(sizePanel)
-                .addGap(2)
-                .addComponent(opacityPanel));
-
-        panel.addMouseListener(new DebuggingHoverListener(image, 0));
-        originPanel.addMouseListener(new DebuggingHoverListener(image, 1));
-        sizePanel.addMouseListener(new DebuggingHoverListener(image, 2));
-
-        return panel;
-    }
-
-    public static void recurseAddBorders(Container c) {
-        for (var v : c.getComponents()) {
-            try {
-                ((JComponent) v).setBorder(BorderFactory.createLineBorder(Color.RED));
-            } catch (ClassCastException e) {
-            }
-            try {
-                recurseAddBorders((Container) v);
-            } catch (ClassCastException e) {
-            }
-        }
-    }
-}
+// class EditingPanelFactory {
+
+// private EditingPanelFactory() {
+// }
+
+// private static void addPannerKeybinds(JComponent comp) {
+// var inputMap = comp.getInputMap();
+// var actionMap = comp.getActionMap();
+// inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), "slow
+// pressed");
+// inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "slow
+// released");
+
+// inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, false), "debug
+// pressed");
+// inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "debug
+// released");
+
+// actionMap.put("slow pressed", new AbstractAction() {
+// @Override
+// public void actionPerformed(ActionEvent e) {
+// GlobalState.pannerPanelSlow = true;
+// }
+// });
+
+// actionMap.put("slow released", new AbstractAction() {
+// @Override
+// public void actionPerformed(ActionEvent e) {
+// GlobalState.pannerPanelSlow = false;
+// }
+// });
+
+// actionMap.put("debug pressed", new AbstractAction() {
+// @Override
+// public void actionPerformed(ActionEvent e) {
+// GlobalState.pannerShowDebugging = true;
+// }
+// });
+
+// actionMap.put("debug released", new AbstractAction() {
+// @Override
+// public void actionPerformed(ActionEvent e) {
+// GlobalState.pannerShowDebugging = false;
+// }
+// });
+
+// }
+
+// public static JPanel create(String labelText, Point point, GraphicObject obj,
+// int debugValue) {
+// JPanel panel = new JPanel();
+// JLabel label = new JLabel(labelText);
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// SpinnerNumberModel xModel = new SpinnerNumberModel();
+// xModel.setValue(point.x);
+// SpinnerNumberModel yModel = new SpinnerNumberModel();
+// yModel.setValue(point.y);
+// JSpinner xSpinner = new JSpinner(xModel);
+// xSpinner.addChangeListener(e -> {
+// point.x = (int) xSpinner.getValue();
+// });
+// JSpinner ySpinner = new JSpinner(yModel);
+// ySpinner.addChangeListener(e -> {
+// point.y = (int) ySpinner.getValue();
+// });
+
+// JPanel pannerPanel = new JPanel();
+// pannerPanel.setPreferredSize(new Dimension(20, 20));
+// pannerPanel.setMaximumSize(new Dimension(20, 20));
+// pannerPanel.setMinimumSize(new Dimension(20, 20));
+// pannerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+// pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+// pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
+// debugValue));
+// pannerPanel.setFocusable(true);
+// addPannerKeybinds(pannerPanel);
+
+// JPanel pannerXPanel = new JPanel();
+// pannerXPanel.setPreferredSize(new Dimension(20, 8));
+// pannerXPanel.setMaximumSize(new Dimension(20, 8));
+// pannerXPanel.setMinimumSize(new Dimension(20, 8));
+// pannerXPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+// pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
+// pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
+// debugValue));
+// pannerXPanel.setFocusable(true);
+// addPannerKeybinds(pannerXPanel);
+
+// JPanel pannerYPanel = new JPanel();
+// pannerYPanel.setPreferredSize(new Dimension(8, 20));
+// pannerYPanel.setMaximumSize(new Dimension(8, 20));
+// pannerYPanel.setMinimumSize(new Dimension(8, 20));
+// pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+// pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
+// pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
+// debugValue));
+// pannerYPanel.setFocusable(true);
+// addPannerKeybinds(pannerYPanel);
+
+// var xListener = new PannerPanelXListener(xSpinner, point);
+// var yListener = new PannerPanelYListener(ySpinner, point);
+// pannerPanel.addMouseListener(xListener);
+// pannerPanel.addMouseListener(yListener);
+// pannerPanel.addMouseMotionListener(xListener);
+// pannerPanel.addMouseMotionListener(yListener);
+// pannerXPanel.addMouseListener(xListener);
+// pannerXPanel.addMouseMotionListener(xListener);
+// pannerYPanel.addMouseListener(yListener);
+// pannerYPanel.addMouseMotionListener(yListener);
+
+// layout.setHorizontalGroup(layout.createSequentialGroup()
+// .addComponent(label)
+// .addPreferredGap(ComponentPlacement.RELATED)
+// .addComponent(xSpinner)
+// .addComponent(ySpinner)
+// .addPreferredGap(ComponentPlacement.RELATED)
+// .addComponent(pannerYPanel)
+// .addGroup(layout.createParallelGroup(Alignment.CENTER)
+// .addComponent(pannerPanel)
+// .addComponent(pannerXPanel)));
+// layout.setVerticalGroup(
+// layout.createSequentialGroup()
+// .addComponent(pannerXPanel)
+// .addGroup(layout.createParallelGroup(Alignment.BASELINE)
+// .addComponent(label)
+// .addComponent(xSpinner)
+// .addComponent(ySpinner)
+// .addComponent(pannerYPanel)
+// .addComponent(pannerPanel)));
+
+// return panel;
+// }
+
+// public static JPanel create(String labelText, Dimension dim, GraphicObject
+// obj, int debugValue) {
+// JPanel panel = new JPanel();
+// JLabel label = new JLabel(labelText);
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// SpinnerNumberModel wModel = new SpinnerNumberModel();
+// wModel.setValue(dim.width);
+// SpinnerNumberModel hModel = new SpinnerNumberModel();
+// hModel.setValue(dim.height);
+// JSpinner wSpinner = new JSpinner(wModel);
+
+// wSpinner.addChangeListener(e -> {
+// dim.width = (int) wSpinner.getValue();
+// });
+
+// JSpinner hSpinner = new JSpinner(hModel);
+// hSpinner.addChangeListener(e -> {
+// dim.height = (int) hSpinner.getValue();
+// });
+
+// JPanel pannerPanel = new JPanel();
+// pannerPanel.setPreferredSize(new Dimension(20, 20));
+// pannerPanel.setMaximumSize(new Dimension(20, 20));
+// pannerPanel.setMinimumSize(new Dimension(20, 20));
+// pannerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+// pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
+// pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
+// debugValue));
+// addPannerKeybinds(pannerPanel);
+
+// JPanel pannerXPanel = new JPanel();
+// pannerXPanel.setPreferredSize(new Dimension(20, 8));
+// pannerXPanel.setMaximumSize(new Dimension(20, 8));
+// pannerXPanel.setMinimumSize(new Dimension(20, 8));
+// pannerXPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+// pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
+// pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
+// debugValue));
+// addPannerKeybinds(pannerXPanel);
+
+// JPanel pannerYPanel = new JPanel();
+// pannerYPanel.setPreferredSize(new Dimension(8, 20));
+// pannerYPanel.setMaximumSize(new Dimension(8, 20));
+// pannerYPanel.setMinimumSize(new Dimension(8, 20));
+// pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+// pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
+// pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
+// debugValue));
+// addPannerKeybinds(pannerYPanel);
+
+// var xListener = new PannerPanelWListener(wSpinner, dim);
+// var yListener = new PannerPanelHListener(hSpinner, dim);
+// pannerPanel.addMouseListener(xListener);
+// pannerPanel.addMouseListener(yListener);
+// pannerPanel.addMouseMotionListener(xListener);
+// pannerPanel.addMouseMotionListener(yListener);
+// pannerXPanel.addMouseListener(xListener);
+// pannerXPanel.addMouseMotionListener(xListener);
+// pannerYPanel.addMouseListener(yListener);
+// pannerYPanel.addMouseMotionListener(yListener);
+
+// layout.setHorizontalGroup(layout.createSequentialGroup()
+// .addComponent(label)
+// .addPreferredGap(ComponentPlacement.RELATED)
+// .addComponent(wSpinner)
+// .addComponent(hSpinner)
+// .addPreferredGap(ComponentPlacement.RELATED)
+// .addComponent(pannerYPanel)
+// .addGroup(layout.createParallelGroup(Alignment.CENTER)
+// .addComponent(pannerPanel)
+// .addComponent(pannerXPanel)));
+// layout.setVerticalGroup(
+// layout.createSequentialGroup()
+// .addComponent(pannerXPanel)
+// .addGroup(layout.createParallelGroup(Alignment.BASELINE)
+// .addComponent(label)
+// .addComponent(wSpinner)
+// .addComponent(hSpinner)
+// .addComponent(pannerYPanel)
+// .addComponent(pannerPanel)));
+
+// return panel;
+// }
+
+// public static JPanel create(String labelText, MutableString str,
+// GraphicObject obj, int debugValue) {
+// JPanel panel = new JPanel();
+// JLabel label = new JLabel(labelText);
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// JTextField textField = new JTextField(str.value);
+// if (obj == null) {
+// textField.addActionListener(e -> {
+// str.value = textField.getText();
+// GlobalState.needsUpdateLayers = true;
+// });
+// } else {
+// textField.addActionListener(e -> {
+// str.value = textField.getText();
+// });
+// }
+
+// layout.setHorizontalGroup(layout.createSequentialGroup()
+// .addComponent(label)
+// .addPreferredGap(ComponentPlacement.RELATED)
+// .addComponent(textField));
+// layout.setVerticalGroup(
+// layout.createParallelGroup(Alignment.BASELINE)
+// .addComponent(label)
+// .addComponent(textField));
+
+// return panel;
+// }
+
+// public static JPanel create(String labelText, MutableDouble doub, double min,
+// double max, double stepSize,
+// Debuggable obj, int debugValue) {
+// JPanel panel = new JPanel();
+// JLabel label = new JLabel(labelText);
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// int sliderSteps = (int) ((max - min) / stepSize);
+// JSlider slider = new JSlider(0, sliderSteps, (int) ((doub.value - min) /
+// stepSize));
+// JSpinner spinner = new JSpinner(new SpinnerNumberModel(doub.value, min, max,
+// stepSize));
+// spinner.addChangeListener(e -> {
+// doub.value = (double) spinner.getValue();
+// slider.setValue((int) ((doub.value - min) / stepSize));
+// });
+// slider.addChangeListener(e -> {
+// spinner.setValue(slider.getValue() * stepSize + min);
+// });
+
+// layout.setHorizontalGroup(layout.createSequentialGroup()
+// .addComponent(label)
+// .addPreferredGap(ComponentPlacement.RELATED)
+// .addComponent(slider)
+// .addComponent(spinner));
+// layout.setVerticalGroup(
+// layout.createParallelGroup(Alignment.BASELINE)
+// .addComponent(label)
+// .addComponent(slider)
+// .addComponent(spinner));
+
+// slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+
+// return panel;
+// }
+
+// public static JPanel create(String labelText, MutableInt integer, int min,
+// int max, int stepSize,
+// Debuggable obj,
+// int debugValue) {
+// JPanel panel = new JPanel();
+// JLabel label = new JLabel(labelText);
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// int sliderSteps = (max - min) / stepSize;
+// JSlider slider = new JSlider(0, sliderSteps, (integer.value - min) /
+// stepSize);
+// JSpinner spinner = new JSpinner(new SpinnerNumberModel(integer.value, min,
+// Integer.MAX_VALUE, stepSize));
+// ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(2);
+// spinner.addChangeListener(e -> {
+// integer.value = (int) spinner.getValue();
+// slider.setValue((integer.value - min) / stepSize);
+// });
+// slider.addChangeListener(e -> {
+// spinner.setValue(slider.getValue() * stepSize + min);
+// });
+
+// layout.setHorizontalGroup(layout.createSequentialGroup()
+// .addComponent(label)
+// .addPreferredGap(ComponentPlacement.RELATED)
+// .addComponent(slider)
+// .addComponent(spinner));
+// layout.setVerticalGroup(
+// layout.createParallelGroup(Alignment.BASELINE)
+// .addComponent(label)
+// .addComponent(slider)
+// .addComponent(spinner));
+
+// slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+
+// return panel;
+// }
+
+// public static JPanel create(String labelText, MutableColor color, Debuggable
+// obj, int debugValue) {
+// JPanel panel = new JPanel();
+// JLabel label = new JLabel(labelText);
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// ColorButton button = new ColorButton();
+// button.setColor(color.value);
+
+// JTextField textField = new JTextField(ColorHexer.encode(color.value));
+
+// button.addActionListener(e -> {
+// Color newColor = JColorChooser.showDialog(null, "Choose a color",
+// color.value);
+// if (newColor != null) {
+// color.value = newColor;
+// button.setColor(color.value);
+// textField.setText(ColorHexer.encode(color.value));
+// }
+// });
+
+// Runnable newColorFunction = () -> {
+// var parsedColor = ColorHexer.decodeOptional(textField.getText());
+// if (parsedColor.isPresent()) {
+// color.value = parsedColor.get();
+// button.setColor(parsedColor.get());
+// } else {
+// button.setInvalid();
+// }
+// };
+// textField.getDocument().addDocumentListener(new DocumentListener() {
+// @Override
+// public void insertUpdate(DocumentEvent e) {
+// newColorFunction.run();
+// }
+
+// @Override
+// public void removeUpdate(DocumentEvent e) {
+// newColorFunction.run();
+// }
+
+// @Override
+// public void changedUpdate(DocumentEvent e) {
+// newColorFunction.run();
+// }
+// });
+// textField.addActionListener(e -> {
+// var parsedColor = ColorHexer.decodeOptional(textField.getText());
+// if (parsedColor.isPresent()) {
+// button.setColor(color.value);
+// } else {
+// button.setInvalid();
+// }
+// color.value = parsedColor.orElse(Color.black);
+// });
+
+// layout.setHorizontalGroup(layout.createSequentialGroup()
+// .addComponent(label)
+// .addPreferredGap(ComponentPlacement.RELATED)
+// .addComponent(button)
+// .addPreferredGap(ComponentPlacement.RELATED)
+// .addComponent(textField));
+
+// layout.setVerticalGroup(
+// layout.createParallelGroup(Alignment.BASELINE)
+// .addComponent(label)
+// .addComponent(button)
+// .addComponent(textField));
+
+// button.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+
+// return panel;
+// }
+
+// public static JPanel create(String labelText, MutableBoolean bool, Debuggable
+// obj, int debugValue) {
+// JPanel panel = new JPanel();
+// JLabel label = new JLabel(labelText);
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// JCheckBox checkBox = new JCheckBox();
+// checkBox.setSelected(bool.value);
+// checkBox.addActionListener(e -> {
+// bool.value = checkBox.isSelected();
+// });
+
+// layout.setHorizontalGroup(layout.createSequentialGroup()
+// .addComponent(label)
+// .addPreferredGap(ComponentPlacement.RELATED)
+// .addComponent(checkBox));
+// layout.setVerticalGroup(
+// layout.createParallelGroup(Alignment.BASELINE)
+// .addComponent(label)
+// .addComponent(checkBox));
+
+// checkBox.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+
+// return panel;
+// }
+
+// public static JPanel create(GraphicLayer layer) {
+// JPanel panel = new JPanel();
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+// var vGroup = layout.createSequentialGroup();
+// var hGroup = layout.createParallelGroup();
+// layout.setHorizontalGroup(layout.createSequentialGroup()
+// .addGap(10)
+// .addGroup(hGroup)
+// .addGap(10));
+// vGroup.addGap(5);
+// layout.setVerticalGroup(vGroup);
+
+// var layerNamePanel = create("layer", layer.name, null, 0);
+// vGroup.addComponent(layerNamePanel);
+// hGroup.addComponent(layerNamePanel);
+// for (var gObj : layer.objects) {
+// var objPanel = create(gObj);
+// JPopupMenu popupMenu = new JPopupMenu();
+// var deleteItem = popupMenu.add("Delete");
+// deleteItem.addActionListener(e -> {
+// layer.remove(gObj);
+// GlobalState.needsUpdateEditor = true;
+// });
+// objPanel.setComponentPopupMenu(popupMenu);
+
+// vGroup.addPreferredGap(ComponentPlacement.RELATED);
+// vGroup.addComponent(objPanel);
+// hGroup.addComponent(objPanel);
+// }
+
+// JComboBox<String> comboBox = new JComboBox<String>();
+// comboBox.addItem("GraphicLine");
+// comboBox.addItem("GraphicPolyline");
+// comboBox.addItem("GraphicPolygon");
+// comboBox.addItem("GraphicBezierCurve");
+// comboBox.addItem("GraphicPolyBezier");
+// comboBox.addItem("GraphicCircle");
+// comboBox.addItem("GraphicFloodFill");
+// comboBox.addItem("GraphicImage");
+
+// comboBox.setSelectedIndex(GlobalState.lastSelectedNewObjI);
+
+// JButton addButton = new JButton("+");
+// addButton.addActionListener(e -> {
+// GlobalState.lastSelectedNewObjI = comboBox.getSelectedIndex();
+// Predicate<? super GraphicObject> pred;
+// GraphicObject defaultObj;
+// switch ((String) comboBox.getSelectedItem()) {
+// case "GraphicCircle":
+// pred = obj -> obj instanceof GraphicCircle;
+// defaultObj = new GraphicCircle("#000000", 1, new Point(0, 0), 50);
+// break;
+// case "GraphicImage":
+// pred = obj -> obj instanceof GraphicImage;
+// defaultObj = new GraphicImage("image.png", new Point(0, 0), new Dimension(50,
+// 50), 1.0);
+// break;
+// default:
+// return;
+// }
+
+// GlobalState.needsUpdateEditor = true;
+
+// var streamResult = layer.objects.stream().filter(pred).reduce((a, b) -> b);
+// if (!streamResult.isPresent()) {
+// layer.objects.add(defaultObj);
+// return;
+// }
+// switch ((String) comboBox.getSelectedItem()) {
+// case "GraphicCircle": {
+// var result = (GraphicCircle) streamResult.get().copy();
+// result.center.translate(10, 10);
+// layer.add(result);
+// break;
+// }
+// case "GraphicImage": {
+// var result = (GraphicImage) streamResult.get().copy();
+// result.origin.translate(10, 10);
+// layer.add(result);
+// break;
+// }
+// }
+// });
+
+// vGroup.addPreferredGap(ComponentPlacement.RELATED);
+// vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER, false)
+// .addComponent(comboBox)
+// .addComponent(addButton));
+// hGroup.addGroup(layout.createSequentialGroup()
+// .addComponent(comboBox)
+// .addComponent(addButton));
+// return panel;
+// }
+
+// public static JPanel create(GraphicObject object) {
+// if (object instanceof GraphicPath2D) {
+// return create((GraphicPath2D) object);
+// } else if (object instanceof GraphicCircle) {
+// return create((GraphicCircle) object);
+// } else if (object instanceof GraphicImage) {
+// return create((GraphicImage) object);
+// } else {
+// JPanel jPanel = new JPanel();
+// JLabel label = new JLabel("⚠️\ufe0f " + object.getClass().getSimpleName());
+// jPanel.add(label);
+// return jPanel;
+// }
+// }
+
+// static void p2DAddActionListeners(JMenuItem insertLineItem, JMenuItem
+// insertBezierItem, JMenuItem deleteItem,
+// GraphicPath2D p2d, Path2DData data, int dataIndex) {
+// insertLineItem.addActionListener(e -> {
+// Point pRef;
+// if (dataIndex == 0) {
+// pRef = p2d.p1;
+// } else {
+// pRef = p2d.data.get(dataIndex - 1).lastPoint();
+// }
+// var newData = new Path2DLine(new Point(pRef.x + 20, pRef.y + 20));
+// p2d.data.add(dataIndex, newData);
+// GlobalState.needsUpdateEditor = true;
+// });
+// insertBezierItem.addActionListener(e -> {
+// Point pRef;
+// if (dataIndex == 0) {
+// pRef = p2d.p1;
+// } else {
+// pRef = p2d.data.get(dataIndex - 1).lastPoint();
+// }
+// var newData = new Path2DBezier(new Point((pRef.x), (pRef.y + 20)),
+// new Point((pRef.x + 20), (pRef.y)),
+// new Point((pRef.x + 20), (pRef.y + 20)));
+// p2d.data.add(dataIndex, newData);
+// GlobalState.needsUpdateEditor = true;
+// });
+// deleteItem.addActionListener(e -> {
+// p2d.data.remove(data);
+// GlobalState.needsUpdateEditor = true;
+// });
+// }
+
+// public static JPanel create(Path2DLine data, GraphicPath2D p2d, int
+// dataIndex, int debuggingStartI) {
+// JPanel panel = new JPanel();
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// char pointLetter = (char) (97 + (dataIndex + 16) % 26);
+
+// var pPanel = create(pointLetter + "", data.pNext, p2d, debuggingStartI);
+
+// var popupMenu = new JPopupMenu();
+// var insertLineItem = popupMenu.add("Insert Line");
+// var insertBezierItem = popupMenu.add("Insert Bezier");
+// var deleteItem = popupMenu.add("Delete");
+// p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d,
+// data, dataIndex);
+// pPanel.setComponentPopupMenu(popupMenu);
+
+// layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
+// .addComponent(pPanel));
+// layout.setVerticalGroup(layout.createSequentialGroup()
+// .addComponent(pPanel));
+
+// panel.addMouseListener(new DebuggingHoverListener(p2d, 0));
+// pPanel.addMouseListener(new DebuggingHoverListener(p2d, debuggingStartI));
+
+// return panel;
+// }
+
+// public static JPanel create(Path2DBezier data, GraphicPath2D p2d, int
+// dataIndex, int debuggingStartI) {
+// JPanel panel = new JPanel();
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// char pointLetter = (char) (97 + (dataIndex + 16) % 26);
+
+// var hGroup = layout.createParallelGroup(Alignment.LEADING);
+// var vGroup = layout.createSequentialGroup();
+// layout.setHorizontalGroup(hGroup);
+// layout.setVerticalGroup(vGroup);
+
+// var popupMenu = new JPopupMenu();
+// var insertLineItem = popupMenu.add("Insert Line");
+// var insertBezierItem = popupMenu.add("Insert Bezier");
+// var deleteItem = popupMenu.add("Delete");
+// p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d,
+// data, dataIndex);
+
+// var p1Panel = create(pointLetter + "2", data.pNext, p2d, debuggingStartI);
+// hGroup.addComponent(p1Panel);
+// vGroup.addComponent(p1Panel);
+// p1Panel.addMouseListener(new DebuggingHoverListener(p2d, debuggingStartI));
+// p1Panel.setComponentPopupMenu(popupMenu);
+
+// for (int i = 0; i < data.morePoints.size(); i++) {
+// var pointPanel = create(pointLetter + "" + (i + 3), data.morePoints.get(i),
+// p2d,
+// i + debuggingStartI + 1);
+// hGroup.addComponent(pointPanel);
+// vGroup.addGap(2);
+// vGroup.addComponent(pointPanel);
+// pointPanel.addMouseListener(new DebuggingHoverListener(p2d, i +
+// debuggingStartI + 1));
+// pointPanel.setComponentPopupMenu(popupMenu);
+// }
+
+// JButton addButton = new JButton("+");
+// JButton minusButton = new JButton("-");
+// addButton.addActionListener(e -> {
+// var newCp = new Point(data.morePoints.get(data.morePoints.size() - 2).x + 20,
+// data.morePoints.get(data.morePoints.size() - 2).y + 20);
+// var newPp = new Point(data.morePoints.get(data.morePoints.size() - 1).x + 20,
+// data.morePoints.get(data.morePoints.size() - 1).y + 20);
+// data.morePoints.add(newCp);
+// data.morePoints.add(newPp);
+// GlobalState.needsUpdateEditor = true;
+// });
+// minusButton.addActionListener(e -> {
+// if (data.morePoints.size() > 2) {
+// data.morePoints.remove(data.morePoints.size() - 1);
+// data.morePoints.remove(data.morePoints.size() - 1);
+// GlobalState.needsUpdateEditor = true;
+// }
+// });
+// minusButton.setEnabled(data.morePoints.size() > 2);
+
+// hGroup.addGroup(layout.createSequentialGroup()
+// .addComponent(addButton)
+// .addComponent(minusButton));
+// vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER)
+// .addComponent(addButton)
+// .addComponent(minusButton));
+
+// panel.addMouseListener(new DebuggingHoverListener(p2d, 0));
+
+// return panel;
+// }
+
+// public static JPanel create(Path2DData p2d, GraphicPath2D obj, int dataIndex,
+// int debugValue) {
+// if (p2d instanceof Path2DLine) {
+// return create((Path2DLine) p2d, obj, dataIndex, debugValue);
+// } else if (p2d instanceof Path2DBezier) {
+// return create((Path2DBezier) p2d, obj, dataIndex, debugValue);
+// } else {
+// JPanel jPanel = new JPanel();
+// JLabel label = new JLabel("⚠️\ufe0f " + p2d.getClass().getSimpleName());
+// jPanel.add(label);
+// return jPanel;
+// }
+// }
+
+// public static JPanel create(GraphicPath2D path2d) {
+// JPanel panel = new JPanel();
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// JLabel label = new JLabel("GraphicPath2D");
+// var strokePanel = create("stroke", path2d.stroke, path2d, 0);
+// var strokeColorPanel = create("color", path2d.strokeColor, path2d, 0);
+// var thicknessPanel = create("thickness", path2d.thickness, 1, 15, 1, path2d,
+// 0);
+// var fillPanel = create("fill", path2d.fill, path2d, 0);
+// var fillColorPanel = create("color", path2d.fillColor, path2d, 0);
+// var closedPanel = create("closed", path2d.closed, path2d, 0);
+// var p1Panel = create("p", path2d.p1, path2d, 1);
+
+// var hGroup = layout.createParallelGroup(Alignment.LEADING)
+// .addComponent(label)
+// .addComponent(strokePanel)
+// .addComponent(strokeColorPanel)
+// .addComponent(thicknessPanel)
+// .addComponent(fillPanel)
+// .addComponent(fillColorPanel)
+// .addComponent(closedPanel)
+// .addComponent(p1Panel);
+// var vGroup = layout.createSequentialGroup()
+// .addComponent(label)
+// .addComponent(strokePanel)
+// .addGap(2)
+// .addComponent(strokeColorPanel)
+// .addGap(2)
+// .addComponent(thicknessPanel)
+// .addGap(2)
+// .addComponent(fillPanel)
+// .addGap(2)
+// .addComponent(fillColorPanel)
+// .addGap(2)
+// .addComponent(closedPanel)
+// .addGap(2)
+// .addComponent(p1Panel);
+
+// layout.setHorizontalGroup(hGroup);
+// layout.setVerticalGroup(vGroup);
+
+// int dataIndex = 0;
+// int debuggingStartI = 2;
+// for (var v : path2d.data) {
+// var dataPanel = create(v, path2d, dataIndex, debuggingStartI);
+// hGroup.addComponent(dataPanel);
+// vGroup.addGap(2);
+// vGroup.addComponent(dataPanel);
+// dataIndex++;
+// debuggingStartI += v.size();
+// }
+
+// JButton addLineButton = new JButton("++ Line");
+// JButton addBezierButton = new JButton("++ Bezier");
+// JButton minusButton = new JButton("--");
+// addLineButton.addActionListener(e -> {
+// var lastPoint = path2d.lastPoint();
+// path2d.data.add(new Path2DLine(new Point(lastPoint.x + 20, lastPoint.y +
+// 20)));
+// GlobalState.needsUpdateEditor = true;
+// });
+// addBezierButton.addActionListener(e -> {
+// var lastPoint = path2d.lastPoint();
+// path2d.data.add(new Path2DBezier(new Point(lastPoint.x, lastPoint.y + 20),
+// new Point(lastPoint.x + 20, lastPoint.y), new Point(lastPoint.x + 20,
+// lastPoint.y + 20)));
+// GlobalState.needsUpdateEditor = true;
+// });
+// minusButton.addActionListener(e -> {
+// if (path2d.data.size() > 0) {
+// path2d.data.remove(path2d.data.size() - 1);
+// GlobalState.needsUpdateEditor = true;
+// }
+// });
+// minusButton.setEnabled(path2d.data.size() > 0);
+
+// hGroup.addGroup(layout.createSequentialGroup()
+// .addComponent(addLineButton)
+// .addComponent(addBezierButton)
+// .addComponent(minusButton));
+// vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER)
+// .addComponent(addLineButton)
+// .addComponent(addBezierButton)
+// .addComponent(minusButton));
+
+// panel.addMouseListener(new DebuggingHoverListener(path2d, 0));
+
+// return panel;
+// }
+
+// public static JPanel create(GraphicCircle circle) {
+// JPanel panel = new JPanel();
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// JLabel label = new JLabel("GraphicCircle");
+// var colorPanel = create("color", circle.color, circle, 0);
+// var thicknessPanel = create("thickness", circle.thickness, 1, 15, 1, circle,
+// 0);
+// var pointPanel = create("center", circle.center, circle, 1);
+// var radiusPanel = create("radius", circle.radius, 0, 50, 1, circle, 2);
+
+// layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
+// .addComponent(label)
+// .addComponent(colorPanel)
+// .addComponent(thicknessPanel)
+// .addComponent(pointPanel)
+// .addComponent(radiusPanel));
+// layout.setVerticalGroup(layout.createSequentialGroup()
+// .addComponent(label)
+// .addComponent(colorPanel)
+// .addGap(2)
+// .addComponent(thicknessPanel)
+// .addGap(2)
+// .addComponent(pointPanel)
+// .addGap(2)
+// .addComponent(radiusPanel));
+
+// panel.addMouseListener(new DebuggingHoverListener(circle, 0));
+// pointPanel.addMouseListener(new DebuggingHoverListener(circle, 1));
+// radiusPanel.addMouseListener(new DebuggingHoverListener(circle, 2));
+
+// return panel;
+// }
+
+// public static JPanel create(GraphicImage image) {
+// JPanel panel = new JPanel();
+// GroupLayout layout = new GroupLayout(panel);
+// panel.setLayout(layout);
+
+// JLabel label = new JLabel("GraphicImage");
+
+// var filePathPanel = create("file path", image.filePath, image, 0);
+
+// var originPanel = create("origin", image.origin, image, 1);
+// var sizePanel = create("size", image.size, image, 2);
+
+// var opacityPanel = create("opacity", image.opacity, 0.0, 1.0, 0.01, image,
+// 0);
+
+// layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
+// .addComponent(label)
+// .addComponent(filePathPanel)
+// .addComponent(originPanel)
+// .addComponent(sizePanel)
+// .addComponent(opacityPanel));
+// layout.setVerticalGroup(layout.createSequentialGroup()
+// .addComponent(label)
+// .addComponent(filePathPanel)
+// .addGap(2)
+// .addComponent(originPanel)
+// .addGap(2)
+// .addComponent(sizePanel)
+// .addGap(2)
+// .addComponent(opacityPanel));
+
+// panel.addMouseListener(new DebuggingHoverListener(image, 0));
+// originPanel.addMouseListener(new DebuggingHoverListener(image, 1));
+// sizePanel.addMouseListener(new DebuggingHoverListener(image, 2));
+
+// return panel;
+// }
+
+// public static void recurseAddBorders(Container c) {
+// for (var v : c.getComponents()) {
+// try {
+// ((JComponent) v).setBorder(BorderFactory.createLineBorder(Color.RED));
+// } catch (ClassCastException e) {
+// }
+// try {
+// recurseAddBorders((Container) v);
+// } catch (ClassCastException e) {
+// }
+// }
+// }
+// }
 
 interface Exportable {
     public String exportString();
@@ -2945,6 +3284,14 @@ class ImEx {
             sb.append("\n");
         }
         return sb.toString();
+    }
+
+    public static String exportString(double d) {
+        return Double.toString(d);
+    }
+
+    public static String exportString(int i) {
+        return Integer.toString(i);
     }
 
     public static String exportString(Color color) {
@@ -3013,126 +3360,136 @@ class ImEx {
         return bool ? "true" : "false";
     }
 
-    public static List<GraphicLayer> importString(String str) {
-        Scanner sc = new Scanner(str);
-        List<GraphicLayer> layers = importLayers(sc);
-        sc.close();
-        return layers;
+    public static String exportCode(double d) {
+        return Double.toString(d);
     }
 
-    public static List<GraphicLayer> importLayers(Scanner sc) {
-        List<GraphicLayer> layers = new ArrayList<>();
-        while (sc.hasNext()) {
-            String type = sc.next();
-            switch (type) {
-                case "LAYER":
-                    layers.add(importLayer(sc));
-                    break;
-            }
-        }
-        return layers;
+    public static String exportCode(int i) {
+        return Integer.toString(i);
     }
 
-    public static GraphicLayer importLayer(Scanner sc) {
-        sc.skip(" ");
-        String layerName = sc.nextLine();
-        if (!sc.hasNext("VISIBLE")) {
-            throw new IllegalArgumentException("Expected VISIBLE");
-        }
-        sc.next();
-        boolean visible = sc.next().equals("T");
-        List<GraphicObject> objects = new ArrayList<>();
-        while (true) {
-            String type = sc.next();
-            if (type.equals("END")) {
-                break;
-            }
-            switch (type) {
-                case "PATH2D":
-                    objects.add(importPath2D(sc));
-                    break;
-                case "CIRCLE":
-                    objects.add(importCircle(sc));
-                    break;
-                case "IMAGE":
-                    objects.add(importImage(sc));
-                    break;
-            }
-        }
-        sc.skip("[ \\n\\r]*");
-        return new GraphicLayer(); // TODO
-    }
+    // public static List<GraphicLayer> importString(String str) {
+    // Scanner sc = new Scanner(str);
+    // List<GraphicLayer> layers = importLayers(sc);
+    // sc.close();
+    // return layers;
+    // }
 
-    public static Path2DLine importPath2DLine(Scanner sc) {
-        Point pNext = importPoint(sc);
-        return new Path2DLine(pNext);
-    }
+    // public static List<GraphicLayer> importLayers(Scanner sc) {
+    // List<GraphicLayer> layers = new ArrayList<>();
+    // while (sc.hasNext()) {
+    // String type = sc.next();
+    // switch (type) {
+    // case "LAYER":
+    // layers.add(importLayer(sc));
+    // break;
+    // }
+    // }
+    // return layers;
+    // }
 
-    public static Path2DBezier importPath2DBezier(Scanner sc) {
-        Point pNext = importPoint(sc);
-        List<Point> morePoints = new ArrayList<>();
-        while (true) {
-            morePoints.add(importPoint(sc));
-            if (sc.hasNext("END")) {
-                sc.next();
-                break;
-            }
-        }
-        return new Path2DBezier(pNext, morePoints);
-    }
+    // public static GraphicLayer importLayer(Scanner sc) {
+    // sc.skip(" ");
+    // String layerName = sc.nextLine();
+    // if (!sc.hasNext("VISIBLE")) {
+    // throw new IllegalArgumentException("Expected VISIBLE");
+    // }
+    // sc.next();
+    // boolean visible = sc.next().equals("T");
+    // List<GraphicObject> objects = new ArrayList<>();
+    // while (true) {
+    // String type = sc.next();
+    // if (type.equals("END")) {
+    // break;
+    // }
+    // switch (type) {
+    // case "PATH2D":
+    // objects.add(importPath2D(sc));
+    // break;
+    // case "CIRCLE":
+    // objects.add(importCircle(sc));
+    // break;
+    // case "IMAGE":
+    // objects.add(importImage(sc));
+    // break;
+    // }
+    // }
+    // sc.skip("[ \\n\\r]*");
+    // return new GraphicLayer(); // TODO
+    // }
 
-    public static GraphicPath2D importPath2D(Scanner sc) {
-        boolean stroke = sc.next().equals("T");
-        String strokeColor = sc.next();
-        int thickness = sc.nextInt();
-        boolean fill = sc.next().equals("T");
-        String fillColor = sc.next();
-        boolean closed = sc.next().equals("T");
-        Point p1 = importPoint(sc);
-        List<Path2DData> data = new ArrayList<>();
-        while (true) {
-            String type = sc.next();
-            if (type.equals("END")) {
-                break;
-            }
-            switch (type) {
-                case "LINE":
-                    data.add(importPath2DLine(sc));
-                    break;
-                case "BEZIER":
-                    data.add(importPath2DBezier(sc));
-                    break;
-            }
-        }
-        return new GraphicPath2D(stroke, strokeColor, thickness, fill, fillColor, closed, p1, data);
-    }
+    // public static Path2DLine importPath2DLine(Scanner sc) {
+    // Point pNext = importPoint(sc);
+    // return null; // TODO
+    // }
 
-    public static GraphicCircle importCircle(Scanner sc) {
-        String hexColor = sc.next();
-        int thickness = sc.nextInt();
-        Point center = importPoint(sc);
-        int radius = sc.nextInt();
-        return new GraphicCircle(hexColor, thickness, center, radius);
-    }
+    // public static Path2DBezier importPath2DBezier(Scanner sc) {
+    // Point pNext = importPoint(sc);
+    // List<Point> morePoints = new ArrayList<>();
+    // while (true) {
+    // morePoints.add(importPoint(sc));
+    // if (sc.hasNext("END")) {
+    // sc.next();
+    // break;
+    // }
+    // }
+    // return null; // TODO
+    // }
 
-    public static Point importPoint(Scanner sc) {
-        String[] coords = sc.next().split(",");
-        return new Point(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
-    }
+    // public static GraphicPath2D importPath2D(Scanner sc) {
+    // boolean stroke = sc.next().equals("T");
+    // String strokeColor = sc.next();
+    // int thickness = sc.nextInt();
+    // boolean fill = sc.next().equals("T");
+    // String fillColor = sc.next();
+    // boolean closed = sc.next().equals("T");
+    // Point p1 = importPoint(sc);
+    // List<Path2DData> data = new ArrayList<>();
+    // while (true) {
+    // String type = sc.next();
+    // if (type.equals("END")) {
+    // break;
+    // }
+    // switch (type) {
+    // case "LINE":
+    // data.add(importPath2DLine(sc));
+    // break;
+    // case "BEZIER":
+    // data.add(importPath2DBezier(sc));
+    // break;
+    // }
+    // }
+    // return new GraphicPath2D(stroke, strokeColor, thickness, fill, fillColor,
+    // closed, p1, data);
+    // }
 
-    public static GraphicImage importImage(Scanner sc) {
-        sc.skip(" ");
-        String filePath = sc.nextLine();
-        Point origin = importPoint(sc);
-        Dimension size = importDimension(sc);
-        double opacity = sc.nextDouble();
-        return new GraphicImage(filePath, origin, size, opacity);
-    }
+    // public static GraphicCircle importCircle(Scanner sc) {
+    // String hexColor = sc.next();
+    // int thickness = sc.nextInt();
+    // Point center = importPoint(sc);
+    // int radius = sc.nextInt();
+    // return new GraphicCircle(hexColor, thickness, center, radius);
+    // }
 
-    public static Dimension importDimension(Scanner sc) {
-        String[] coords = sc.next().split(",");
-        return new Dimension(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
-    }
+    // public static Point importPoint(Scanner sc) {
+    // String[] coords = sc.next().split(",");
+    // return new Point(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
+    // }
+
+    // public static GraphicImage importImage(Scanner sc) {
+    // sc.skip(" ");
+    // String filePath = sc.nextLine();
+    // Point origin = importPoint(sc);
+    // Dimension size = importDimension(sc);
+    // double opacity = sc.nextDouble();
+    // return new GraphicImage(filePath, origin, size, opacity);
+    // }
+
+    // public static Dimension importDimension(Scanner sc) {
+    // String[] coords = sc.next().split(",");
+    // return new Dimension(Integer.parseInt(coords[0]),
+    // Integer.parseInt(coords[1]));
+    // }
 
 }
 
