@@ -439,7 +439,7 @@ enum EasingFunction implements DoubleUnaryOperator {
     }
 
     private static DoubleUnaryOperator constructEaseInOutPower(double power) {
-        return x -> x < 0.5 ? 2 * Math.pow(x, power) : 1 - Math.pow(-2 * x + 2, 2) / 2;
+        return x -> x < 0.5 ? Math.pow(2, power - 1) * Math.pow(x, power) : 1 - Math.pow(-2 * x + 2, 2) / 2;
     }
 
     private final DoubleUnaryOperator easing;
