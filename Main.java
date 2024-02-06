@@ -2926,6 +2926,10 @@ interface Exportable {
 
 class ImEx {
 
+    public static String exportString(Exportable obj) {
+        return obj.exportString();
+    }
+
     public static String exportString(List<GraphicLayer> instructions) {
         StringBuilder sb = new StringBuilder();
         for (GraphicLayer layer : instructions) {
@@ -2957,6 +2961,10 @@ class ImEx {
 
     public static String exportString(boolean bool) {
         return bool ? "T" : "F";
+    }
+
+    public static String exportCode(Exportable obj) {
+        return obj.exportCode();
     }
 
     public static String exportCode(List<GraphicLayer> instructions) {
