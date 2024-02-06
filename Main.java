@@ -439,7 +439,7 @@ enum EasingFunction implements DoubleUnaryOperator {
     }
 
     private static DoubleUnaryOperator constructEaseInOutPower(double power) {
-        return x -> x < 0.5 ? 2 * Math.pow(x, power) : 1 - Math.pow(-2 * x + 2, 2) / 2;
+        return x -> x < 0.5 ? Math.pow(2, power - 1) * Math.pow(x, power) : 1 - Math.pow(-2 * x + 2, 2) / 2;
     }
 
     private final DoubleUnaryOperator easing;
@@ -2934,6 +2934,10 @@ interface Exportable {
 
 class ImEx {
 
+    public static String exportString(Exportable obj) {
+        return obj.exportString();
+    }
+
     public static String exportString(List<GraphicLayer> instructions) {
         StringBuilder sb = new StringBuilder();
         for (GraphicLayer layer : instructions) {
@@ -2965,6 +2969,10 @@ class ImEx {
 
     public static String exportString(boolean bool) {
         return bool ? "T" : "F";
+    }
+
+    public static String exportCode(Exportable obj) {
+        return obj.exportCode();
     }
 
     public static String exportCode(List<GraphicLayer> instructions) {
@@ -3141,23 +3149,27 @@ class GraphicsPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics gOuter) {
         super.paintComponent(gOuter);
+        var size = this.getSize();
         Graphics g = gOuter.create();
-        // g.translate(300, 300);
+        g.translate(size.width / 2, size.height / 2);
         var debugG = (Graphics2D) gOuter.create();
         debugG.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        // debugG.translate(300, 300);
-
-        debugG.setColor(Color.red);
-        // debugG.drawRect(-301, -301, 601, 601);
-        debugG.fillRect(0, 0, 1, 1);
-        debugG.fillRect(599, 589, 1, 1);
-        debugG.fillRect(589, 599, 1, 1);
+        debugG.translate(size.width / 2, size.height / 2);
 
         for (GraphicLayer layer : instructions) {
             if (layer.shown.get(time)) {
                 layer.draw(g, time);
             }
         }
+
+        for (int i = 0; i < 600; i++) {
+            debugG.setColor(i % 2 == 0 ? Color.white : Color.black);
+            debugG.fillRect(-301 + i, -305, 1, 5);
+            debugG.fillRect(-305, -301 + i, 5, 1);
+            debugG.fillRect(300 - i, 300, 1, 5);
+            debugG.fillRect(300, 300 - i, 5, 1);
+        }
+
         if (!GlobalState.pannerPanelDragging || GlobalState.pannerShowDebugging) {
             for (GraphicLayer layer : instructions) {
                 layer.debugDraw(debugG, time);
