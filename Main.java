@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
@@ -127,7 +128,7 @@ public class Main {
         var exx = ImEx.exportString(instructions);
         System.out.println(exx);
 
-        // System.out.println(ImEx.exportString(ImEx.importString(exx)));
+        System.out.println(ImEx.exportString(ImEx.importString(exx)));
         System.out.println(ImEx.exportCode(instructions));
 
         GraphicsPanel panel = new GraphicsPanel(instructions);
@@ -792,7 +793,7 @@ class AnimColor extends AnimatedValue {
     public List<Color> valuepoints = new ArrayList<>();
 
     public AnimColor add(double time, String value, EasingFunction easingToNext) {
-        return add(time, Color.decode(value), easingToNext);
+        return add(time, ColorHexer.decode(value), easingToNext);
     }
 
     public AnimColor add(double time, Color value, EasingFunction easingToNext) {
@@ -1835,8 +1836,8 @@ class GraphicCircle extends GraphicBezierPlotter {
         this(new AnimColor(), new AnimInt(), new AnimPoint(), new AnimInt());
     }
 
-    GraphicCircle(AnimColor hexColor, AnimInt thickness, AnimPoint center, AnimInt radius) {
-        super(hexColor, thickness);
+    GraphicCircle(AnimColor color, AnimInt thickness, AnimPoint center, AnimInt radius) {
+        super(color, thickness);
         this.center = center;
         this.radius = radius;
     }
@@ -3368,128 +3369,235 @@ class ImEx {
         return Integer.toString(i);
     }
 
-    // public static List<GraphicLayer> importString(String str) {
-    // Scanner sc = new Scanner(str);
-    // List<GraphicLayer> layers = importLayers(sc);
-    // sc.close();
-    // return layers;
-    // }
+    public static List<GraphicLayer> importString(String str) {
+        Scanner sc = new Scanner(str);
+        List<GraphicLayer> layers = importLayers(sc);
+        sc.close();
+        return layers;
+    }
 
-    // public static List<GraphicLayer> importLayers(Scanner sc) {
-    // List<GraphicLayer> layers = new ArrayList<>();
-    // while (sc.hasNext()) {
-    // String type = sc.next();
-    // switch (type) {
-    // case "LAYER":
-    // layers.add(importLayer(sc));
-    // break;
-    // }
-    // }
-    // return layers;
-    // }
+    public static boolean importBoolean(Scanner sc) {
+        return sc.next().equals("T");
+    }
 
-    // public static GraphicLayer importLayer(Scanner sc) {
-    // sc.skip(" ");
-    // String layerName = sc.nextLine();
-    // if (!sc.hasNext("VISIBLE")) {
-    // throw new IllegalArgumentException("Expected VISIBLE");
-    // }
-    // sc.next();
-    // boolean visible = sc.next().equals("T");
-    // List<GraphicObject> objects = new ArrayList<>();
-    // while (true) {
-    // String type = sc.next();
-    // if (type.equals("END")) {
-    // break;
-    // }
-    // switch (type) {
-    // case "PATH2D":
-    // objects.add(importPath2D(sc));
-    // break;
-    // case "CIRCLE":
-    // objects.add(importCircle(sc));
-    // break;
-    // case "IMAGE":
-    // objects.add(importImage(sc));
-    // break;
-    // }
-    // }
-    // sc.skip("[ \\n\\r]*");
-    // return new GraphicLayer(); // TODO
-    // }
+    public static String importHexColor(Scanner sc) {
+        return sc.next();
+    }
 
-    // public static Path2DLine importPath2DLine(Scanner sc) {
-    // Point pNext = importPoint(sc);
-    // return null; // TODO
-    // }
+    public static Point importPoint(Scanner sc) {
+        String[] coords = sc.next().split(",");
+        return new Point(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
+    }
 
-    // public static Path2DBezier importPath2DBezier(Scanner sc) {
-    // Point pNext = importPoint(sc);
-    // List<Point> morePoints = new ArrayList<>();
-    // while (true) {
-    // morePoints.add(importPoint(sc));
-    // if (sc.hasNext("END")) {
-    // sc.next();
-    // break;
-    // }
-    // }
-    // return null; // TODO
-    // }
+    public static Dimension importDimension(Scanner sc) {
+        String[] coords = sc.next().split(",");
+        return new Dimension(Integer.parseInt(coords[0]),
+                Integer.parseInt(coords[1]));
+    }
 
-    // public static GraphicPath2D importPath2D(Scanner sc) {
-    // boolean stroke = sc.next().equals("T");
-    // String strokeColor = sc.next();
-    // int thickness = sc.nextInt();
-    // boolean fill = sc.next().equals("T");
-    // String fillColor = sc.next();
-    // boolean closed = sc.next().equals("T");
-    // Point p1 = importPoint(sc);
-    // List<Path2DData> data = new ArrayList<>();
-    // while (true) {
-    // String type = sc.next();
-    // if (type.equals("END")) {
-    // break;
-    // }
-    // switch (type) {
-    // case "LINE":
-    // data.add(importPath2DLine(sc));
-    // break;
-    // case "BEZIER":
-    // data.add(importPath2DBezier(sc));
-    // break;
-    // }
-    // }
-    // return new GraphicPath2D(stroke, strokeColor, thickness, fill, fillColor,
-    // closed, p1, data);
-    // }
+    public static int importInt(Scanner sc) {
+        return sc.nextInt();
+    }
 
-    // public static GraphicCircle importCircle(Scanner sc) {
-    // String hexColor = sc.next();
-    // int thickness = sc.nextInt();
-    // Point center = importPoint(sc);
-    // int radius = sc.nextInt();
-    // return new GraphicCircle(hexColor, thickness, center, radius);
-    // }
+    public static double importDouble(Scanner sc) {
+        return sc.nextDouble();
+    }
 
-    // public static Point importPoint(Scanner sc) {
-    // String[] coords = sc.next().split(",");
-    // return new Point(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
-    // }
+    public static String importUserString(Scanner sc) {
+        sc.skip(" ");
+        return sc.nextLine();
+    }
 
-    // public static GraphicImage importImage(Scanner sc) {
-    // sc.skip(" ");
-    // String filePath = sc.nextLine();
-    // Point origin = importPoint(sc);
-    // Dimension size = importDimension(sc);
-    // double opacity = sc.nextDouble();
-    // return new GraphicImage(filePath, origin, size, opacity);
-    // }
+    public static EasingFunction importEasingFunction(Scanner sc) {
+        return EasingFunction.valueOf(sc.next());
+    }
 
-    // public static Dimension importDimension(Scanner sc) {
-    // String[] coords = sc.next().split(",");
-    // return new Dimension(Integer.parseInt(coords[0]),
-    // Integer.parseInt(coords[1]));
-    // }
+    private static class AnimValueData<T> {
+        public List<AnimatedValue.Timepoint> timepoints;
+        public List<T> values;
+
+        public AnimValueData(List<AnimatedValue.Timepoint> timepoints, List<T> values) {
+            this.timepoints = timepoints;
+            this.values = values;
+        }
+
+    }
+
+    private static <T> AnimValueData<T> importAnimValues(Scanner sc, Function<Scanner, T> importFunction) {
+        List<AnimatedValue.Timepoint> timepoints = new ArrayList<>();
+        List<T> values = new ArrayList<>();
+        while (true) {
+            var time = sc.nextDouble();
+            values.add(importFunction.apply(sc));
+            var easingToNext = importEasingFunction(sc);
+            timepoints.add(new AnimatedValue.Timepoint(time, easingToNext));
+            if (sc.hasNext("END")) {
+                sc.next();
+                break;
+            }
+        }
+        return new AnimValueData<>(timepoints, values);
+    }
+
+    public static AnimBoolean importAnimBoolean(Scanner sc) {
+        var data = importAnimValues(sc, ImEx::importBoolean);
+        var anim = new AnimBoolean();
+        for (int i = 0; i < data.timepoints.size(); i++) {
+            var tp = data.timepoints.get(i);
+            anim.add(tp.time, data.values.get(i), tp.easingToNext);
+        }
+        return anim;
+    }
+
+    public static AnimColor importAnimColor(Scanner sc) {
+        var data = importAnimValues(sc, ImEx::importHexColor);
+        var anim = new AnimColor();
+        for (int i = 0; i < data.timepoints.size(); i++) {
+            var tp = data.timepoints.get(i);
+            anim.add(tp.time, data.values.get(i), tp.easingToNext);
+        }
+        return anim;
+    }
+
+    public static AnimPoint importAnimPoint(Scanner sc) {
+        var data = importAnimValues(sc, ImEx::importPoint);
+        var anim = new AnimPoint();
+        for (int i = 0; i < data.timepoints.size(); i++) {
+            var tp = data.timepoints.get(i);
+            anim.add(tp.time, data.values.get(i), tp.easingToNext);
+        }
+        return anim;
+    }
+
+    public static AnimDimension importAnimDimension(Scanner sc) {
+        var data = importAnimValues(sc, ImEx::importDimension);
+        var anim = new AnimDimension();
+        for (int i = 0; i < data.timepoints.size(); i++) {
+            var tp = data.timepoints.get(i);
+            anim.add(tp.time, data.values.get(i), tp.easingToNext);
+        }
+        return anim;
+    }
+
+    public static AnimDouble importAnimDouble(Scanner sc) {
+        var data = importAnimValues(sc, ImEx::importDouble);
+        var anim = new AnimDouble();
+        for (int i = 0; i < data.timepoints.size(); i++) {
+            var tp = data.timepoints.get(i);
+            anim.add(tp.time, data.values.get(i), tp.easingToNext);
+        }
+        return anim;
+    }
+
+    public static AnimInt importAnimInt(Scanner sc) {
+        var data = importAnimValues(sc, ImEx::importInt);
+        var anim = new AnimInt();
+        for (int i = 0; i < data.timepoints.size(); i++) {
+            var tp = data.timepoints.get(i);
+            anim.add(tp.time, data.values.get(i), tp.easingToNext);
+        }
+        return anim;
+    }
+
+    public static List<GraphicLayer> importLayers(Scanner sc) {
+        List<GraphicLayer> layers = new ArrayList<>();
+        while (sc.hasNext()) {
+            String type = sc.next();
+            switch (type) {
+                case "LAYER":
+                    layers.add(importLayer(sc));
+                    break;
+            }
+        }
+        return layers;
+    }
+
+    public static GraphicLayer importLayer(Scanner sc) {
+        String layerName = importUserString(sc);
+        AnimBoolean visible = importAnimBoolean(sc);
+        AnimPoint translate = importAnimPoint(sc);
+        AnimPoint rotateOrigin = importAnimPoint(sc);
+        AnimDouble rotate = importAnimDouble(sc);
+        List<GraphicObject> objects = new ArrayList<>();
+        while (true) {
+            String type = sc.next();
+            if (type.equals("END")) {
+                break;
+            }
+            switch (type) {
+                case "PATH2D":
+                    objects.add(importPath2D(sc));
+                    break;
+                case "CIRCLE":
+                    objects.add(importCircle(sc));
+                    break;
+                case "IMAGE":
+                    objects.add(importImage(sc));
+                    break;
+            }
+        }
+        return new GraphicLayer(layerName, visible, translate, rotateOrigin, rotate, objects);
+    }
+
+    public static Path2DLine importPath2DLine(Scanner sc) {
+        AnimPoint pNext = importAnimPoint(sc);
+        return new Path2DLine(pNext);
+    }
+
+    public static Path2DBezier importPath2DBezier(Scanner sc) {
+        AnimPoint pNext = importAnimPoint(sc);
+        List<AnimPoint> morePoints = new ArrayList<>();
+        while (true) {
+            morePoints.add(importAnimPoint(sc));
+            if (sc.hasNext("END")) {
+                sc.next();
+                break;
+            }
+        }
+        return new Path2DBezier(pNext, morePoints);
+    }
+
+    public static GraphicPath2D importPath2D(Scanner sc) {
+        AnimBoolean stroke = importAnimBoolean(sc);
+        AnimColor strokeColor = importAnimColor(sc);
+        AnimInt thickness = importAnimInt(sc);
+        AnimBoolean fill = importAnimBoolean(sc);
+        AnimColor fillColor = importAnimColor(sc);
+        AnimBoolean closed = importAnimBoolean(sc);
+        AnimPoint p1 = importAnimPoint(sc);
+        List<Path2DData> data = new ArrayList<>();
+        while (true) {
+            String type = sc.next();
+            if (type.equals("END")) {
+                break;
+            }
+            switch (type) {
+                case "LINE":
+                    data.add(importPath2DLine(sc));
+                    break;
+                case "BEZIER":
+                    data.add(importPath2DBezier(sc));
+                    break;
+            }
+        }
+        return new GraphicPath2D(stroke, strokeColor, thickness, fill, fillColor, closed, p1, data);
+    }
+
+    public static GraphicCircle importCircle(Scanner sc) {
+        AnimColor color = importAnimColor(sc);
+        AnimInt thickness = importAnimInt(sc);
+        AnimPoint center = importAnimPoint(sc);
+        AnimInt radius = importAnimInt(sc);
+        return new GraphicCircle(color, thickness, center, radius);
+    }
+
+    public static GraphicImage importImage(Scanner sc) {
+        String filePath = importUserString(sc);
+        AnimPoint origin = importAnimPoint(sc);
+        AnimDimension size = importAnimDimension(sc);
+        AnimDouble opacity = importAnimDouble(sc);
+        return new GraphicImage(filePath, origin, size, opacity);
+    }
 
 }
 
