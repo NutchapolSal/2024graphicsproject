@@ -88,12 +88,33 @@ public class Main {
         }
 
         List<GraphicLayer> instructions = new ArrayList<>();
+        instructions.add(new GraphicLayer("bg",
+                new AnimBoolean().add(0, true, EasingFunction.snap),
+                new AnimPoint().add(0, new Point(), EasingFunction.snap),
+                new AnimPoint().add(0, new Point(), EasingFunction.snap),
+                new AnimDouble().add(0, 0.0, EasingFunction.snap))
+                .add(new GraphicPath2D(
+                        new AnimBoolean().add(0, false, EasingFunction.snap),
+                        new AnimColor().add(0, "#FFFFFF", EasingFunction.snap),
+                        new AnimInt().add(0, 1, EasingFunction.snap),
+                        new AnimBoolean().add(0, true, EasingFunction.snap),
+                        new AnimColor().add(0, "#113", EasingFunction.easeInOutPower2)
+                                .add(10, "#374A71", EasingFunction.easeInOutPower2),
+                        new AnimBoolean().add(0, false, EasingFunction.snap),
+                        new AnimPoint().add(0, new Point(-325, -325), EasingFunction.snap),
+                        new Path2DLine(new AnimPoint().add(0, new Point(325, -325), EasingFunction.snap)),
+                        new Path2DLine(new AnimPoint().add(0, new Point(325, 325), EasingFunction.snap)),
+                        new Path2DLine(new AnimPoint().add(0, new Point(-325, 325), EasingFunction.snap))))
+
+        );
         instructions.add(new GraphicLayer("third point six swing",
-                new AnimBoolean().add(0, true, EasingFunction.snap).add(6, false, EasingFunction.snap),
+                new AnimBoolean().add(0, true, EasingFunction.snap)
+                        .add(6, false, EasingFunction.snap)
+                        .add(10, true, EasingFunction.snap),
                 new AnimPoint().add(0, new Point(), EasingFunction.easeInOutPower2)
                         .add(2, new Point(50, 50), EasingFunction.easeInOutPower2),
                 new AnimPoint().add(0, new Point(), EasingFunction.snap),
-                new AnimDouble().add(3, 0.0, EasingFunction.linear).add(5, 360.0, EasingFunction.linear))
+                new AnimDouble().add(3, 0.0, EasingFunction.easeInOutPower3).add(5, 360.0, EasingFunction.linear))
                 .add(new GraphicPath2D(
                         new AnimBoolean().add(0, true, EasingFunction.snap),
                         new AnimColor().add(0, "#000000", EasingFunction.snap),
