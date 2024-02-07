@@ -1,7 +1,7 @@
 public class AnimInt extends AnimatedValue<Integer> {
 
-    public AnimInt add(double time, int value, EasingFunction easingToNext) {
-        super.addTimepoint(time, value, easingToNext);
+    public AnimInt add(TimeKeypoint tkp, int value, EasingFunction easingToNext) {
+        super.addTimepoint(tkp, value, easingToNext);
         return this;
     }
 
@@ -26,7 +26,7 @@ public class AnimInt extends AnimatedValue<Integer> {
     public AnimInt copy() {
         var anim = new AnimInt();
         for (Timepoint tp : timepoints) {
-            anim.add(tp.time, tp.value, tp.easingToNext);
+            anim.add(tp.tkp, tp.value, tp.easingToNext);
         }
         return anim;
     }

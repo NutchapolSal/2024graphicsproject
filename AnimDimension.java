@@ -2,8 +2,8 @@ import java.awt.Dimension;
 
 class AnimDimension extends AnimatedValue<Dimension> {
 
-    public AnimDimension add(double time, Dimension value, EasingFunction easingToNext) {
-        super.addTimepoint(time, value, easingToNext);
+    public AnimDimension add(TimeKeypoint tkp, Dimension value, EasingFunction easingToNext) {
+        super.addTimepoint(tkp, value, easingToNext);
         return this;
     }
 

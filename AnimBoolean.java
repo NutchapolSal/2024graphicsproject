@@ -1,8 +1,8 @@
 import java.util.function.DoubleUnaryOperator;
 
 class AnimBoolean extends AnimatedValue<Boolean> {
-    public AnimBoolean add(double time, boolean value, DoubleUnaryOperator easingToNext) {
-        super.addTimepoint(time, value, EasingFunction.snap);
+    public AnimBoolean add(TimeKeypoint tkp, boolean value, DoubleUnaryOperator easingToNext) {
+        super.addTimepoint(tkp, value, EasingFunction.snap);
         return this;
     }
 
@@ -27,7 +27,7 @@ class AnimBoolean extends AnimatedValue<Boolean> {
     public AnimBoolean copy() {
         var anim = new AnimBoolean();
         for (Timepoint tp : timepoints) {
-            anim.add(tp.time, tp.value, tp.easingToNext);
+            anim.add(tp.tkp, tp.value, tp.easingToNext);
         }
         return anim;
     }

@@ -1,7 +1,7 @@
 class AnimDouble extends AnimatedValue<Double> {
 
-    public AnimDouble add(double time, double value, EasingFunction easingToNext) {
-        super.addTimepoint(time, value, easingToNext);
+    public AnimDouble add(TimeKeypoint tkp, double value, EasingFunction easingToNext) {
+        super.addTimepoint(tkp, value, easingToNext);
         return this;
     }
 
@@ -28,7 +28,7 @@ class AnimDouble extends AnimatedValue<Double> {
         for (int i = 0; i < timepoints.size(); i++) {
             var tp = timepoints.get(i);
             var value = this.getIndex(i);
-            anim.add(tp.time, value, tp.easingToNext);
+            anim.add(tp.tkp, value, tp.easingToNext);
         }
         return anim;
     }

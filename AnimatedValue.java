@@ -6,12 +6,12 @@ import java.util.stream.Collectors;
 
 abstract class AnimatedValue<T> implements Exportable {
     class Timepoint {
-        public double time;
+        public TimeKeypoint tkp;
         public T value;
         public EasingFunction easingToNext;
 
-        Timepoint(double time, T value, EasingFunction easingToNext) {
-            this.time = time;
+        Timepoint(TimeKeypoint tkp, T value, EasingFunction easingToNext) {
+            this.tkp = tkp;
             this.value = value;
             this.easingToNext = easingToNext;
         }
@@ -35,26 +35,19 @@ abstract class AnimatedValue<T> implements Exportable {
 
     public List<Timepoint> timepoints = new ArrayList<>();
 
-    /**
-     * @return index of added timepoint or -1 if timepoint already exists
-     */
-    protected int addTimepoint(double time, T value, EasingFunction easingToNext) {
-        int index = Collections.binarySearch(timepoints, new Timepoint(time, null, null),
-                (a, b) -> Double.compare(a.time, b.time));
-        if (index < 0) {
-            index = ~index;
-        } else {
-            return -1;
-        }
+    protected void sortTimepoints() {
+        Collections.sort(timepoints, (tp1, tp2) -> Double.compare(tp1.tkp.time(), tp2.tkp.time()));
+    }
 
-        timepoints.add(index, new Timepoint(time, value, easingToNext));
-        return index;
+    protected void addTimepoint(TimeKeypoint tkp, T value, EasingFunction easingToNext) {
+        timepoints.add(new Timepoint(tkp, value, easingToNext));
+        sortTimepoints();
     }
 
     protected StepValue getValue(double time) {
         int iBeforeTime = -1; // index of timepoint before or equal time
         for (Timepoint timepoint : timepoints) {
-            if (timepoint.time <= time) {
+            if (timepoint.tkp.time() <= time) {
                 iBeforeTime++;
             } else {
                 break;
@@ -68,8 +61,8 @@ abstract class AnimatedValue<T> implements Exportable {
             return new StepValue(iBeforeTime, 0);
         }
 
-        double timeBefore = timepoints.get(iBeforeTime).time;
-        double timeAfter = timepoints.get(iBeforeTime + 1).time;
+        double timeBefore = timepoints.get(iBeforeTime).tkp.time();
+        double timeAfter = timepoints.get(iBeforeTime + 1).tkp.time();
         double frac = (time - timeBefore) / (timeAfter - timeBefore);
         return new StepValue(iBeforeTime, timepoints.get(iBeforeTime).easingToNext.applyAsDouble(frac));
     }
@@ -79,13 +72,13 @@ abstract class AnimatedValue<T> implements Exportable {
     }
 
     protected String exportString(Function<T, String> exporter) {
-        return timepoints.stream().map(tp -> ImEx.exportString(tp.time) + " " + exporter.apply(tp.value) + " "
+        return timepoints.stream().map(tp -> ImEx.exportString(tp.tkp) + " " + exporter.apply(tp.value) + " "
                 + ImEx.exportString(tp.easingToNext)).collect(Collectors.joining(" ", "", " END"));
     }
 
     protected String exportCode(String className, Function<T, String> exporter) {
         return timepoints.stream()
-                .map(tp -> ".add(" + ImEx.exportCode(tp.time) + ", " + exporter.apply(tp.value) + ", "
+                .map(tp -> ".add(" + ImEx.exportCode(tp.tkp) + ", " + exporter.apply(tp.value) + ", "
                         + ImEx.exportCode(tp.easingToNext) + ")")
                 .collect(Collectors.joining(" ", "new " + className + "()\n", ""));
     }

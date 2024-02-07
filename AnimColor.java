@@ -40,20 +40,20 @@ class AnimColor extends AnimatedValue<AnimColor.MaybePaletteValue> {
         }
     }
 
-    public AnimColor add(double time, String value, EasingFunction easingToNext) {
-        return add(time, ColorHexer.decode(value), easingToNext);
+    public AnimColor add(TimeKeypoint tkp, String value, EasingFunction easingToNext) {
+        return add(tkp, ColorHexer.decode(value), easingToNext);
     }
 
-    public AnimColor add(double time, Color value, EasingFunction easingToNext) {
-        return add(time, new MaybePaletteValue(value), easingToNext);
+    public AnimColor add(TimeKeypoint tkp, Color value, EasingFunction easingToNext) {
+        return add(tkp, new MaybePaletteValue(value), easingToNext);
     }
 
-    public AnimColor add(double time, PaletteValue value, EasingFunction easingToNext) {
-        return add(time, new MaybePaletteValue(value), easingToNext);
+    public AnimColor add(TimeKeypoint tkp, PaletteValue value, EasingFunction easingToNext) {
+        return add(tkp, new MaybePaletteValue(value), easingToNext);
     }
 
-    private AnimColor add(double time, MaybePaletteValue value, EasingFunction easingToNext) {
-        super.addTimepoint(time, value, easingToNext);
+    private AnimColor add(TimeKeypoint tkp, MaybePaletteValue value, EasingFunction easingToNext) {
+        super.addTimepoint(tkp, value, easingToNext);
         return this;
     }
 
@@ -80,7 +80,7 @@ class AnimColor extends AnimatedValue<AnimColor.MaybePaletteValue> {
         for (int i = 0; i < timepoints.size(); i++) {
             var tp = timepoints.get(i);
             var value = this.getIndex(i);
-            anim.add(tp.time, value, tp.easingToNext);
+            anim.add(tp.tkp, value, tp.easingToNext);
         }
         return anim;
     }

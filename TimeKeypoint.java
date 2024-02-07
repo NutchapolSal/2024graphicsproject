@@ -34,10 +34,18 @@ class TimeKeypoint implements Referenceable {
 
     public int referenceDepth() {
         var depth = 0;
-        for (var current = this; current.reference.isPresent(); current = current.reference.get()) {
+        for (var current = this.reference; current.isPresent(); current = current.get().reference) {
             depth++;
         }
         return depth;
+    }
+
+    public double time() {
+        var time = this.offset;
+        for (var current = this.reference; current.isPresent(); current = current.get().reference) {
+            time += current.get().offset;
+        }
+        return time;
     }
 
     public String exportInitString() {

@@ -237,16 +237,16 @@ class ImEx {
     }
 
     interface TimepointCreator<T> {
-        public void apply(double time, T value, EasingFunction easingToNext);
+        public void apply(TimeKeypoint tkp, T value, EasingFunction easingToNext);
     }
 
-    private static <T> void importAnimValues(Scanner sc, Function<Scanner, T> importFunction,
-            TimepointCreator<T> creator) {
+    private static <T> void importAnimValues(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints,
+            Function<Scanner, T> importFunction, TimepointCreator<T> creator) {
         while (true) {
-            var time = sc.nextDouble();
+            var tkpId = importStringId(sc);
             var value = importFunction.apply(sc);
             var easingToNext = importEasingFunction(sc);
-            creator.apply(time, value, easingToNext);
+            creator.apply(timeKeypoints.get(tkpId), value, easingToNext);
             if (sc.hasNext("END")) {
                 sc.next();
                 break;
@@ -254,9 +254,9 @@ class ImEx {
         }
     }
 
-    public static AnimBoolean importAnimBoolean(Scanner sc) {
+    public static AnimBoolean importAnimBoolean(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
         var anim = new AnimBoolean();
-        importAnimValues(sc, ImEx::importBoolean, anim::add);
+        importAnimValues(sc, timeKeypoints, ImEx::importBoolean, anim::add);
         return anim;
     }
 
@@ -289,9 +289,10 @@ class ImEx {
         throw new IllegalArgumentException("invalid type: " + type);
     }
 
-    public static AnimColor importAnimColor(Scanner sc, HashMap<String, PaletteValue> paletteValues) {
+    public static AnimColor importAnimColor(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints,
+            HashMap<String, PaletteValue> paletteValues) {
         var anim = new AnimColor();
-        importAnimValues(sc, s -> importMaybePaletteValue(s), (time, value, easingToNext) -> {
+        importAnimValues(sc, timeKeypoints, s -> importMaybePaletteValue(s), (time, value, easingToNext) -> {
             if (value.isPaletteValue) {
                 anim.add(time, value.get(paletteValues), easingToNext);
             } else {
@@ -301,27 +302,27 @@ class ImEx {
         return anim;
     }
 
-    public static AnimPoint importAnimPoint(Scanner sc) {
+    public static AnimPoint importAnimPoint(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
         var anim = new AnimPoint();
-        importAnimValues(sc, ImEx::importPoint, anim::add);
+        importAnimValues(sc, timeKeypoints, ImEx::importPoint, anim::add);
         return anim;
     }
 
-    public static AnimDimension importAnimDimension(Scanner sc) {
+    public static AnimDimension importAnimDimension(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
         var anim = new AnimDimension();
-        importAnimValues(sc, ImEx::importDimension, anim::add);
+        importAnimValues(sc, timeKeypoints, ImEx::importDimension, anim::add);
         return anim;
     }
 
-    public static AnimDouble importAnimDouble(Scanner sc) {
+    public static AnimDouble importAnimDouble(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
         var anim = new AnimDouble();
-        importAnimValues(sc, ImEx::importDouble, anim::add);
+        importAnimValues(sc, timeKeypoints, ImEx::importDouble, anim::add);
         return anim;
     }
 
-    public static AnimInt importAnimInt(Scanner sc) {
+    public static AnimInt importAnimInt(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
         var anim = new AnimInt();
-        importAnimValues(sc, ImEx::importInt, anim::add);
+        importAnimValues(sc, timeKeypoints, ImEx::importInt, anim::add);
         return anim;
     }
 
@@ -345,7 +346,7 @@ class ImEx {
                 palette = importPalette(sc, paletteValues);
                 break;
             case "LAYER":
-                layers.add(importLayer(sc, paletteValues));
+                layers.add(importLayer(sc, timeKeypoints, paletteValues));
                 break;
             }
         }
@@ -385,12 +386,13 @@ class ImEx {
         return new PaletteValue(id, color, label);
     }
 
-    public static GraphicLayer importLayer(Scanner sc, HashMap<String, PaletteValue> paletteValues) {
+    public static GraphicLayer importLayer(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints,
+            HashMap<String, PaletteValue> paletteValues) {
         String layerName = importUserString(sc);
-        AnimBoolean visible = importAnimBoolean(sc);
-        AnimPoint translate = importAnimPoint(sc);
-        AnimPoint rotateOrigin = importAnimPoint(sc);
-        AnimDouble rotate = importAnimDouble(sc);
+        AnimBoolean visible = importAnimBoolean(sc, timeKeypoints);
+        AnimPoint translate = importAnimPoint(sc, timeKeypoints);
+        AnimPoint rotateOrigin = importAnimPoint(sc, timeKeypoints);
+        AnimDouble rotate = importAnimDouble(sc, timeKeypoints);
         List<GraphicObject> objects = new ArrayList<>();
         while (true) {
             String type = sc.next();
@@ -399,13 +401,13 @@ class ImEx {
             }
             switch (type) {
             case "PATH2D":
-                objects.add(importPath2D(sc, paletteValues));
+                objects.add(importPath2D(sc, timeKeypoints, paletteValues));
                 break;
             case "CIRCLE":
-                objects.add(importCircle(sc, paletteValues));
+                objects.add(importCircle(sc, timeKeypoints, paletteValues));
                 break;
             case "IMAGE":
-                objects.add(importImage(sc));
+                objects.add(importImage(sc, timeKeypoints));
                 break;
             }
         }
@@ -429,16 +431,16 @@ class ImEx {
         return palette;
     }
 
-    public static Path2DLine importPath2DLine(Scanner sc) {
-        AnimPoint pNext = importAnimPoint(sc);
+    public static Path2DLine importPath2DLine(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
+        AnimPoint pNext = importAnimPoint(sc, timeKeypoints);
         return new Path2DLine(pNext);
     }
 
-    public static Path2DBezier importPath2DBezier(Scanner sc) {
-        AnimPoint pNext = importAnimPoint(sc);
+    public static Path2DBezier importPath2DBezier(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
+        AnimPoint pNext = importAnimPoint(sc, timeKeypoints);
         List<AnimPoint> morePoints = new ArrayList<>();
         while (true) {
-            morePoints.add(importAnimPoint(sc));
+            morePoints.add(importAnimPoint(sc, timeKeypoints));
             if (sc.hasNext("END")) {
                 sc.next();
                 break;
@@ -447,14 +449,15 @@ class ImEx {
         return new Path2DBezier(pNext, morePoints);
     }
 
-    public static GraphicPath2D importPath2D(Scanner sc, HashMap<String, PaletteValue> paletteValues) {
-        AnimBoolean stroke = importAnimBoolean(sc);
-        AnimColor strokeColor = importAnimColor(sc, paletteValues);
-        AnimInt thickness = importAnimInt(sc);
-        AnimBoolean fill = importAnimBoolean(sc);
-        AnimColor fillColor = importAnimColor(sc, paletteValues);
-        AnimBoolean closed = importAnimBoolean(sc);
-        AnimPoint p1 = importAnimPoint(sc);
+    public static GraphicPath2D importPath2D(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints,
+            HashMap<String, PaletteValue> paletteValues) {
+        AnimBoolean stroke = importAnimBoolean(sc, timeKeypoints);
+        AnimColor strokeColor = importAnimColor(sc, timeKeypoints, paletteValues);
+        AnimInt thickness = importAnimInt(sc, timeKeypoints);
+        AnimBoolean fill = importAnimBoolean(sc, timeKeypoints);
+        AnimColor fillColor = importAnimColor(sc, timeKeypoints, paletteValues);
+        AnimBoolean closed = importAnimBoolean(sc, timeKeypoints);
+        AnimPoint p1 = importAnimPoint(sc, timeKeypoints);
         List<Path2DData> data = new ArrayList<>();
         while (true) {
             String type = sc.next();
@@ -463,29 +466,30 @@ class ImEx {
             }
             switch (type) {
             case "LINE":
-                data.add(importPath2DLine(sc));
+                data.add(importPath2DLine(sc, timeKeypoints));
                 break;
             case "BEZIER":
-                data.add(importPath2DBezier(sc));
+                data.add(importPath2DBezier(sc, timeKeypoints));
                 break;
             }
         }
         return new GraphicPath2D(stroke, strokeColor, thickness, fill, fillColor, closed, p1, data);
     }
 
-    public static GraphicCircle importCircle(Scanner sc, HashMap<String, PaletteValue> paletteValues) {
-        AnimColor color = importAnimColor(sc, paletteValues);
-        AnimInt thickness = importAnimInt(sc);
-        AnimPoint center = importAnimPoint(sc);
-        AnimInt radius = importAnimInt(sc);
+    public static GraphicCircle importCircle(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints,
+            HashMap<String, PaletteValue> paletteValues) {
+        AnimColor color = importAnimColor(sc, timeKeypoints, paletteValues);
+        AnimInt thickness = importAnimInt(sc, timeKeypoints);
+        AnimPoint center = importAnimPoint(sc, timeKeypoints);
+        AnimInt radius = importAnimInt(sc, timeKeypoints);
         return new GraphicCircle(color, thickness, center, radius);
     }
 
-    public static GraphicImage importImage(Scanner sc) {
+    public static GraphicImage importImage(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
         String filePath = importUserString(sc);
-        AnimPoint origin = importAnimPoint(sc);
-        AnimDimension size = importAnimDimension(sc);
-        AnimDouble opacity = importAnimDouble(sc);
+        AnimPoint origin = importAnimPoint(sc, timeKeypoints);
+        AnimDimension size = importAnimDimension(sc, timeKeypoints);
+        AnimDouble opacity = importAnimDouble(sc, timeKeypoints);
         return new GraphicImage(filePath, origin, size, opacity);
     }
 

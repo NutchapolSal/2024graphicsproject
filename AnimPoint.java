@@ -1,8 +1,8 @@
 import java.awt.Point;
 
 class AnimPoint extends AnimatedValue<Point> {
-    public AnimPoint add(double time, Point value, EasingFunction easingToNext) {
-        super.addTimepoint(time, value, easingToNext);
+    public AnimPoint add(TimeKeypoint tkp, Point value, EasingFunction easingToNext) {
+        super.addTimepoint(tkp, value, easingToNext);
         return this;
     }
 
@@ -18,7 +18,7 @@ class AnimPoint extends AnimatedValue<Point> {
         }
         var stepValue = getValue(time);
         if (stepValue.frac == 0) {
-            return this.getIndex(0);
+            return this.getIndex(stepValue.index);
         }
 
         return new Point(
