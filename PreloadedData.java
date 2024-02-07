@@ -29,10 +29,10 @@ class PreloadedData {
     }
 
     static GraphicRoot create() {
-        var tkp_0qwe = new TimeKeypoint("0qwe", 0.0, null);
-        var tkp_1asd = new TimeKeypoint("1asd", 10.0, tkp_0qwe);
-        var tkp_2zxc = new TimeKeypoint("2zxc", 2.0, tkp_1asd);
-        var tkp_5rty = new TimeKeypoint("5rty", -4.5, tkp_0qwe);
+        var tkp_0qwe = new TimeKeypoint("0qwe", 0.0, null, "origin");
+        var tkp_1asd = new TimeKeypoint("1asd", 10.0, tkp_0qwe, "1");
+        var tkp_2zxc = new TimeKeypoint("2zxc", 2.0, tkp_1asd, "2");
+        var tkp_5rty = new TimeKeypoint("5rty", -4.5, tkp_0qwe, "5");
         var pv_0fgh = new PaletteValue("0fgh", "#113", "bgDark");
         var pv_1vbn = new PaletteValue("1vbn", "#374A71", "bgSunrise");
         var pv_2uio = new PaletteValue("2uio", "#2266AA", "path thing");

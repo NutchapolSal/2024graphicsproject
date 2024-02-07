@@ -63,7 +63,7 @@ class Palette implements Exportable {
                     xIterator = values.get(y).keySet().iterator();
                 }
                 x = xIterator.next();
-                return new SparsePaletteSlot(x, y, values.get(x).get(y));
+                return new SparsePaletteSlot(x, y, values.get(y).get(x));
             }
         };
     }
@@ -100,11 +100,11 @@ class Palette implements Exportable {
             public PaletteSlot next() {
                 var value = get(x, y);
                 var slot = new PaletteSlot(x, y, value);
-                if (y < yMax) {
-                    y++;
-                } else {
+                if (x < xMax) {
                     x++;
-                    y = yMin;
+                } else {
+                    y++;
+                    x = xMin;
                 }
                 return slot;
             }
@@ -118,38 +118,34 @@ class Palette implements Exportable {
 
     @Override
     public String exportString() {
-        return sparseStreamSorted()
-                .map(slot -> {
-                    var sb2 = new StringBuilder();
-                    sb2.append(ImEx.exportString(slot.x));
-                    sb2.append(" ");
-                    sb2.append(ImEx.exportString(slot.y));
-                    sb2.append(" ");
-                    sb2.append(ImEx.exportString(slot.value));
-                    return sb2.toString();
-                }).collect(Collectors.joining("\n", "PALETTE\n", "\nEND"));
+        return sparseStreamSorted().map(slot -> {
+            var sb2 = new StringBuilder();
+            sb2.append(ImEx.exportString(slot.x));
+            sb2.append(" ");
+            sb2.append(ImEx.exportString(slot.y));
+            sb2.append(" ");
+            sb2.append(ImEx.exportString(slot.value));
+            return sb2.toString();
+        }).collect(Collectors.joining("\n", "PALETTE\n", "\nEND"));
     }
 
     public String exportInitStringPaletteValues() {
-        return sparseStreamSorted()
-                .map(slot -> slot.value.exportInitString())
-                .collect(Collectors.joining());
+        return sparseStreamSorted().map(slot -> slot.value.exportInitString()).collect(Collectors.joining());
     }
 
     @Override
     public String exportCode() {
-        return sparseStreamSorted()
-                .map(slot -> {
-                    var sb2 = new StringBuilder();
-                    sb2.append(".set(");
-                    sb2.append(ImEx.exportCode(slot.x));
-                    sb2.append(", ");
-                    sb2.append(ImEx.exportCode(slot.y));
-                    sb2.append(", ");
-                    sb2.append(ImEx.exportCode(slot.value));
-                    sb2.append(")");
-                    return sb2.toString();
-                }).collect(Collectors.joining("\n", "new Palette()\n", ""));
+        return sparseStreamSorted().map(slot -> {
+            var sb2 = new StringBuilder();
+            sb2.append(".set(");
+            sb2.append(ImEx.exportCode(slot.x));
+            sb2.append(", ");
+            sb2.append(ImEx.exportCode(slot.y));
+            sb2.append(", ");
+            sb2.append(ImEx.exportCode(slot.value));
+            sb2.append(")");
+            return sb2.toString();
+        }).collect(Collectors.joining("\n", "new Palette()\n", ""));
     }
 
 }

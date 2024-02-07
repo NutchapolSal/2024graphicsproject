@@ -58,7 +58,7 @@ class ImEx {
     public static String exportStringTKPs(List<TimeKeypoint> timeKeypoints) {
         var tkps = new ArrayList<>(timeKeypoints);
         tkps.sort(Comparator.comparingInt(TimeKeypoint::referenceDepth));
-        return tkps.stream().map(ImEx::exportInitString).collect(Collectors.joining("\n"));
+        return tkps.stream().map(ImEx::exportInitString).collect(Collectors.joining());
     }
 
     public static String exportString(double d) {
@@ -379,7 +379,7 @@ class ImEx {
             HashMap<String, Set<String>> timeAwaits) {
         String id = importStringId(sc);
         double offset = importDouble(sc);
-        TimeKeypoint tkp = new TimeKeypoint(id, offset, null);
+        TimeKeypoint tkp = new TimeKeypoint(id, offset, null, "");
         timeKeypoints.put(id, tkp);
         if (timeAwaits.containsKey(id)) {
             for (String awaitId : timeAwaits.get(id)) {
@@ -389,15 +389,15 @@ class ImEx {
         }
         if (sc.hasNext("NULL")) {
             sc.next();
-            return;
-        }
-
-        String referenceId = importStringId(sc);
-        if (timeKeypoints.containsKey(referenceId)) {
-            tkp.setReference(timeKeypoints.get(referenceId));
         } else {
-            timeAwaits.computeIfAbsent(referenceId, k -> new HashSet<>()).add(id);
+            String referenceId = importStringId(sc);
+            if (timeKeypoints.containsKey(referenceId)) {
+                tkp.setReference(timeKeypoints.get(referenceId));
+            } else {
+                timeAwaits.computeIfAbsent(referenceId, k -> new HashSet<>()).add(id);
+            }
         }
+        tkp.label = importUserString(sc);
 
     }
 
@@ -438,8 +438,8 @@ class ImEx {
     public static Palette importPalette(Scanner sc, HashMap<String, PaletteValue> paletteValues) {
         Palette palette = new Palette();
         while (sc.hasNext()) {
-            int y = importInt(sc);
             int x = importInt(sc);
+            int y = importInt(sc);
             String valueId = importStringId(sc);
             if (paletteValues.containsKey(valueId)) {
                 palette.set(x, y, paletteValues.get(valueId));

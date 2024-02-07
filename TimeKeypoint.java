@@ -5,18 +5,20 @@ import java.util.UUID;
 
 class TimeKeypoint implements Referenceable {
     public final String id;
+    public String label = "a time keypoint";
     public double offset;
     public Optional<TimeKeypoint> reference = Optional.empty();
     public List<TimeKeypoint> children = new ArrayList<>();
 
-    public TimeKeypoint(String id, double offset, TimeKeypoint reference) {
+    public TimeKeypoint(String id, double offset, TimeKeypoint reference, String label) {
         this.id = id;
+        this.label = label;
         this.offset = offset;
         setReference(reference);
     }
 
-    public TimeKeypoint(double offset, TimeKeypoint reference) {
-        this(UUID.randomUUID().toString(), offset, reference);
+    public TimeKeypoint(double offset, TimeKeypoint reference, String label) {
+        this(UUID.randomUUID().toString(), offset, reference, label);
     }
 
     void setReference(TimeKeypoint reference) {
@@ -46,6 +48,8 @@ class TimeKeypoint implements Referenceable {
         sb.append(ImEx.exportString(offset));
         sb.append(" ");
         sb.append(reference.isPresent() ? ImEx.exportStringId(reference.get().id) : "NULL");
+        sb.append(" ");
+        sb.append(ImEx.exportStringUser(label));
         return sb.toString();
     }
 
@@ -67,6 +71,8 @@ class TimeKeypoint implements Referenceable {
         sb.append(ImEx.exportCode(offset));
         sb.append(", ");
         sb.append(reference.isPresent() ? reference.get().getCodeId() : "null");
+        sb.append(", ");
+        sb.append(ImEx.exportCode(label));
         sb.append(");");
         return sb.toString();
     }
