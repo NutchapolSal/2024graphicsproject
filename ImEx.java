@@ -17,13 +17,13 @@ class ImEx {
     public static void test() {
         var root = PreloadedData.create();
         var exx = ImEx.exportString(root);
-        var reimport = ImEx.exportString(ImEx.importString(exx));
         System.out.println("ImEx test");
         System.out.println("string export:");
         System.out.println(exx);
         System.out.println();
         System.out.println("---");
         System.out.println();
+        var reimport = ImEx.exportString(ImEx.importString(exx));
         System.out.println("re-imported:" + (exx.equals(reimport) ? "ok" : "FAIL"));
         System.out.println();
         if (!exx.equals(reimport)) {
@@ -265,12 +265,45 @@ class ImEx {
         return anim;
     }
 
-    public static AnimColor importAnimColor(Scanner sc) {
-        var data = importAnimValues(sc, ImEx::importHexColor);
+    private static class MaybePaletteData {
+        public boolean isPaletteValue;
+        public String str;
+
+        public MaybePaletteData(String str, boolean isPaletteValue) {
+            this.str = str;
+            this.isPaletteValue = isPaletteValue;
+        }
+
+        public String get() {
+            return str;
+        }
+
+        public PaletteValue get(HashMap<String, PaletteValue> paletteValues) {
+            return paletteValues.get(str);
+        }
+    }
+
+    public static MaybePaletteData importMaybePaletteValue(Scanner sc) {
+        String type = sc.next();
+        switch (type) {
+        case "COLOR":
+            return new MaybePaletteData(importHexColor(sc), false);
+        case "PALETTEVALUE":
+            return new MaybePaletteData(importStringId(sc), true);
+        }
+        throw new IllegalArgumentException("invalid type: " + type);
+    }
+
+    public static AnimColor importAnimColor(Scanner sc, HashMap<String, PaletteValue> paletteValues) {
+        var data = importAnimValues(sc, ImEx::importMaybePaletteValue);
         var anim = new AnimColor();
         for (int i = 0; i < data.timepoints.size(); i++) {
             var tp = data.timepoints.get(i);
-            anim.add(tp.time, data.values.get(i), tp.easingToNext);
+            if (data.values.get(i).isPaletteValue) {
+                anim.add(tp.time, data.values.get(i).get(paletteValues), tp.easingToNext);
+            } else {
+                anim.add(tp.time, data.values.get(i).get(), tp.easingToNext);
+            }
         }
         return anim;
     }
@@ -335,7 +368,7 @@ class ImEx {
                 palette = importPalette(sc, paletteValues);
                 break;
             case "LAYER":
-                layers.add(importLayer(sc));
+                layers.add(importLayer(sc, paletteValues));
                 break;
             }
         }
@@ -375,7 +408,7 @@ class ImEx {
         return new PaletteValue(id, color, label);
     }
 
-    public static GraphicLayer importLayer(Scanner sc) {
+    public static GraphicLayer importLayer(Scanner sc, HashMap<String, PaletteValue> paletteValues) {
         String layerName = importUserString(sc);
         AnimBoolean visible = importAnimBoolean(sc);
         AnimPoint translate = importAnimPoint(sc);
@@ -389,10 +422,10 @@ class ImEx {
             }
             switch (type) {
             case "PATH2D":
-                objects.add(importPath2D(sc));
+                objects.add(importPath2D(sc, paletteValues));
                 break;
             case "CIRCLE":
-                objects.add(importCircle(sc));
+                objects.add(importCircle(sc, paletteValues));
                 break;
             case "IMAGE":
                 objects.add(importImage(sc));
@@ -437,12 +470,12 @@ class ImEx {
         return new Path2DBezier(pNext, morePoints);
     }
 
-    public static GraphicPath2D importPath2D(Scanner sc) {
+    public static GraphicPath2D importPath2D(Scanner sc, HashMap<String, PaletteValue> paletteValues) {
         AnimBoolean stroke = importAnimBoolean(sc);
-        AnimColor strokeColor = importAnimColor(sc);
+        AnimColor strokeColor = importAnimColor(sc, paletteValues);
         AnimInt thickness = importAnimInt(sc);
         AnimBoolean fill = importAnimBoolean(sc);
-        AnimColor fillColor = importAnimColor(sc);
+        AnimColor fillColor = importAnimColor(sc, paletteValues);
         AnimBoolean closed = importAnimBoolean(sc);
         AnimPoint p1 = importAnimPoint(sc);
         List<Path2DData> data = new ArrayList<>();
@@ -463,8 +496,8 @@ class ImEx {
         return new GraphicPath2D(stroke, strokeColor, thickness, fill, fillColor, closed, p1, data);
     }
 
-    public static GraphicCircle importCircle(Scanner sc) {
-        AnimColor color = importAnimColor(sc);
+    public static GraphicCircle importCircle(Scanner sc, HashMap<String, PaletteValue> paletteValues) {
+        AnimColor color = importAnimColor(sc, paletteValues);
         AnimInt thickness = importAnimInt(sc);
         AnimPoint center = importAnimPoint(sc);
         AnimInt radius = importAnimInt(sc);

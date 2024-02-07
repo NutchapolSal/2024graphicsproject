@@ -51,7 +51,7 @@ class PreloadedData {
                                 new AnimColor().add(0, "#FFFFFF", EasingFunction.snap),
                                 new AnimInt().add(0, 1, EasingFunction.snap),
                                 new AnimBoolean().add(0, true, EasingFunction.snap),
-                                new AnimColor().add(0, "#113", EasingFunction.easeInOutPower2).add(10, "#374A71",
+                                new AnimColor().add(0, pv_0fgh, EasingFunction.easeInOutPower2).add(10, pv_1vbn,
                                         EasingFunction.easeInOutPower2),
                                 new AnimBoolean().add(0, false, EasingFunction.snap),
                                 new AnimPoint().add(0, new Point(-325, -325), EasingFunction.snap),
@@ -88,7 +88,7 @@ class PreloadedData {
                                 new AnimPoint().add(0, new Point(-290, -290), EasingFunction.snap),
                                 new AnimDimension().add(0, new Dimension(20, 20), EasingFunction.snap),
                                 new AnimDouble().add(0, 1.0, EasingFunction.snap)))
-                        .add(new GraphicCircle(new AnimColor().add(0, "#2266AA", EasingFunction.snap),
+                        .add(new GraphicCircle(new AnimColor().add(0, pv_2uio, EasingFunction.snap),
                                 new AnimInt().add(0, 1, EasingFunction.snap),
                                 new AnimPoint().add(0, new Point(-220, -260), EasingFunction.snap),
                                 new AnimInt().add(0, 20, EasingFunction.snap)))
