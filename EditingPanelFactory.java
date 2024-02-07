@@ -491,15 +491,22 @@ class EditingPanelFactory {
     }
 
     public static JPanel createPlaceholder(Object object) {
-        JPanel jPanel = new JPanel();
-        JLabel label = new JLabel("⚠️\ufe0f " + object.getClass().getSimpleName());
-        jPanel.add(label);
-        return jPanel;
+        return createPlaceholder(object, null);
     }
 
     public static JPanel createPlaceholder(Object object, String message) {
+        var labelText = "⚠️\ufe0f ";
+        if (object != null) {
+            labelText += object.getClass().getSimpleName();
+        }
+        if (message != null) {
+            if (object != null) {
+                labelText += ": ";
+            }
+            labelText += message;
+        }
         JPanel jPanel = new JPanel();
-        JLabel label = new JLabel("⚠️\ufe0f " + object.getClass().getSimpleName() + ": " + message);
+        JLabel label = new JLabel(labelText);
         jPanel.add(label);
         return jPanel;
     }

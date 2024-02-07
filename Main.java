@@ -32,7 +32,7 @@ public class Main {
         frame.pack();
         frame.setVisible(true);
 
-        new EditorFrame(frame, root);
+        new EditorGang(frame, root);
 
         long startTime = System.nanoTime();
         new Timer(1000 / 60, e -> {

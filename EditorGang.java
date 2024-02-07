@@ -25,7 +25,7 @@ import javax.swing.Timer;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 
-class EditorFrame {
+class EditorGang {
 
     static Preferences prefs = Preferences.userRoot().node("2024graphicsprojecteditor");
 
@@ -38,21 +38,31 @@ class EditorFrame {
     private JScrollPane layerScrollPane = new JScrollPane();
     private JScrollPane editorScrollPane = new JScrollPane();
 
-    private JFrame frame2 = new JFrame();
+    private JFrame editorFrame = new JFrame();
+    private JFrame timepointsFrame = new JFrame();
+    private JFrame timeControlFrame = new JFrame();
+    private JFrame paletteFrame = new JFrame();
 
-    EditorFrame(JFrame frame, GraphicRoot root) {
+    EditorGang(JFrame frame, GraphicRoot root) {
         this.root = root;
 
-        frame2.setLocation(frame.getLocation().x + frame.getWidth(),
-                frame.getLocation().y);
-        frame2.setTitle("editor");
-        frame2.setSize(600, 600);
+        createEditorFrame(frame);
+        createPaletteFrame(editorFrame);
+        createTimepointsFrame(paletteFrame);
+        createTimeControlFrame(editorFrame);
+        editorFrame.requestFocus();
+    }
 
-        JPanel panel2 = new JPanel();
-        frame2.setContentPane(panel2);
+    private void createEditorFrame(JFrame frame) {
+        editorFrame.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
+        editorFrame.setTitle("editor");
+        editorFrame.setSize(600, 600);
 
-        GroupLayout layout = new GroupLayout(panel2);
-        panel2.setLayout(layout);
+        JPanel editorPanel = new JPanel();
+        editorFrame.setContentPane(editorPanel);
+
+        GroupLayout layout = new GroupLayout(editorPanel);
+        editorPanel.setLayout(layout);
 
         layerScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         layerScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
@@ -71,8 +81,7 @@ class EditorFrame {
         layerUpButton.addActionListener(e -> {
             if (currentLayer.value > 0) {
                 var temp = root.instructions.get(currentLayer.value - 1);
-                root.instructions.set(currentLayer.value - 1,
-                        root.instructions.get(currentLayer.value));
+                root.instructions.set(currentLayer.value - 1, root.instructions.get(currentLayer.value));
                 root.instructions.set(currentLayer.value, temp);
                 currentLayer.value--;
                 updateLayerListPanel();
@@ -83,8 +92,7 @@ class EditorFrame {
         layerDownButton.addActionListener(e -> {
             if (currentLayer.value < root.instructions.size() - 1) {
                 var temp = root.instructions.get(currentLayer.value + 1);
-                root.instructions.set(currentLayer.value + 1,
-                        root.instructions.get(currentLayer.value));
+                root.instructions.set(currentLayer.value + 1, root.instructions.get(currentLayer.value));
                 root.instructions.set(currentLayer.value, temp);
                 currentLayer.value++;
                 updateLayerListPanel();
@@ -92,24 +100,18 @@ class EditorFrame {
         });
 
         layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(Alignment.LEADING, false)
-                        .addComponent(layerScrollPane)
-                        .addGroup(layout.createSequentialGroup()
-                                .addComponent(addLayerButton)
-                                .addComponent(layerUpButton)
-                                .addComponent(layerDownButton)))
+                .addGroup(layout.createParallelGroup(Alignment.LEADING, false).addComponent(layerScrollPane)
+                        .addGroup(layout.createSequentialGroup().addComponent(addLayerButton)
+                                .addComponent(layerUpButton).addComponent(layerDownButton)))
                 .addComponent(editorScrollPane));
         layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addGroup(layout.createSequentialGroup()
-                        .addComponent(layerScrollPane)
-                        .addGroup(layout.createParallelGroup(Alignment.BASELINE)
-                                .addComponent(addLayerButton)
-                                .addComponent(layerUpButton)
-                                .addComponent(layerDownButton)))
+                .addGroup(layout.createSequentialGroup().addComponent(layerScrollPane)
+                        .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(addLayerButton)
+                                .addComponent(layerUpButton).addComponent(layerDownButton)))
                 .addComponent(editorScrollPane));
 
         JMenuBar menuBar = new JMenuBar();
-        frame2.setJMenuBar(menuBar);
+        editorFrame.setJMenuBar(menuBar);
 
         var fileMenu = new JMenu("File");
         menuBar.add(fileMenu);
@@ -120,12 +122,11 @@ class EditorFrame {
         fileMenu.addSeparator();
         var exportCodeMenuItem = fileMenu.add("Export code...");
 
-        JFileChooser fileChooser = new JFileChooser(prefs.get("lastSavePath",
-                System.getProperty("user.home")));
+        JFileChooser fileChooser = new JFileChooser(prefs.get("lastSavePath", System.getProperty("user.home")));
 
         saveMenuItem.addActionListener(e -> {
             if (this.savePath.value == null) {
-                if (fileChooser.showSaveDialog(frame2) != JFileChooser.APPROVE_OPTION) {
+                if (fileChooser.showSaveDialog(editorFrame) != JFileChooser.APPROVE_OPTION) {
                     return;
                 }
                 this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
@@ -133,19 +134,17 @@ class EditorFrame {
             }
 
             try {
-                Files.write(
-                        Path.of(this.savePath.value),
-                        ImEx.exportString(root).getBytes(StandardCharsets.UTF_8));
+                Files.write(Path.of(this.savePath.value), ImEx.exportString(root).getBytes(StandardCharsets.UTF_8));
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-            frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
+            editorFrame.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
                     + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
             prefs.put("lastSavePath", this.saveFolder.value);
         });
 
         saveAsMenuItem.addActionListener(e -> {
-            if (fileChooser.showSaveDialog(frame2) != JFileChooser.APPROVE_OPTION) {
+            if (fileChooser.showSaveDialog(editorFrame) != JFileChooser.APPROVE_OPTION) {
                 return;
             }
             this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
@@ -153,18 +152,16 @@ class EditorFrame {
             prefs.put("lastSavePath", this.saveFolder.value);
 
             try {
-                Files.write(
-                        Path.of(this.savePath.value),
-                        ImEx.exportString(root).getBytes(StandardCharsets.UTF_8));
+                Files.write(Path.of(this.savePath.value), ImEx.exportString(root).getBytes(StandardCharsets.UTF_8));
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-            frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
+            editorFrame.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
                     + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
         });
 
         loadMenuItem.addActionListener(e -> {
-            if (fileChooser.showOpenDialog(frame2) != JFileChooser.APPROVE_OPTION) {
+            if (fileChooser.showOpenDialog(editorFrame) != JFileChooser.APPROVE_OPTION) {
                 return;
             }
             this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
@@ -179,7 +176,7 @@ class EditorFrame {
                 root.timeKeypoints = newRoot.timeKeypoints;
                 root.palette = newRoot.palette;
                 scanner.close();
-                frame2.setTitle("editor - " + file.getName());
+                editorFrame.setTitle("editor - " + file.getName());
                 updateLayerListPanel();
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -187,29 +184,26 @@ class EditorFrame {
         });
 
         exportCodeMenuItem.addActionListener(e -> {
-            if (fileChooser.showSaveDialog(frame2) != JFileChooser.APPROVE_OPTION) {
+            if (fileChooser.showSaveDialog(editorFrame) != JFileChooser.APPROVE_OPTION) {
                 return;
             }
 
             prefs.put("lastSavePath", fileChooser.getCurrentDirectory().getAbsolutePath());
 
             try {
-                Files.write(
-                        Path.of(fileChooser.getSelectedFile().getAbsolutePath()),
+                Files.write(Path.of(fileChooser.getSelectedFile().getAbsolutePath()),
                         ImEx.exportCode(root).getBytes(StandardCharsets.UTF_8));
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
 
-        saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
-                InputEvent.CTRL_DOWN_MASK));
-        saveAsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
-                InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
-        loadMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,
-                InputEvent.CTRL_DOWN_MASK));
+        saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+        saveAsMenuItem.setAccelerator(
+                KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
+        loadMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
 
-        frame2.setVisible(true);
+        editorFrame.setVisible(true);
 
         new Timer(250, e -> {
             if (GlobalState.needsUpdateEditor) {
@@ -231,8 +225,7 @@ class EditorFrame {
         }
         boolean sameLayer = layerIndex == this.currentLayer.value;
         int scrollPos = editorScrollPane.getVerticalScrollBar().getValue();
-        editorScrollPane
-                .setViewportView(EditingPanelFactory.create(this.root.instructions.get(layerIndex)));
+        editorScrollPane.setViewportView(EditingPanelFactory.create(this.root.instructions.get(layerIndex)));
         if (sameLayer) {
             editorScrollPane.getVerticalScrollBar().setValue(scrollPos);
         } else {
@@ -248,14 +241,12 @@ class EditorFrame {
 
         var layerVGroup = layerLayout.createSequentialGroup();
         var layerRadioHGroup = layerLayout.createParallelGroup();
-        layerLayout.setHorizontalGroup(layerLayout.createSequentialGroup()
-                .addGroup(layerRadioHGroup));
+        layerLayout.setHorizontalGroup(layerLayout.createSequentialGroup().addGroup(layerRadioHGroup));
         layerLayout.setVerticalGroup(layerVGroup);
 
         ButtonGroup layerButtonGroup = new ButtonGroup();
 
-        changeEditorPane(Math.max(0, Math.min(this.currentLayer.value,
-                root.instructions.size() - 1)));
+        changeEditorPane(Math.max(0, Math.min(this.currentLayer.value, root.instructions.size() - 1)));
 
         int layerI = 0;
         for (GraphicLayer layer : root.instructions) {
@@ -270,9 +261,7 @@ class EditorFrame {
             });
             layerButtonGroup.add(layerEditRadio);
 
-            layerVGroup.addGroup(
-                    layerLayout.createParallelGroup(Alignment.CENTER)
-                            .addComponent(layerEditRadio));
+            layerVGroup.addGroup(layerLayout.createParallelGroup(Alignment.CENTER).addComponent(layerEditRadio));
             layerVGroup.addPreferredGap(ComponentPlacement.RELATED);
             layerRadioHGroup.addComponent(layerEditRadio);
 
@@ -288,5 +277,32 @@ class EditorFrame {
             layerI++;
         }
         layerScrollPane.setViewportView(layerPane);
+    }
+
+    private void createTimepointsFrame(JFrame frame) {
+        timepointsFrame.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
+        timepointsFrame.setTitle("timepoints");
+        timepointsFrame.setSize(400, 600);
+        timepointsFrame.setVisible(true);
+
+        timepointsFrame.setContentPane(EditingPanelFactory.createPlaceholder(null, "timepoints"));
+    }
+
+    private void createTimeControlFrame(JFrame frame) {
+        timeControlFrame.setLocation(frame.getLocation().x, frame.getLocation().y + frame.getHeight());
+        timeControlFrame.setTitle("time control");
+        timeControlFrame.setSize(1200, 150);
+        timeControlFrame.setVisible(true);
+
+        timeControlFrame.setContentPane(EditingPanelFactory.createPlaceholder(null, "timecontrol"));
+    }
+
+    private void createPaletteFrame(JFrame frame) {
+        paletteFrame.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
+        paletteFrame.setTitle("palette");
+        paletteFrame.setSize(150, 600);
+        paletteFrame.setVisible(true);
+
+        paletteFrame.setContentPane(EditingPanelFactory.createPlaceholder(null, "palette"));
     }
 }
