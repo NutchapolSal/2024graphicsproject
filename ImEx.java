@@ -89,6 +89,10 @@ class ImEx {
         return sb.toString();
     }
 
+    public static String exportString(EasingFunction easingFunction) {
+        return easingFunction.name();
+    }
+
     public static String exportString(boolean bool) {
         return bool ? "T" : "F";
     }
@@ -165,6 +169,10 @@ class ImEx {
         return sb.toString();
     }
 
+    public static String exportCode(EasingFunction easingFunction) {
+        return "EasingFunction." + easingFunction.name();
+    }
+
     public static String exportCode(boolean bool) {
         return bool ? "true" : "false";
     }
@@ -228,40 +236,27 @@ class ImEx {
         return EasingFunction.valueOf(sc.next());
     }
 
-    private static class AnimValueData<T> {
-        public List<AnimatedValue.Timepoint> timepoints;
-        public List<T> values;
-
-        public AnimValueData(List<AnimatedValue.Timepoint> timepoints, List<T> values) {
-            this.timepoints = timepoints;
-            this.values = values;
-        }
-
+    interface TimepointCreator<T> {
+        public void apply(double time, T value, EasingFunction easingToNext);
     }
 
-    private static <T> AnimValueData<T> importAnimValues(Scanner sc, Function<Scanner, T> importFunction) {
-        List<AnimatedValue.Timepoint> timepoints = new ArrayList<>();
-        List<T> values = new ArrayList<>();
+    private static <T> void importAnimValues(Scanner sc, Function<Scanner, T> importFunction,
+            TimepointCreator<T> creator) {
         while (true) {
             var time = sc.nextDouble();
-            values.add(importFunction.apply(sc));
+            var value = importFunction.apply(sc);
             var easingToNext = importEasingFunction(sc);
-            timepoints.add(new AnimatedValue.Timepoint(time, easingToNext));
+            creator.apply(time, value, easingToNext);
             if (sc.hasNext("END")) {
                 sc.next();
                 break;
             }
         }
-        return new AnimValueData<>(timepoints, values);
     }
 
     public static AnimBoolean importAnimBoolean(Scanner sc) {
-        var data = importAnimValues(sc, ImEx::importBoolean);
         var anim = new AnimBoolean();
-        for (int i = 0; i < data.timepoints.size(); i++) {
-            var tp = data.timepoints.get(i);
-            anim.add(tp.time, data.values.get(i), tp.easingToNext);
-        }
+        importAnimValues(sc, ImEx::importBoolean, anim::add);
         return anim;
     }
 
@@ -295,56 +290,38 @@ class ImEx {
     }
 
     public static AnimColor importAnimColor(Scanner sc, HashMap<String, PaletteValue> paletteValues) {
-        var data = importAnimValues(sc, ImEx::importMaybePaletteValue);
         var anim = new AnimColor();
-        for (int i = 0; i < data.timepoints.size(); i++) {
-            var tp = data.timepoints.get(i);
-            if (data.values.get(i).isPaletteValue) {
-                anim.add(tp.time, data.values.get(i).get(paletteValues), tp.easingToNext);
+        importAnimValues(sc, s -> importMaybePaletteValue(s), (time, value, easingToNext) -> {
+            if (value.isPaletteValue) {
+                anim.add(time, value.get(paletteValues), easingToNext);
             } else {
-                anim.add(tp.time, data.values.get(i).get(), tp.easingToNext);
+                anim.add(time, value.get(), easingToNext);
             }
-        }
+        });
         return anim;
     }
 
     public static AnimPoint importAnimPoint(Scanner sc) {
-        var data = importAnimValues(sc, ImEx::importPoint);
         var anim = new AnimPoint();
-        for (int i = 0; i < data.timepoints.size(); i++) {
-            var tp = data.timepoints.get(i);
-            anim.add(tp.time, data.values.get(i), tp.easingToNext);
-        }
+        importAnimValues(sc, ImEx::importPoint, anim::add);
         return anim;
     }
 
     public static AnimDimension importAnimDimension(Scanner sc) {
-        var data = importAnimValues(sc, ImEx::importDimension);
         var anim = new AnimDimension();
-        for (int i = 0; i < data.timepoints.size(); i++) {
-            var tp = data.timepoints.get(i);
-            anim.add(tp.time, data.values.get(i), tp.easingToNext);
-        }
+        importAnimValues(sc, ImEx::importDimension, anim::add);
         return anim;
     }
 
     public static AnimDouble importAnimDouble(Scanner sc) {
-        var data = importAnimValues(sc, ImEx::importDouble);
         var anim = new AnimDouble();
-        for (int i = 0; i < data.timepoints.size(); i++) {
-            var tp = data.timepoints.get(i);
-            anim.add(tp.time, data.values.get(i), tp.easingToNext);
-        }
+        importAnimValues(sc, ImEx::importDouble, anim::add);
         return anim;
     }
 
     public static AnimInt importAnimInt(Scanner sc) {
-        var data = importAnimValues(sc, ImEx::importInt);
         var anim = new AnimInt();
-        for (int i = 0; i < data.timepoints.size(); i++) {
-            var tp = data.timepoints.get(i);
-            anim.add(tp.time, data.values.get(i), tp.easingToNext);
-        }
+        importAnimValues(sc, ImEx::importInt, anim::add);
         return anim;
     }
 

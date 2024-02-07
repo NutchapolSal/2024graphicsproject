@@ -1,23 +1,13 @@
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
-class AnimPoint extends AnimatedValue {
-    public List<Point> valuepoints = new ArrayList<>();
-
+class AnimPoint extends AnimatedValue<Point> {
     public AnimPoint add(double time, Point value, EasingFunction easingToNext) {
-        var i = super.addTimepoint(time, easingToNext);
-        if (i == -1) {
-            return this;
-        }
-        valuepoints.add(value);
+        super.addTimepoint(time, value, easingToNext);
         return this;
     }
 
     public AnimPoint remove(double time) {
         var stepValue = getValue(time);
-        valuepoints.remove(stepValue.index);
         timepoints.remove(stepValue.index);
         return this;
     }
@@ -28,23 +18,19 @@ class AnimPoint extends AnimatedValue {
         }
         var stepValue = getValue(time);
         if (stepValue.frac == 0) {
-            return valuepoints.get(stepValue.index);
+            return this.getIndex(0);
         }
 
         return new Point(
-                Lerp.run(valuepoints.get(stepValue.index).x, stepValue.frac,
-                        valuepoints.get(stepValue.index + 1).x),
-                Lerp.run(valuepoints.get(stepValue.index).y, stepValue.frac,
-                        valuepoints.get(stepValue.index + 1).y));
+                Lerp.run(this.getIndex(stepValue.index).x, stepValue.frac, this.getIndex(stepValue.index + 1).x),
+                Lerp.run(this.getIndex(stepValue.index).y, stepValue.frac, this.getIndex(stepValue.index + 1).y));
     }
 
     public String exportString() {
-        var strings = valuepoints.stream().map(ImEx::exportString).collect(Collectors.toList());
-        return super.exportString(strings);
+        return super.exportString(v -> ImEx.exportString(v));
     }
 
     public String exportCode() {
-        var strings = valuepoints.stream().map(ImEx::exportCode).collect(Collectors.toList());
-        return super.exportCode("AnimPoint", strings);
+        return super.exportCode("AnimPoint", v -> ImEx.exportCode(v));
     }
 }

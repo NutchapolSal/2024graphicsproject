@@ -1,9 +1,6 @@
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
-class AnimColor extends AnimatedValue {
+class AnimColor extends AnimatedValue<AnimColor.MaybePaletteValue> {
     static class MaybePaletteValue implements Exportable {
         public final boolean isPaletteValue;
         public final PaletteValue paletteValue;
@@ -43,8 +40,6 @@ class AnimColor extends AnimatedValue {
         }
     }
 
-    public List<MaybePaletteValue> valuepoints = new ArrayList<>();
-
     public AnimColor add(double time, String value, EasingFunction easingToNext) {
         return add(time, ColorHexer.decode(value), easingToNext);
     }
@@ -58,17 +53,12 @@ class AnimColor extends AnimatedValue {
     }
 
     private AnimColor add(double time, MaybePaletteValue value, EasingFunction easingToNext) {
-        var i = super.addTimepoint(time, easingToNext);
-        if (i == -1) {
-            return this;
-        }
-        valuepoints.add(value);
+        super.addTimepoint(time, value, easingToNext);
         return this;
     }
 
     public AnimColor remove(double time) {
         var stepValue = getValue(time);
-        valuepoints.remove(stepValue.index);
         timepoints.remove(stepValue.index);
         return this;
     }
@@ -79,30 +69,27 @@ class AnimColor extends AnimatedValue {
         }
         var stepValue = getValue(time);
         if (stepValue.frac == 0) {
-            return valuepoints.get(stepValue.index).get();
+            return this.getIndex(stepValue.index).get();
         }
 
-        return Lerp.run(valuepoints.get(stepValue.index).get(), stepValue.frac,
-                valuepoints.get(stepValue.index + 1).get());
+        return Lerp.run(this.getIndex(stepValue.index).get(), stepValue.frac, this.getIndex(stepValue.index + 1).get());
     }
 
     public AnimColor copy() {
         var anim = new AnimColor();
         for (int i = 0; i < timepoints.size(); i++) {
             var tp = timepoints.get(i);
-            var value = valuepoints.get(i);
+            var value = this.getIndex(i);
             anim.add(tp.time, value, tp.easingToNext);
         }
         return anim;
     }
 
     public String exportString() {
-        var strings = valuepoints.stream().map(ImEx::exportString).collect(Collectors.toList());
-        return super.exportString(strings);
+        return super.exportString(v -> v.exportString());
     }
 
     public String exportCode() {
-        var strings = valuepoints.stream().map(ImEx::exportCode).collect(Collectors.toList());
-        return super.exportCode("AnimColor", strings);
+        return super.exportCode("AnimColor", v -> v.exportCode());
     }
 }

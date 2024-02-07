@@ -1,14 +1,18 @@
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-abstract class AnimatedValue implements Exportable {
-    static class Timepoint {
+abstract class AnimatedValue<T> implements Exportable {
+    class Timepoint {
         public double time;
+        public T value;
         public EasingFunction easingToNext;
 
-        Timepoint(double time, EasingFunction easingToNext) {
+        Timepoint(double time, T value, EasingFunction easingToNext) {
             this.time = time;
+            this.value = value;
             this.easingToNext = easingToNext;
         }
 
@@ -34,8 +38,8 @@ abstract class AnimatedValue implements Exportable {
     /**
      * @return index of added timepoint or -1 if timepoint already exists
      */
-    protected int addTimepoint(double time, EasingFunction easingToNext) {
-        int index = Collections.binarySearch(timepoints, new Timepoint(time, null),
+    protected int addTimepoint(double time, T value, EasingFunction easingToNext) {
+        int index = Collections.binarySearch(timepoints, new Timepoint(time, null, null),
                 (a, b) -> Double.compare(a.time, b.time));
         if (index < 0) {
             index = ~index;
@@ -43,7 +47,7 @@ abstract class AnimatedValue implements Exportable {
             return -1;
         }
 
-        timepoints.add(index, new Timepoint(time, easingToNext));
+        timepoints.add(index, new Timepoint(time, value, easingToNext));
         return index;
     }
 
@@ -70,33 +74,19 @@ abstract class AnimatedValue implements Exportable {
         return new StepValue(iBeforeTime, timepoints.get(iBeforeTime).easingToNext.applyAsDouble(frac));
     }
 
-    protected String exportString(List<String> valuepoints) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < timepoints.size(); i++) {
-            sb.append(timepoints.get(i).time);
-            sb.append(" ");
-            sb.append(valuepoints.get(i));
-            sb.append(" ");
-            sb.append(timepoints.get(i).easingToNext);
-            sb.append(" ");
-        }
-        sb.append("END");
-        return sb.toString();
+    protected T getIndex(int index) {
+        return timepoints.get(index).value;
     }
 
-    protected String exportCode(String className, List<String> valuepoints) {
-        StringBuilder sb = new StringBuilder("new ");
-        sb.append(className);
-        sb.append("()");
-        for (int i = 0; i < timepoints.size(); i++) {
-            sb.append("\n.add(");
-            sb.append(timepoints.get(i).time);
-            sb.append(", ");
-            sb.append(valuepoints.get(i));
-            sb.append(", EasingFunction.");
-            sb.append(timepoints.get(i).easingToNext);
-            sb.append(")");
-        }
-        return sb.toString();
+    protected String exportString(Function<T, String> exporter) {
+        return timepoints.stream().map(tp -> ImEx.exportString(tp.time) + " " + exporter.apply(tp.value) + " "
+                + ImEx.exportString(tp.easingToNext)).collect(Collectors.joining(" ", "", " END"));
+    }
+
+    protected String exportCode(String className, Function<T, String> exporter) {
+        return timepoints.stream()
+                .map(tp -> ".add(" + ImEx.exportCode(tp.time) + ", " + exporter.apply(tp.value) + ", "
+                        + ImEx.exportCode(tp.easingToNext) + ")")
+                .collect(Collectors.joining(" ", "new " + className + "()\n", ""));
     }
 }
