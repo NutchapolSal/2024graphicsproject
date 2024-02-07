@@ -2,23 +2,63 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 class ImEx {
+
+    public static void test() {
+        var root = PreloadedData.create();
+        var exx = ImEx.exportString(root);
+        var reimport = ImEx.exportString(ImEx.importString(exx));
+        System.out.println("ImEx test");
+        System.out.println("string export:");
+        System.out.println(exx);
+        System.out.println();
+        System.out.println("---");
+        System.out.println();
+        System.out.println("re-imported:" + (exx.equals(reimport) ? "ok" : "FAIL"));
+        System.out.println();
+        if (!exx.equals(reimport)) {
+            System.out.println(reimport);
+        }
+        System.out.println("---");
+        System.out.println();
+        System.out.println("code export:");
+        System.out.println(ImEx.exportCode(root));
+    }
 
     public static String exportString(Exportable obj) {
         return obj.exportString();
     }
 
-    public static String exportString(List<GraphicLayer> instructions) {
-        StringBuilder sb = new StringBuilder();
-        for (GraphicLayer layer : instructions) {
-            sb.append(layer.exportString());
-            sb.append("\n");
-        }
-        return sb.toString();
+    public static String exportString(Referenceable obj) {
+        return obj.exportString();
+    }
+
+    public static String exportInitString(Referenceable obj) {
+        return obj.exportInitString();
+    }
+
+    public static String exportInitStringPaletteValues(Palette palette) {
+        return palette.exportInitStringPaletteValues();
+    }
+
+    public static String exportStringLayers(List<GraphicLayer> instructions) {
+        return instructions.stream().map(ImEx::exportString).collect(Collectors.joining("\n"));
+    }
+
+    public static String exportStringTKPs(List<TimeKeypoint> timeKeypoints) {
+        var tkps = new ArrayList<>(timeKeypoints);
+        tkps.sort(Comparator.comparingInt(TimeKeypoint::referenceDepth));
+        return tkps.stream().map(ImEx::exportInitString).collect(Collectors.joining("\n"));
     }
 
     public static String exportString(double d) {
@@ -53,18 +93,52 @@ class ImEx {
         return bool ? "T" : "F";
     }
 
+    public static String exportStringUser(String str) {
+        return str + "\n";
+    }
+
+    public static String exportStringId(String id) {
+        return id;
+    }
+
+    public static String getCodeId(Referenceable obj) {
+        return obj.getCodeId();
+    }
+
     public static String exportCode(Exportable obj) {
         return obj.exportCode();
     }
 
-    public static String exportCode(List<GraphicLayer> instructions) {
+    public static String exportCode(Referenceable obj) {
+        return obj.exportCode();
+    }
+
+    public static String exportInitCode(Referenceable obj) {
+        return obj.exportInitCode();
+    }
+
+    public static String exportCodeLayers(List<GraphicLayer> instructions) {
         StringBuilder sb = new StringBuilder();
         for (GraphicLayer layer : instructions) {
             sb.append("instructions.add(");
-            sb.append(layer.exportCode());
+            sb.append(ImEx.exportCode(layer));
             sb.append(");\n");
         }
         return sb.toString();
+    }
+
+    public static String exportInitCodePaletteValues(Palette palette) {
+        return StreamSupport.stream(palette.sparseIterator().spliterator(), true).map(v -> v.value.exportInitCode())
+                .collect(Collectors.joining("\n"));
+    }
+
+    public static String exportInitCodeTKPs(List<TimeKeypoint> timeKeypoints) {
+        return timeKeypoints.stream().map(TimeKeypoint::exportInitCode).collect(Collectors.joining("\n"));
+    }
+
+    public static String exportCodeTKPs(List<TimeKeypoint> timeKeypoints) {
+        return timeKeypoints.stream().map(TimeKeypoint::exportCode)
+                .collect(Collectors.joining(");\ntimeKeypoints.add(", "timeKeypoints.add(", ");"));
     }
 
     public static String exportCode(Color color) {
@@ -103,11 +177,16 @@ class ImEx {
         return Integer.toString(i);
     }
 
-    public static List<GraphicLayer> importString(String str) {
+    /** wrap string in quotes */
+    public static String exportCode(String str) {
+        return "\"" + str.replace("\n", "\\n") + "\"";
+    }
+
+    public static GraphicRoot importString(String str) {
         Scanner sc = new Scanner(str);
-        List<GraphicLayer> layers = importLayers(sc);
+        GraphicRoot root = importRoot(sc);
         sc.close();
-        return layers;
+        return root;
     }
 
     public static boolean importBoolean(Scanner sc) {
@@ -125,8 +204,7 @@ class ImEx {
 
     public static Dimension importDimension(Scanner sc) {
         String[] coords = sc.next().split(",");
-        return new Dimension(Integer.parseInt(coords[0]),
-                Integer.parseInt(coords[1]));
+        return new Dimension(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
     }
 
     public static int importInt(Scanner sc) {
@@ -140,6 +218,10 @@ class ImEx {
     public static String importUserString(Scanner sc) {
         sc.skip(" ");
         return sc.nextLine();
+    }
+
+    public static String importStringId(Scanner sc) {
+        return sc.next();
     }
 
     public static EasingFunction importEasingFunction(Scanner sc) {
@@ -233,17 +315,64 @@ class ImEx {
         return anim;
     }
 
-    public static List<GraphicLayer> importLayers(Scanner sc) {
+    public static GraphicRoot importRoot(Scanner sc) {
+        HashMap<String, TimeKeypoint> timeKeypoints = new HashMap<>();
+        HashMap<String, Set<String>> timeAwaits = new HashMap<>();
+        HashMap<String, PaletteValue> paletteValues = new HashMap<>();
+        Palette palette = new Palette();
         List<GraphicLayer> layers = new ArrayList<>();
         while (sc.hasNext()) {
             String type = sc.next();
             switch (type) {
-                case "LAYER":
-                    layers.add(importLayer(sc));
-                    break;
+            case "TIMEKEYPOINT":
+                importTimeKeypoint(sc, timeKeypoints, timeAwaits);
+                break;
+            case "PALETTEVALUE":
+                var pv = importPaletteValue(sc);
+                paletteValues.put(pv.id, pv);
+                break;
+            case "PALETTE":
+                palette = importPalette(sc, paletteValues);
+                break;
+            case "LAYER":
+                layers.add(importLayer(sc));
+                break;
             }
         }
-        return layers;
+        return new GraphicRoot(new ArrayList<>(timeKeypoints.values()), palette, layers);
+    }
+
+    public static void importTimeKeypoint(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints,
+            HashMap<String, Set<String>> timeAwaits) {
+        String id = importStringId(sc);
+        double offset = importDouble(sc);
+        TimeKeypoint tkp = new TimeKeypoint(id, offset, null);
+        timeKeypoints.put(id, tkp);
+        if (timeAwaits.containsKey(id)) {
+            for (String awaitId : timeAwaits.get(id)) {
+                timeKeypoints.get(awaitId).setReference(tkp);
+            }
+            timeAwaits.remove(id);
+        }
+        if (sc.hasNext("NULL")) {
+            sc.next();
+            return;
+        }
+
+        String referenceId = importStringId(sc);
+        if (timeKeypoints.containsKey(referenceId)) {
+            tkp.setReference(timeKeypoints.get(referenceId));
+        } else {
+            timeAwaits.computeIfAbsent(referenceId, k -> new HashSet<>()).add(id);
+        }
+
+    }
+
+    public static PaletteValue importPaletteValue(Scanner sc) {
+        String id = importStringId(sc);
+        String color = importHexColor(sc);
+        String label = importUserString(sc);
+        return new PaletteValue(id, color, label);
     }
 
     public static GraphicLayer importLayer(Scanner sc) {
@@ -259,18 +388,35 @@ class ImEx {
                 break;
             }
             switch (type) {
-                case "PATH2D":
-                    objects.add(importPath2D(sc));
-                    break;
-                case "CIRCLE":
-                    objects.add(importCircle(sc));
-                    break;
-                case "IMAGE":
-                    objects.add(importImage(sc));
-                    break;
+            case "PATH2D":
+                objects.add(importPath2D(sc));
+                break;
+            case "CIRCLE":
+                objects.add(importCircle(sc));
+                break;
+            case "IMAGE":
+                objects.add(importImage(sc));
+                break;
             }
         }
         return new GraphicLayer(layerName, visible, translate, rotateOrigin, rotate, objects);
+    }
+
+    public static Palette importPalette(Scanner sc, HashMap<String, PaletteValue> paletteValues) {
+        Palette palette = new Palette();
+        while (sc.hasNext()) {
+            int y = importInt(sc);
+            int x = importInt(sc);
+            String valueId = importStringId(sc);
+            if (paletteValues.containsKey(valueId)) {
+                palette.set(x, y, paletteValues.get(valueId));
+            }
+            if (sc.hasNext("END")) {
+                sc.next();
+                break;
+            }
+        }
+        return palette;
     }
 
     public static Path2DLine importPath2DLine(Scanner sc) {
@@ -306,12 +452,12 @@ class ImEx {
                 break;
             }
             switch (type) {
-                case "LINE":
-                    data.add(importPath2DLine(sc));
-                    break;
-                case "BEZIER":
-                    data.add(importPath2DBezier(sc));
-                    break;
+            case "LINE":
+                data.add(importPath2DLine(sc));
+                break;
+            case "BEZIER":
+                data.add(importPath2DBezier(sc));
+                break;
             }
         }
         return new GraphicPath2D(stroke, strokeColor, thickness, fill, fillColor, closed, p1, data);

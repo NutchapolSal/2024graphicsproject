@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Scanner;
 import java.util.prefs.Preferences;
 
@@ -30,7 +29,7 @@ class EditorFrame {
 
     static Preferences prefs = Preferences.userRoot().node("2024graphicsprojecteditor");
 
-    private List<GraphicLayer> instructions;
+    private GraphicRoot root;
 
     private MutableInt currentLayer = new MutableInt(-1);
     private MutableString savePath = new MutableString(null);
@@ -41,8 +40,8 @@ class EditorFrame {
 
     private JFrame frame2 = new JFrame();
 
-    EditorFrame(JFrame frame, List<GraphicLayer> instructions) {
-        this.instructions = instructions;
+    EditorFrame(JFrame frame, GraphicRoot root) {
+        this.root = root;
 
         frame2.setLocation(frame.getLocation().x + frame.getWidth(),
                 frame.getLocation().y);
@@ -65,16 +64,16 @@ class EditorFrame {
 
         JButton addLayerButton = new JButton("add layer");
         addLayerButton.addActionListener(e -> {
-            this.instructions.add(new GraphicLayer());
+            this.root.instructions.add(new GraphicLayer());
             updateLayerListPanel();
         });
         JButton layerUpButton = new JButton("^");
         layerUpButton.addActionListener(e -> {
             if (currentLayer.value > 0) {
-                var temp = instructions.get(currentLayer.value - 1);
-                instructions.set(currentLayer.value - 1,
-                        instructions.get(currentLayer.value));
-                instructions.set(currentLayer.value, temp);
+                var temp = root.instructions.get(currentLayer.value - 1);
+                root.instructions.set(currentLayer.value - 1,
+                        root.instructions.get(currentLayer.value));
+                root.instructions.set(currentLayer.value, temp);
                 currentLayer.value--;
                 updateLayerListPanel();
             }
@@ -82,11 +81,11 @@ class EditorFrame {
 
         JButton layerDownButton = new JButton("v");
         layerDownButton.addActionListener(e -> {
-            if (currentLayer.value < instructions.size() - 1) {
-                var temp = instructions.get(currentLayer.value + 1);
-                instructions.set(currentLayer.value + 1,
-                        instructions.get(currentLayer.value));
-                instructions.set(currentLayer.value, temp);
+            if (currentLayer.value < root.instructions.size() - 1) {
+                var temp = root.instructions.get(currentLayer.value + 1);
+                root.instructions.set(currentLayer.value + 1,
+                        root.instructions.get(currentLayer.value));
+                root.instructions.set(currentLayer.value, temp);
                 currentLayer.value++;
                 updateLayerListPanel();
             }
@@ -136,7 +135,7 @@ class EditorFrame {
             try {
                 Files.write(
                         Path.of(this.savePath.value),
-                        ImEx.exportString(instructions).getBytes(StandardCharsets.UTF_8));
+                        ImEx.exportString(root).getBytes(StandardCharsets.UTF_8));
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -156,7 +155,7 @@ class EditorFrame {
             try {
                 Files.write(
                         Path.of(this.savePath.value),
-                        ImEx.exportString(instructions).getBytes(StandardCharsets.UTF_8));
+                        ImEx.exportString(root).getBytes(StandardCharsets.UTF_8));
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -175,9 +174,10 @@ class EditorFrame {
             try {
                 var file = new File(this.savePath.value);
                 Scanner scanner = new Scanner(file, "UTF-8");
-                instructions.clear();
-                var newInstructions = ImEx.importLayers(scanner);
-                instructions.addAll(newInstructions);
+                var newRoot = ImEx.importRoot(scanner);
+                root.instructions = newRoot.instructions;
+                root.timeKeypoints = newRoot.timeKeypoints;
+                root.palette = newRoot.palette;
                 scanner.close();
                 frame2.setTitle("editor - " + file.getName());
                 updateLayerListPanel();
@@ -196,7 +196,7 @@ class EditorFrame {
             try {
                 Files.write(
                         Path.of(fileChooser.getSelectedFile().getAbsolutePath()),
-                        ImEx.exportCode(instructions).getBytes(StandardCharsets.UTF_8));
+                        ImEx.exportCode(root).getBytes(StandardCharsets.UTF_8));
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -224,7 +224,7 @@ class EditorFrame {
     }
 
     private void changeEditorPane(int layerIndex) {
-        if (layerIndex < 0 || layerIndex >= instructions.size()) {
+        if (layerIndex < 0 || layerIndex >= root.instructions.size()) {
             editorScrollPane.setViewportView(new JPanel());
             this.currentLayer.value = layerIndex;
             return;
@@ -232,7 +232,7 @@ class EditorFrame {
         boolean sameLayer = layerIndex == this.currentLayer.value;
         int scrollPos = editorScrollPane.getVerticalScrollBar().getValue();
         editorScrollPane
-                .setViewportView(EditingPanelFactory.create(this.instructions.get(layerIndex)));
+                .setViewportView(EditingPanelFactory.create(this.root.instructions.get(layerIndex)));
         if (sameLayer) {
             editorScrollPane.getVerticalScrollBar().setValue(scrollPos);
         } else {
@@ -255,10 +255,10 @@ class EditorFrame {
         ButtonGroup layerButtonGroup = new ButtonGroup();
 
         changeEditorPane(Math.max(0, Math.min(this.currentLayer.value,
-                instructions.size() - 1)));
+                root.instructions.size() - 1)));
 
         int layerI = 0;
-        for (GraphicLayer layer : instructions) {
+        for (GraphicLayer layer : root.instructions) {
 
             var layerEditRadio = new JRadioButton(layer.name.value);
             if (layerI == currentLayer.value) {
@@ -279,7 +279,7 @@ class EditorFrame {
             JPopupMenu layerPopupMenu = new JPopupMenu();
             var layerDeleteMenuItem = layerPopupMenu.add("Delete");
             layerDeleteMenuItem.addActionListener(e -> {
-                instructions.remove(layer);
+                root.instructions.remove(layer);
                 GlobalState.needsUpdateLayers = true;
             });
 
