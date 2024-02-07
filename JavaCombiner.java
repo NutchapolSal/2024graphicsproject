@@ -1,10 +1,9 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -52,7 +51,7 @@ class JavaCombiner {
         var lines = Stream.concat(imports.stream().sorted(), body.stream()).collect(Collectors.toList());
 
         try {
-            Files.write(Paths.get("Main.java.out"), lines, StandardCharsets.UTF_8);
+            Files.write(Path.of("Main.java.out"), lines, StandardCharsets.UTF_8);
             System.out.println("output at Main.java.out");
             System.out.println(lines.size() + " lines");
             System.out.println(
