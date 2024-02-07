@@ -1,7 +1,9 @@
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
-import java.io.FileWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
@@ -32,6 +34,7 @@ class EditorFrame {
 
     private MutableInt currentLayer = new MutableInt(-1);
     private MutableString savePath = new MutableString(null);
+    private MutableString saveFolder = new MutableString(null);
 
     private JScrollPane layerScrollPane = new JScrollPane();
     private JScrollPane editorScrollPane = new JScrollPane();
@@ -123,77 +126,79 @@ class EditorFrame {
 
         saveMenuItem.addActionListener(e -> {
             if (this.savePath.value == null) {
-                if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
-                    this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
-                    prefs.put("lastSavePath",
-                            fileChooser.getCurrentDirectory().getAbsolutePath());
+                if (fileChooser.showSaveDialog(frame2) != JFileChooser.APPROVE_OPTION) {
+                    return;
                 }
+                this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+                this.saveFolder.value = fileChooser.getCurrentDirectory().getAbsolutePath();
             }
-            if (this.savePath.value != null) {
-                try {
-                    FileWriter fw = new FileWriter(this.savePath.value);
-                    fw.write(ImEx.exportString(instructions));
-                    fw.close();
-                    frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
-                            + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
-                    prefs.put("lastSavePath", this.savePath.value);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+
+            try {
+                Files.write(
+                        Path.of(this.savePath.value),
+                        ImEx.exportString(instructions).getBytes(StandardCharsets.UTF_8));
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
+            frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
+                    + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
+            prefs.put("lastSavePath", this.saveFolder.value);
         });
 
         saveAsMenuItem.addActionListener(e -> {
-            if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
-                this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
-                prefs.put("lastSavePath",
-                        fileChooser.getCurrentDirectory().getAbsolutePath());
-
-                try {
-                    FileWriter fw = new FileWriter(this.savePath.value);
-                    fw.write(ImEx.exportString(instructions));
-                    fw.close();
-                    frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
-                            + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+            if (fileChooser.showSaveDialog(frame2) != JFileChooser.APPROVE_OPTION) {
+                return;
             }
+            this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+            this.saveFolder.value = fileChooser.getCurrentDirectory().getAbsolutePath();
+            prefs.put("lastSavePath", this.saveFolder.value);
+
+            try {
+                Files.write(
+                        Path.of(this.savePath.value),
+                        ImEx.exportString(instructions).getBytes(StandardCharsets.UTF_8));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            frame2.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
+                    + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
         });
 
         loadMenuItem.addActionListener(e -> {
-            if (fileChooser.showOpenDialog(frame2) == JFileChooser.APPROVE_OPTION) {
-                this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
-                prefs.put("lastSavePath",
-                        fileChooser.getCurrentDirectory().getAbsolutePath());
+            if (fileChooser.showOpenDialog(frame2) != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+            this.savePath.value = fileChooser.getSelectedFile().getAbsolutePath();
+            this.saveFolder.value = fileChooser.getCurrentDirectory().getAbsolutePath();
+            prefs.put("lastSavePath", this.saveFolder.value);
 
-                try {
-                    var file = new File(this.savePath.value);
-                    Scanner scanner = new Scanner(file);
-                    instructions.clear();
-                    var newInstructions = ImEx.importLayers(scanner);
-                    instructions.addAll(newInstructions);
-                    scanner.close();
-                    frame2.setTitle("editor - " + file.getName());
-                    updateLayerListPanel();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+            try {
+                var file = new File(this.savePath.value);
+                Scanner scanner = new Scanner(file, "UTF-8");
+                instructions.clear();
+                var newInstructions = ImEx.importLayers(scanner);
+                instructions.addAll(newInstructions);
+                scanner.close();
+                frame2.setTitle("editor - " + file.getName());
+                updateLayerListPanel();
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         });
 
         exportCodeMenuItem.addActionListener(e -> {
-            if (fileChooser.showSaveDialog(frame2) == JFileChooser.APPROVE_OPTION) {
-                prefs.put("lastSavePath",
-                        fileChooser.getCurrentDirectory().getAbsolutePath());
+            if (fileChooser.showSaveDialog(frame2) != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
 
-                try {
-                    FileWriter fw = new FileWriter(fileChooser.getSelectedFile().getAbsolutePath());
-                    fw.write(ImEx.exportCode(instructions));
-                    fw.close();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+            prefs.put("lastSavePath", fileChooser.getCurrentDirectory().getAbsolutePath());
+
+            try {
+                Files.write(
+                        Path.of(fileChooser.getSelectedFile().getAbsolutePath()),
+                        ImEx.exportCode(instructions).getBytes(StandardCharsets.UTF_8));
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         });
 
