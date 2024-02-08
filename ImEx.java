@@ -1,6 +1,8 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -188,6 +190,15 @@ class ImEx {
     /** wrap string in quotes */
     public static String exportCode(String str) {
         return "\"" + str.replace("\n", "\\n") + "\"";
+    }
+
+    public static String generateAnnotation(String className) {
+        return generateAnnotation(className, ZonedDateTime.now());
+    }
+
+    public static String generateAnnotation(String className, ZonedDateTime time) {
+        return "@Generated(value = " + exportCode(className) + ", date = "
+                + exportCode(time.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)) + ")";
     }
 
     public static GraphicRoot importString(String str) {

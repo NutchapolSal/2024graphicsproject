@@ -23,6 +23,9 @@ class GraphicRoot implements Exportable {
 
     public String exportCode() {
         StringBuilder sb = new StringBuilder();
+        sb.append(ImEx.generateAnnotation("ImEx"));
+        sb.append("\n");
+        sb.append("\n");
         sb.append(ImEx.exportInitCodeTKPs(timeKeypoints));
         sb.append("\n");
         sb.append(ImEx.exportInitCodePaletteValues(palette));

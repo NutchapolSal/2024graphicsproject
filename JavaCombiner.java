@@ -13,9 +13,10 @@ import java.util.stream.Stream;
 
 class JavaCombiner {
     public static void main(String[] args) {
+        var className = JavaCombiner.class.getSimpleName();
         var folder = new File(".");
-        var fileList = folder.listFiles((f) -> f.isFile() && f.getName().endsWith(".java")
-                && !f.getName().equals(JavaCombiner.class.getSimpleName() + ".java"));
+        var fileList = folder.listFiles(
+                (f) -> f.isFile() && f.getName().endsWith(".java") && !f.getName().equals(className + ".java"));
 
         System.out.println(fileList.length + " files");
 
@@ -47,6 +48,7 @@ class JavaCombiner {
         }
 
         var lines = Stream.concat(imports.stream().sorted(), body.stream()).collect(Collectors.toList());
+        lines.add(0, ImEx.generateAnnotation(className));
 
         try {
             Files.write(Path.of("Main.java.out"), lines, StandardCharsets.UTF_8);
