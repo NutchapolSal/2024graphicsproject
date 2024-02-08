@@ -4,29 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 class PreloadedData {
-    static void thing() {
-        for (int i = 0; i < 20; i++) {
-            System.out.println("wow");
-        }
-    }
-
-    static void thing2() {
-        for (int i = 0; i < 20; i++) {
-            System.out.println("wow");
-        }
-    }
-
-    static void thing3() {
-        for (int i = 0; i < 20; i++) {
-            System.out.println("wow");
-        }
-    }
-
-    static void thing4() {
-        for (int i = 0; i < 20; i++) {
-            System.out.println("wow");
-        }
-    }
 
     static GraphicRoot create() {
         var tkp_0qwe = new TimeKeypoint("0qwe", 0.0, null, "origin");
