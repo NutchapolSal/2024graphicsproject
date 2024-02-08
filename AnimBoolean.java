@@ -1,14 +1,14 @@
 import java.util.function.DoubleUnaryOperator;
 
 class AnimBoolean extends AnimatedValue<Boolean> {
+    /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
     public AnimBoolean add(TimeKeypoint tkp, boolean value, DoubleUnaryOperator easingToNext) {
         super.addTimepoint(tkp, value, EasingFunction.snap);
         return this;
     }
 
-    public AnimBoolean remove(double time) {
-        var stepValue = getValue(time);
-        timepoints.remove(stepValue.index);
+    public AnimBoolean remove(TimeKeypoint tkp) {
+        super.removeTimepoint(tkp);
         return this;
     }
 

@@ -1,14 +1,14 @@
 import java.awt.Point;
 
 class AnimPoint extends AnimatedValue<Point> {
+    /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
     public AnimPoint add(TimeKeypoint tkp, Point value, EasingFunction easingToNext) {
         super.addTimepoint(tkp, value, easingToNext);
         return this;
     }
 
-    public AnimPoint remove(double time) {
-        var stepValue = getValue(time);
-        timepoints.remove(stepValue.index);
+    public AnimPoint remove(TimeKeypoint tkp) {
+        super.removeTimepoint(tkp);
         return this;
     }
 

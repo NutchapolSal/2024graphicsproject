@@ -2,14 +2,14 @@ import java.awt.Dimension;
 
 class AnimDimension extends AnimatedValue<Dimension> {
 
+    /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
     public AnimDimension add(TimeKeypoint tkp, Dimension value, EasingFunction easingToNext) {
         super.addTimepoint(tkp, value, easingToNext);
         return this;
     }
 
-    public AnimDimension remove(double time) {
-        var stepValue = getValue(time);
-        timepoints.remove(stepValue.index);
+    public AnimDimension remove(TimeKeypoint tkp) {
+        super.removeTimepoint(tkp);
         return this;
     }
 

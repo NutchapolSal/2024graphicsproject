@@ -1,13 +1,13 @@
 public class AnimInt extends AnimatedValue<Integer> {
 
+    /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
     public AnimInt add(TimeKeypoint tkp, int value, EasingFunction easingToNext) {
         super.addTimepoint(tkp, value, easingToNext);
         return this;
     }
 
-    public AnimInt remove(double time) {
-        var stepValue = getValue(time);
-        timepoints.remove(stepValue.index);
+    public AnimInt remove(TimeKeypoint tkp) {
+        super.removeTimepoint(tkp);
         return this;
     }
 

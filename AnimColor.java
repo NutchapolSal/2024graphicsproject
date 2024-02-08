@@ -40,26 +40,29 @@ class AnimColor extends AnimatedValue<AnimColor.MaybePaletteValue> {
         }
     }
 
+    /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
     public AnimColor add(TimeKeypoint tkp, String value, EasingFunction easingToNext) {
         return add(tkp, ColorHexer.decode(value), easingToNext);
     }
 
+    /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
     public AnimColor add(TimeKeypoint tkp, Color value, EasingFunction easingToNext) {
         return add(tkp, new MaybePaletteValue(value), easingToNext);
     }
 
+    /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
     public AnimColor add(TimeKeypoint tkp, PaletteValue value, EasingFunction easingToNext) {
         return add(tkp, new MaybePaletteValue(value), easingToNext);
     }
 
+    /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
     private AnimColor add(TimeKeypoint tkp, MaybePaletteValue value, EasingFunction easingToNext) {
         super.addTimepoint(tkp, value, easingToNext);
         return this;
     }
 
-    public AnimColor remove(double time) {
-        var stepValue = getValue(time);
-        timepoints.remove(stepValue.index);
+    public AnimColor remove(TimeKeypoint tkp) {
+        super.removeTimepoint(tkp);
         return this;
     }
 

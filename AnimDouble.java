@@ -1,13 +1,13 @@
 class AnimDouble extends AnimatedValue<Double> {
 
+    /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
     public AnimDouble add(TimeKeypoint tkp, double value, EasingFunction easingToNext) {
         super.addTimepoint(tkp, value, easingToNext);
         return this;
     }
 
-    public AnimDouble remove(double time) {
-        var stepValue = getValue(time);
-        timepoints.remove(stepValue.index);
+    public AnimDouble remove(TimeKeypoint tkp) {
+        super.removeTimepoint(tkp);
         return this;
     }
 

@@ -39,9 +39,17 @@ abstract class AnimatedValue<T> implements Exportable {
         Collections.sort(timepoints, (tp1, tp2) -> Double.compare(tp1.tkp.time(), tp2.tkp.time()));
     }
 
+    /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
     protected void addTimepoint(TimeKeypoint tkp, T value, EasingFunction easingToNext) {
+        if (timepoints.stream().anyMatch(tp -> tp.tkp == tkp)) {
+            throw new IllegalArgumentException("Cannot add the same TimeKeypoint twice");
+        }
         timepoints.add(new Timepoint(tkp, value, easingToNext));
         sortTimepoints();
+    }
+
+    protected void removeTimepoint(TimeKeypoint tkp) {
+        timepoints.removeIf(tp -> tp.tkp == tkp);
     }
 
     protected StepValue getValue(double time) {
