@@ -1,5 +1,5 @@
 import javax.swing.JFrame;
-import javax.swing.Timer;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 public class Main {
@@ -12,7 +12,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        runTests();
+        // runTests();
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -24,23 +24,17 @@ public class Main {
 
         GraphicsPanel panel = new GraphicsPanel(root);
 
-        JFrame frame = new JFrame();
-        frame.add(panel);
-        frame.setTitle("😋");
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame();
+            frame.add(panel);
+            frame.setTitle("😋");
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.pack();
-        frame.setVisible(true);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.pack();
+            frame.setVisible(true);
 
-        new EditorGang(frame, root);
-
-        long startTime = System.nanoTime();
-        new Timer(1000 / 60, e -> {
-            long currTime = System.nanoTime();
-            root.setTime((currTime - startTime) / 1_000_000_000.0);
-            panel.repaint();
-        }).start();
-
+            new EditorGang(frame, root);
+        });
     }
 
 }

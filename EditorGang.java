@@ -1,3 +1,8 @@
+import java.awt.Component;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -5,26 +10,43 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.prefs.Preferences;
 
+import javax.swing.Box;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.ListCellRenderer;
+import javax.swing.ListSelectionModel;
 import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 class EditorGang {
 
@@ -39,25 +61,116 @@ class EditorGang {
     private JScrollPane layerScrollPane = new JScrollPane();
     private JScrollPane editorScrollPane = new JScrollPane();
 
+    private JFrame displayFrame;
     private JFrame editorFrame = new JFrame();
     private JFrame timepointsFrame = new JFrame();
     private JFrame timeControlFrame = new JFrame();
     private JFrame paletteFrame = new JFrame();
 
+    private long lastTime;
+    private double time;
+    private Timer timeTicker = new Timer(1000 / 60, e -> {
+        long currTime = System.nanoTime();
+        double deltaSecs = (currTime - lastTime) / 1_000_000_000.0;
+        lastTime = currTime;
+
+        time += deltaSecs;
+        root.setTime(time);
+    });
+    private boolean bringingToFront = false;
+    private List<Consumer<Boolean>> timerStateSubscribers = new ArrayList<>();
+
     EditorGang(JFrame frame, GraphicRoot root) {
         this.root = root;
 
+        displayFrame = frame;
         createEditorFrame(frame);
         createPaletteFrame(editorFrame);
         createTimepointsFrame(paletteFrame);
         createTimeControlFrame(editorFrame);
-        editorFrame.requestFocus();
+
+        timeControlFrame.setVisible(true);
+        timepointsFrame.setVisible(true);
+        paletteFrame.setVisible(true);
+        editorFrame.setVisible(true);
+
+        setupBringToFront();
+
+        new Timer(250, e -> {
+            if (GlobalState.needsUpdateEditor) {
+                changeEditorPane(this.currentLayer.value);
+                GlobalState.needsUpdateEditor = false;
+            }
+            if (GlobalState.needsUpdateLayers) {
+                updateLayerListPanel();
+                GlobalState.needsUpdateLayers = false;
+            }
+        }).start();
+    }
+
+    private void setupBringToFront() {
+        var focusListener = new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (bringingToFront) {
+                    return;
+                }
+                bringToFront();
+            }
+        };
+        displayFrame.addFocusListener(focusListener);
+        editorFrame.addFocusListener(focusListener);
+        timepointsFrame.addFocusListener(focusListener);
+        timeControlFrame.addFocusListener(focusListener);
+        paletteFrame.addFocusListener(focusListener);
+    }
+
+    private void bringToFront() {
+        displayFrame.setAutoRequestFocus(false);
+        editorFrame.setAutoRequestFocus(false);
+        timepointsFrame.setAutoRequestFocus(false);
+        timeControlFrame.setAutoRequestFocus(false);
+        paletteFrame.setAutoRequestFocus(false);
+
+        displayFrame.toFront();
+        editorFrame.toFront();
+        timepointsFrame.toFront();
+        timeControlFrame.toFront();
+        paletteFrame.toFront();
+
+        displayFrame.setAutoRequestFocus(true);
+        editorFrame.setAutoRequestFocus(true);
+        timepointsFrame.setAutoRequestFocus(true);
+        timeControlFrame.setAutoRequestFocus(true);
+        paletteFrame.setAutoRequestFocus(true);
+        bringingToFront = false;
+    }
+
+    private void timePlay() {
+        lastTime = System.nanoTime();
+        timeTicker.start();
+        timerStateSubscribers.forEach(sub -> sub.accept(true));
+    }
+
+    private void timePause() {
+        timeTicker.stop();
+        timerStateSubscribers.forEach(sub -> sub.accept(false));
+    }
+
+    private boolean timeRunning() {
+        return timeTicker.isRunning();
+    }
+
+    private void addTimerStateSubscriber(Consumer<Boolean> subscriber) {
+        timerStateSubscribers.add(subscriber);
+        subscriber.accept(timeRunning());
     }
 
     private void createEditorFrame(JFrame frame) {
         editorFrame.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
         editorFrame.setTitle("editor");
         editorFrame.setSize(600, 600);
+        editorFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JPanel editorPanel = new JPanel();
         editorFrame.setContentPane(editorPanel);
@@ -204,18 +317,70 @@ class EditorGang {
                 KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));
         loadMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
 
-        editorFrame.setVisible(true);
+        var windowsMenu = new JMenu("Windows");
+        menuBar.add(windowsMenu);
 
-        new Timer(250, e -> {
-            if (GlobalState.needsUpdateEditor) {
-                changeEditorPane(this.currentLayer.value);
-                GlobalState.needsUpdateEditor = false;
+        var timepointsMenuItem = new JCheckBoxMenuItem("Timepoints");
+        var timeControlMenuItem = new JCheckBoxMenuItem("Time Control");
+        var paletteMenuItem = new JCheckBoxMenuItem("Palette");
+
+        windowsMenu.add(timepointsMenuItem);
+        windowsMenu.add(timeControlMenuItem);
+        windowsMenu.add(paletteMenuItem);
+
+        timepointsFrame.addComponentListener(new ComponentAdapter() {
+            public void componentHidden(ComponentEvent evt) {
+                timepointsMenuItem.setState(false);
             }
-            if (GlobalState.needsUpdateLayers) {
-                updateLayerListPanel();
-                GlobalState.needsUpdateLayers = false;
+
+            public void componentShown(ComponentEvent evt) {
+                timepointsMenuItem.setState(true);
             }
-        }).start();
+        });
+
+        timeControlFrame.addComponentListener(new ComponentAdapter() {
+            public void componentHidden(ComponentEvent evt) {
+                timeControlMenuItem.setState(false);
+            }
+
+            public void componentShown(ComponentEvent evt) {
+                timeControlMenuItem.setState(true);
+            }
+        });
+
+        paletteFrame.addComponentListener(new ComponentAdapter() {
+            public void componentHidden(ComponentEvent evt) {
+                paletteMenuItem.setState(false);
+            }
+
+            public void componentShown(ComponentEvent evt) {
+                paletteMenuItem.setState(true);
+            }
+        });
+
+        timepointsMenuItem.addActionListener(e -> {
+            if (timepointsMenuItem.getState()) {
+                timepointsFrame.setVisible(true);
+            } else {
+                timepointsFrame.setVisible(false);
+            }
+        });
+
+        timeControlMenuItem.addActionListener(e -> {
+            if (timeControlMenuItem.getState()) {
+                timeControlFrame.setVisible(true);
+            } else {
+                timeControlFrame.setVisible(false);
+            }
+        });
+
+        paletteMenuItem.addActionListener(e -> {
+            if (paletteMenuItem.getState()) {
+                paletteFrame.setVisible(true);
+            } else {
+                paletteFrame.setVisible(false);
+            }
+        });
     }
 
     private void changeEditorPane(int layerIndex) {
@@ -280,35 +445,250 @@ class EditorGang {
         layerScrollPane.setViewportView(layerPane);
     }
 
+    private static String formatTime(double time) {
+        return String.format("%.3f", time).replaceAll("\\.?0+$", ".0");
+    }
+
+    private static String formatOffset(double offset) {
+        return String.format("%+.3f", offset).replaceAll("\\.?0+$", ".0");
+    }
+
+    enum TimepointSort {
+        LABEL(value -> value.label + " @ " + formatTime(value.time()), Comparator.comparing(v -> v.label)),
+        TIME(value -> value.label + " @ " + formatTime(value.time()), Comparator.comparingDouble(TimeKeypoint::time)),
+        HIERARCHY(value -> value.label + " @ " + formatTime(value.time()) + " (" + formatOffset(value.offset) + ")",
+                (a, b) -> {
+                    if (a.reference.orElse(null) == b) {
+                        return 1;
+                    }
+                    if (b.reference.orElse(null) == a) {
+                        return -1;
+                    }
+
+                    return a.id.compareTo(b.id);
+                });
+
+        public final Function<TimeKeypoint, String> toStringFunction;
+        public final Comparator<TimeKeypoint> comparator;
+
+        TimepointSort(Function<TimeKeypoint, String> toStringFunction, Comparator<TimeKeypoint> comparator) {
+            this.toStringFunction = toStringFunction;
+            this.comparator = comparator;
+        }
+    }
+
+    private TimepointSort currentSort = TimepointSort.TIME;
+
     private void createTimepointsFrame(JFrame frame) {
         timepointsFrame.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
         timepointsFrame.setTitle("timepoints");
         timepointsFrame.setSize(400, 600);
-        timepointsFrame.setVisible(true);
 
-        timepointsFrame.setContentPane(EditingPanelFactory.createPlaceholder(null, "timepoints"));
+        JPanel timepointsPanel = new JPanel();
+        timepointsFrame.setContentPane(timepointsPanel);
+
+        GroupLayout layout = new GroupLayout(timepointsPanel);
+        timepointsPanel.setLayout(layout);
+
+        JScrollPane listScrollPane = new JScrollPane();
+        listScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        listScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+
+        var listModel = new DefaultListModel<TimeKeypoint>();
+        listModel.addAll(root.timeKeypoints);
+
+        JList<TimeKeypoint> list = new JList<>(listModel);
+        GroupLayout listLayout = new GroupLayout(list);
+        list.setLayout(listLayout);
+
+        var timepointsVGroup = listLayout.createSequentialGroup();
+        var timepointsHGroup = listLayout.createParallelGroup();
+        listLayout.setHorizontalGroup(listLayout.createSequentialGroup().addGroup(timepointsHGroup));
+        listLayout.setVerticalGroup(timepointsVGroup);
+
+        listScrollPane.setViewportView(list);
+
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        var sortLabel = new JLabel("sort");
+        var sortComboBox = new JComboBox<String>();
+        for (TimepointSort sort : TimepointSort.values()) {
+            sortComboBox.addItem(sort.name().toLowerCase());
+        }
+        sortComboBox.setSelectedItem(currentSort.name().toLowerCase());
+
+        sortComboBox.addActionListener(e -> {
+            var selectedTimepoint = list.getSelectedValue();
+            var sort = TimepointSort.values()[sortComboBox.getSelectedIndex()];
+            currentSort = sort;
+            root.timeKeypoints.sort(sort.comparator);
+            listModel.clear();
+            listModel.addAll(root.timeKeypoints);
+            list.setSelectedValue(selectedTimepoint, true);
+        });
+
+        list.setCellRenderer(new ListCellRenderer<>() {
+            @Override
+            public Component getListCellRendererComponent(JList<? extends TimeKeypoint> list, TimeKeypoint value,
+                    int index, boolean isSelected, boolean cellHasFocus) {
+                var panel = new JPanel();
+                var label = new JLabel(currentSort.toStringFunction.apply(value));
+                GroupLayout layout = new GroupLayout(panel);
+                panel.setLayout(layout);
+
+                var hGroup = layout.createSequentialGroup();
+                if (currentSort == TimepointSort.HIERARCHY) {
+                    hGroup.addGap(5 + value.referenceDepth() * 10);
+                } else {
+                    hGroup.addGap(5);
+                }
+                hGroup.addComponent(label);
+                layout.setHorizontalGroup(hGroup);
+                layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING).addComponent(label));
+                if (isSelected) {
+                    panel.setBackground(list.getSelectionBackground());
+                    panel.setForeground(list.getSelectionForeground());
+                    label.setBackground(list.getSelectionBackground());
+                    label.setForeground(list.getSelectionForeground());
+                } else {
+                    panel.setBackground(list.getBackground());
+                    panel.setForeground(list.getForeground());
+                    label.setBackground(list.getBackground());
+                    label.setForeground(list.getForeground());
+                }
+                return panel;
+            }
+        });
+
+        var labelField = new JTextField();
+        var offsetField = new JTextField();
+        var referenceComboBox = new JComboBox<TimeKeypoint>();
+
+        list.addListSelectionListener(e -> {
+            if (list.getSelectedValue() == null) {
+                labelField.setText("");
+                offsetField.setText("");
+                referenceComboBox.setSelectedItem(null);
+                return;
+            }
+            var selected = list.getSelectedValue();
+            labelField.setText(selected.label);
+            offsetField.setText(Double.toString(selected.offset));
+            referenceComboBox.setSelectedItem(selected.reference.orElse(null));
+        });
+
+        var addTimepointButton = new JButton("add timepoint");
+        addTimepointButton.addActionListener(e -> {
+            var newTKP = new TimeKeypoint(time, null, "new timepoint");
+            root.timeKeypoints.add(newTKP);
+            listModel.addElement(newTKP);
+        });
+
+        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING).addGroup(
+                layout.createSequentialGroup().addGap(2).addComponent(sortLabel).addGap(2).addComponent(sortComboBox))
+                .addComponent(listScrollPane));
+        layout.setVerticalGroup(
+                layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(Alignment.CENTER).addComponent(sortLabel)
+                                .addComponent(sortComboBox, GroupLayout.DEFAULT_SIZE, 25, 25))
+                        .addComponent(listScrollPane));
+
     }
 
     private void createTimeControlFrame(JFrame frame) {
         timeControlFrame.setLocation(frame.getLocation().x, frame.getLocation().y + frame.getHeight());
         timeControlFrame.setTitle("time control");
         timeControlFrame.setSize(1200, 150);
-        timeControlFrame.setVisible(true);
 
         JPanel timeControlPanel = new JPanel();
         timeControlFrame.setContentPane(timeControlPanel);
-        JLabel timeLabel = new JLabel();
-        timeControlPanel.add(timeLabel);
-        root.subscribeToTime(t -> {
-            timeLabel.setText("time: " + t);
+
+        GroupLayout layout = new GroupLayout(timeControlPanel);
+        timeControlPanel.setLayout(layout);
+
+        JButton playButton = new JButton();
+        addTimerStateSubscriber(running -> playButton.setText(running ? "⏸" : "▶"));
+        playButton.addActionListener(e -> {
+            if (timeRunning()) {
+                timePause();
+            } else {
+                timePlay();
+            }
         });
+
+        JButton stopButton = new JButton("⏹");
+        stopButton.addActionListener(e -> {
+            timePause();
+            time = 0;
+            root.setTime(time);
+        });
+
+        JTextField timeField = new JTextField();
+        root.subscribeToTime(time -> SwingUtilities.invokeLater(() -> {
+            timeField.setText(Double.toString(time));
+        }));
+        Runnable changedTimeFunction = () -> {
+            try {
+                Double.parseDouble(timeField.getText());
+                timeField.setBackground(EditorColor.Static.color(timeField));
+            } catch (NumberFormatException ex) {
+                timeField.setBackground(EditorColor.Invalid.color());
+            }
+        };
+        Runnable commitTimeFunction = () -> {
+            try {
+                time = Double.parseDouble(timeField.getText());
+                root.setTime(time);
+            } catch (NumberFormatException ex) {
+                timeField.setText(Double.toString(time));
+            }
+        };
+        timeField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                changedTimeFunction.run();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                changedTimeFunction.run();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                changedTimeFunction.run();
+            }
+        });
+        timeField.addActionListener(e -> {
+            commitTimeFunction.run();
+        });
+        timeField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                commitTimeFunction.run();
+            }
+        });
+
+        var filler = Box.createGlue();
+        var filler2 = Box.createGlue();
+
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(filler)
+                .addGroup(layout.createParallelGroup(Alignment.CENTER)
+                        .addGroup(layout.createSequentialGroup().addComponent(playButton).addComponent(stopButton)
+                                .addComponent(timeField, GroupLayout.DEFAULT_SIZE, 150, 150)))
+                .addComponent(filler2));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING).addComponent(filler)
+                .addGroup(layout.createParallelGroup(Alignment.LEADING).addComponent(playButton)
+                        .addComponent(stopButton).addComponent(timeField, GroupLayout.DEFAULT_SIZE,
+                                GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                .addComponent(filler2));
+
     }
 
     private void createPaletteFrame(JFrame frame) {
         paletteFrame.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
         paletteFrame.setTitle("palette");
         paletteFrame.setSize(150, 600);
-        paletteFrame.setVisible(true);
 
         paletteFrame.setContentPane(EditingPanelFactory.createPlaceholder(null, "palette"));
     }

@@ -1,16 +1,21 @@
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.GroupLayout;
+import javax.swing.ImageIcon;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -18,6 +23,7 @@ import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -25,11 +31,17 @@ import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.ListCellRenderer;
+import javax.swing.ListSelectionModel;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.ToolTipManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.MouseInputAdapter;
 import javax.swing.event.MouseInputListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 
 class EditingPanelFactory {
 
@@ -377,6 +389,148 @@ class EditingPanelFactory {
         return panel;
     }
 
+    private static JPopupMenu easingPopup = getEasingPopup();
+    private static Consumer<EasingFunction> easingCallback = e -> {
+    };
+
+    private static JPopupMenu getEasingPopup() {
+        adjustTooltips();
+        JList<EasingFunction> list = new JList<>();
+        var listEasings = new EasingFunction[(int) (Math.ceil(EasingFunction.values().length / 3.0) * 3)];
+        var noEases = EasingFunction.nonEases();
+        int noEasesZoneLength = (int) (Math.ceil(noEases.length / 3.0) * 3);
+        for (int i = 0; i < noEasesZoneLength; i++) {
+            listEasings[i] = i < noEases.length ? noEases[i] : null;
+        }
+        var easeIns = EasingFunction.easeIns();
+        var easeInOuts = EasingFunction.easeInOuts();
+        var easeOuts = EasingFunction.easeOuts();
+        for (int i = 0; i < easeIns.length; i++) {
+            int index = noEasesZoneLength + i * 3;
+            listEasings[index] = easeIns[i];
+            listEasings[index + 1] = easeInOuts[i];
+            listEasings[index + 2] = easeOuts[i];
+        }
+
+        list.setListData(listEasings);
+
+        list.setLayoutOrientation(JList.HORIZONTAL_WRAP);
+        list.setVisibleRowCount(listEasings.length / 3);
+
+        list.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        list.setCellRenderer(new ListCellRenderer<>() {
+            @Override
+            public Component getListCellRendererComponent(JList<? extends EasingFunction> list, EasingFunction value,
+                    int index, boolean isSelected, boolean cellHasFocus) {
+                var panel = new JPanel();
+                if (value == null) {
+                    panel.setForeground(list.getForeground());
+                    panel.setBackground(list.getBackground());
+                    return panel;
+                }
+                var icon = new ImageIcon(value.icon());
+                var iconLabel = new JLabel(icon);
+                panel.add(iconLabel);
+                panel.setToolTipText(value.name());
+                if (isSelected) {
+                    panel.setBackground(list.getSelectionBackground());
+                    panel.setForeground(list.getSelectionForeground());
+                } else {
+                    panel.setBackground(list.getBackground());
+                    panel.setForeground(list.getForeground());
+                }
+                return panel;
+            }
+        });
+
+        list.addMouseMotionListener(new MouseInputAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                list.setSelectedIndex(list.locationToIndex(e.getPoint()));
+            }
+        });
+
+        list.addMouseListener(new MouseInputAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                var selected = list.getSelectedValue();
+                if (selected != null) {
+                    easingCallback.accept(selected);
+                    easingPopup.setVisible(false);
+                }
+            }
+        });
+
+        var popupMenu = new JPopupMenu();
+        popupMenu.add(list);
+        popupMenu.addPopupMenuListener(new PopupMenuListener() {
+            boolean ignoreNextInvis = false;
+
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+            }
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                if (ignoreNextInvis) {
+                    ignoreNextInvis = false;
+                    return;
+                }
+                var selected = list.getSelectedValue();
+                if (selected != null) {
+                    easingCallback.accept(list.getSelectedValue());
+                }
+            }
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+                ignoreNextInvis = true;
+            }
+        });
+        return popupMenu;
+    }
+
+    private static void askForEasing(Component locationRef, Consumer<EasingFunction> callback) {
+        easingCallback = callback;
+        easingPopup.show(locationRef, 0, locationRef.getHeight());
+    }
+
+    public static JPanel createAnimPanel() {
+        JPanel panel = new JPanel();
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        JButton timeKeypointButton = new JButton("▪");
+        timeKeypointButton.addActionListener(e -> {
+            // TODO
+            timeKeypointButton.setText("🔶");
+        });
+
+        JButton easingsButton = new JButton(new ImageIcon(EasingFunction.easeOutPower2.icon()));
+        easingsButton.setToolTipText(EasingFunction.easeOutPower2.name());
+        easingsButton.addActionListener(e -> {
+            askForEasing(easingsButton, easing -> {
+                // TODO
+                easingsButton.setIcon(new ImageIcon(easing.icon()));
+                easingsButton.setToolTipText(easing.name());
+            });
+        });
+
+        JButton jumpToTKPButton = new JButton("↗");
+        jumpToTKPButton.addActionListener(e -> {
+            // TODO
+            jumpToTKPButton.setEnabled(false);
+        });
+
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(easingsButton)
+                .addComponent(timeKeypointButton).addComponent(jumpToTKPButton));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(easingsButton)
+                .addComponent(timeKeypointButton).addComponent(jumpToTKPButton));
+
+        return panel;
+    }
+
     public static JPanel create(String labelText, AnimBoolean animBool, GraphicRoot root, Debuggable obj,
             int debugValue) {
         JPanel panel = new JPanel();
@@ -385,18 +539,30 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JCheckBox checkBox = new JCheckBox();
-        // checkBox.addActionListener(e -> {
-        //     animBool.get(root.getTime()) = checkBox.isSelected();
-        // });
-        checkBox.setEnabled(false); // TODO
+        checkBox.addActionListener(e -> {
+            checkBox.setBackground(EditorColor.Temporary.color());
+        });
         root.subscribeToTime(t -> {
             checkBox.setSelected(animBool.get(t));
+            if (animBool.isAnimated()) {
+                if (animBool.isTimepoint(t)) {
+                    checkBox.setBackground(EditorColor.Timepoint.color());
+                } else {
+                    checkBox.setBackground(EditorColor.Animated.color());
+                }
+            } else {
+                checkBox.setBackground(EditorColor.Static.color(checkBox));
+            }
         });
 
-        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED).addComponent(checkBox));
-        layout.setVerticalGroup(
-                layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(checkBox));
+        var animPanel = createAnimPanel();
+        var filler = Box.createHorizontalGlue();
+
+        layout.setHorizontalGroup(
+                layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(checkBox).addComponent(filler).addComponent(animPanel));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label)
+                .addComponent(checkBox).addComponent(filler).addComponent(animPanel));
 
         checkBox.addMouseListener(new DebuggingHoverListener(obj, debugValue));
 
@@ -1034,5 +1200,10 @@ class EditingPanelFactory {
             } catch (ClassCastException e) {
             }
         }
+    }
+
+    private static void adjustTooltips() {
+        ToolTipManager.sharedInstance().setInitialDelay(200);
+        ToolTipManager.sharedInstance().setReshowDelay(500);
     }
 }

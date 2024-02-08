@@ -1,6 +1,8 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -33,10 +35,13 @@ abstract class AnimatedValue<T> implements Exportable {
         }
     }
 
-    public List<Timepoint> timepoints = new ArrayList<>();
+    protected List<Timepoint> timepoints = new ArrayList<>();
+    protected Set<Double> timepointTimes = new HashSet<>();
 
     protected void sortTimepoints() {
         Collections.sort(timepoints, (tp1, tp2) -> Double.compare(tp1.tkp.time(), tp2.tkp.time()));
+        timepointTimes.clear();
+        timepointTimes.addAll(timepoints.stream().map(tp -> tp.tkp.time()).collect(Collectors.toList()));
     }
 
     /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
@@ -50,6 +55,7 @@ abstract class AnimatedValue<T> implements Exportable {
 
     protected void removeTimepoint(TimeKeypoint tkp) {
         timepoints.removeIf(tp -> tp.tkp == tkp);
+        sortTimepoints();
     }
 
     protected StepValue getValue(double time) {
@@ -77,6 +83,14 @@ abstract class AnimatedValue<T> implements Exportable {
 
     protected T getIndex(int index) {
         return timepoints.get(index).value;
+    }
+
+    public boolean isAnimated() {
+        return timepoints.size() > 1;
+    }
+
+    public boolean isTimepoint(double time) {
+        return timepointTimes.contains(time);
     }
 
     protected String exportString(Function<T, String> exporter) {
