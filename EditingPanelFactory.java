@@ -560,15 +560,83 @@ class EditingPanelFactory {
 
     public static JPanel create(String labelText, AnimPoint animPoint, GraphicRoot root, Debuggable obj,
             int debugValue) { // TODO
-        var panel = createPlaceholder(animPoint, labelText);
-        panel.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+        JPanel panel = new JPanel();
+        JLabel label = new JLabel(labelText);
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        SpinnerNumberModel xModel = new SpinnerNumberModel();
+        SpinnerNumberModel yModel = new SpinnerNumberModel();
+        root.subscribeToTime(t -> {
+            xModel.setValue(animPoint.get(t).x);
+            yModel.setValue(animPoint.get(t).y);
+        });
+        JSpinner xSpinner = new JSpinner(xModel);
+        JSpinner ySpinner = new JSpinner(yModel);
+        // xSpinner.addChangeListener(e -> {
+        //     point.x = (int) xSpinner.getValue();
+        // });
+        // ySpinner.addChangeListener(e -> {
+        //     point.y = (int) ySpinner.getValue();
+        // });
+        xSpinner.setEnabled(false); // TODO
+        ySpinner.setEnabled(false);
+
+        var xListener = new PannerPanelListener(xSpinner, () -> animPoint.get(root.getTime()).x, MouseEvent::getX);
+        var yListener = new PannerPanelListener(ySpinner, () -> animPoint.get(root.getTime()).y, MouseEvent::getY);
+
+        var pannerPanels = createPannerPanel(xListener, yListener, obj, debugValue);
+
+        layout.setHorizontalGroup(
+                layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(xSpinner).addComponent(ySpinner).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(pannerPanels.y).addGroup(layout.createParallelGroup(Alignment.CENTER)
+                                .addComponent(pannerPanels.main).addComponent(pannerPanels.x)));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(pannerPanels.x)
+                .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(xSpinner)
+                        .addComponent(ySpinner).addComponent(pannerPanels.y).addComponent(pannerPanels.main)));
+
         return panel;
     }
 
     public static JPanel create(String labelText, AnimDimension animDim, GraphicRoot root, Debuggable obj,
             int debugValue) { // TODO
-        var panel = createPlaceholder(animDim, labelText);
-        panel.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+        JPanel panel = new JPanel();
+        JLabel label = new JLabel(labelText);
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        SpinnerNumberModel xModel = new SpinnerNumberModel();
+        SpinnerNumberModel yModel = new SpinnerNumberModel();
+        root.subscribeToTime(t -> {
+            xModel.setValue(animDim.get(t).width);
+            yModel.setValue(animDim.get(t).height);
+        });
+        JSpinner xSpinner = new JSpinner(xModel);
+        JSpinner ySpinner = new JSpinner(yModel);
+        // xSpinner.addChangeListener(e -> {
+        //     point.x = (int) xSpinner.getValue();
+        // });
+        // ySpinner.addChangeListener(e -> {
+        //     point.y = (int) ySpinner.getValue();
+        // });
+        xSpinner.setEnabled(false); // TODO
+        ySpinner.setEnabled(false);
+
+        var xListener = new PannerPanelListener(xSpinner, () -> animDim.get(root.getTime()).width, MouseEvent::getX);
+        var yListener = new PannerPanelListener(ySpinner, () -> animDim.get(root.getTime()).height, MouseEvent::getY);
+
+        var pannerPanels = createPannerPanel(xListener, yListener, obj, debugValue);
+
+        layout.setHorizontalGroup(
+                layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(xSpinner).addComponent(ySpinner).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(pannerPanels.y).addGroup(layout.createParallelGroup(Alignment.CENTER)
+                                .addComponent(pannerPanels.main).addComponent(pannerPanels.x)));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(pannerPanels.x)
+                .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(xSpinner)
+                        .addComponent(ySpinner).addComponent(pannerPanels.y).addComponent(pannerPanels.main)));
+
         return panel;
     }
 
