@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.util.function.Predicate;
 
 import javax.swing.AbstractAction;
@@ -149,8 +150,8 @@ class EditingPanelFactory {
             point.y = (int) ySpinner.getValue();
         });
 
-        var xListener = new PannerPanelXListener(xSpinner, point);
-        var yListener = new PannerPanelYListener(ySpinner, point);
+        var xListener = new PannerPanelListener(xSpinner, () -> point.x, MouseEvent::getX);
+        var yListener = new PannerPanelListener(ySpinner, () -> point.y, MouseEvent::getY);
 
         var pannerPanels = createPannerPanel(xListener, yListener, obj, debugValue);
 
@@ -187,8 +188,8 @@ class EditingPanelFactory {
             dim.height = (int) hSpinner.getValue();
         });
 
-        var xListener = new PannerPanelWListener(wSpinner, dim);
-        var yListener = new PannerPanelHListener(hSpinner, dim);
+        var xListener = new PannerPanelListener(wSpinner, () -> dim.width, MouseEvent::getX);
+        var yListener = new PannerPanelListener(hSpinner, () -> dim.height, MouseEvent::getY);
 
         var pannerPanels = createPannerPanel(xListener, yListener, obj, debugValue);
 
@@ -484,19 +485,88 @@ class EditingPanelFactory {
         return panel;
     }
 
-    public static JPanel create(String labelText, AnimColor animColor, Debuggable obj, int debugValue) { // TODO
-        var panel = createPlaceholder(animColor, labelText);
-        panel.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+    public static JPanel create(String labelText, AnimColor animColor, GraphicRoot root, Debuggable obj,
+            int debugValue) {
+        JPanel panel = new JPanel();
+        JLabel label = new JLabel(labelText);
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        ColorButton button = new ColorButton();
+        JTextField textField = new JTextField();
+
+        root.subscribeToTime(t -> {
+            button.setColor(animColor.get(t));
+            textField.setText(ColorHexer.encode(animColor.get(t)));
+        });
+
+        // button.addActionListener(e -> {
+        //     Color newColor = JColorChooser.showDialog(null, "Choose a color", color.value);
+        //     if (newColor != null) {
+        //         color.value = newColor;
+        //         button.setColor(color.value);
+        //     }
+        // });
+
+        button.setEnabled(false); // TODO
+        textField.setEnabled(false);
+
+        // Runnable newColorFunction = () -> {
+        //     var parsedColor = ColorHexer.decodeOptional(textField.getText());
+        //     if (parsedColor.isPresent()) {
+        //         color.value = parsedColor.get();
+        //         button.setColor(parsedColor.get());
+        //     } else {
+        //         button.setInvalid();
+        //     }
+        // };
+        // textField.getDocument().addDocumentListener(new DocumentListener() {
+        //     @Override
+        //     public void insertUpdate(DocumentEvent e) {
+        //         newColorFunction.run();
+        //     }
+
+        //     @Override
+        //     public void removeUpdate(DocumentEvent e) {
+        //         newColorFunction.run();
+        //     }
+
+        //     @Override
+        //     public void changedUpdate(DocumentEvent e) {
+        //         newColorFunction.run();
+        //     }
+        // });
+        // textField.addActionListener(e -> {
+        //     var parsedColor = ColorHexer.decodeOptional(textField.getText());
+        //     if (parsedColor.isPresent()) {
+        //         button.setColor(color.value);
+        //     } else {
+        //         button.setInvalid();
+        //     }
+        //     color.value = parsedColor.orElse(Color.black);
+        // });
+
+        layout.setHorizontalGroup(
+                layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(button).addPreferredGap(ComponentPlacement.RELATED).addComponent(textField));
+
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(button)
+                .addComponent(textField));
+
+        button.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+
         return panel;
     }
 
-    public static JPanel create(String labelText, AnimPoint animPoint, Debuggable obj, int debugValue) { // TODO
+    public static JPanel create(String labelText, AnimPoint animPoint, GraphicRoot root, Debuggable obj,
+            int debugValue) { // TODO
         var panel = createPlaceholder(animPoint, labelText);
         panel.addMouseListener(new DebuggingHoverListener(obj, debugValue));
         return panel;
     }
 
-    public static JPanel create(String labelText, AnimDimension animDim, Debuggable obj, int debugValue) { // TODO
+    public static JPanel create(String labelText, AnimDimension animDim, GraphicRoot root, Debuggable obj,
+            int debugValue) { // TODO
         var panel = createPlaceholder(animDim, labelText);
         panel.addMouseListener(new DebuggingHoverListener(obj, debugValue));
         return panel;
@@ -547,8 +617,8 @@ class EditingPanelFactory {
 
         var layerNamePanel = create("layer", layer.name, null, 0);
         var shownPanel = create("shown", layer.shown, root, layer, 0);
-        var translatePanel = create("translate", layer.translate, layer, 0);
-        var rotateOriginPanel = create("rotateOrigin", layer.rotateOrigin, layer, 0);
+        var translatePanel = create("translate", layer.translate, root, layer, 0);
+        var rotateOriginPanel = create("rotateOrigin", layer.rotateOrigin, root, layer, 0);
         var rotatePanel = create("rotate", layer.rotate, root, -360, 360, 1, layer, 0);
         vGroup.addComponent(layerNamePanel).addGap(2).addComponent(shownPanel).addGap(2).addComponent(translatePanel)
                 .addGap(2).addComponent(rotateOriginPanel).addGap(2).addComponent(rotatePanel);
@@ -661,14 +731,15 @@ class EditingPanelFactory {
         });
     }
 
-    public static JPanel create(Path2DLine data, GraphicPath2D p2d, int dataIndex, int debuggingStartI) {
+    public static JPanel create(Path2DLine data, GraphicRoot root, GraphicPath2D p2d, int dataIndex,
+            int debuggingStartI) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);
 
         char pointLetter = (char) (97 + (dataIndex + 16) % 26);
 
-        var pPanel = create(pointLetter + "", data.pNext, p2d, debuggingStartI);
+        var pPanel = create(pointLetter + "", data.pNext, root, p2d, debuggingStartI);
 
         var popupMenu = new JPopupMenu();
         var insertLineItem = popupMenu.add("Insert Line");
@@ -685,7 +756,8 @@ class EditingPanelFactory {
         return panel;
     }
 
-    public static JPanel create(Path2DBezier data, GraphicPath2D p2d, int dataIndex, int debuggingStartI) {
+    public static JPanel create(Path2DBezier data, GraphicRoot root, GraphicPath2D p2d, int dataIndex,
+            int debuggingStartI) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);
@@ -703,13 +775,14 @@ class EditingPanelFactory {
         var deleteItem = popupMenu.add("Delete");
         p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d, data, dataIndex);
 
-        var p1Panel = create(pointLetter + "2", data.pNext, p2d, debuggingStartI);
+        var p1Panel = create(pointLetter + "2", data.pNext, root, p2d, debuggingStartI);
         hGroup.addComponent(p1Panel);
         vGroup.addComponent(p1Panel);
         p1Panel.setComponentPopupMenu(popupMenu);
 
         for (int i = 0; i < data.morePoints.size(); i++) {
-            var pointPanel = create(pointLetter + "" + (i + 3), data.morePoints.get(i), p2d, i + debuggingStartI + 1);
+            var pointPanel = create(pointLetter + "" + (i + 3), data.morePoints.get(i), root, p2d,
+                    i + debuggingStartI + 1);
             hGroup.addComponent(pointPanel);
             vGroup.addGap(2);
             vGroup.addComponent(pointPanel);
@@ -745,11 +818,11 @@ class EditingPanelFactory {
         return panel;
     }
 
-    public static JPanel create(Path2DData p2d, GraphicPath2D obj, int dataIndex, int debugValue) {
+    public static JPanel create(Path2DData p2d, GraphicRoot root, GraphicPath2D obj, int dataIndex, int debugValue) {
         if (p2d instanceof Path2DLine) {
-            return create((Path2DLine) p2d, obj, dataIndex, debugValue);
+            return create((Path2DLine) p2d, root, obj, dataIndex, debugValue);
         } else if (p2d instanceof Path2DBezier) {
-            return create((Path2DBezier) p2d, obj, dataIndex, debugValue);
+            return create((Path2DBezier) p2d, root, obj, dataIndex, debugValue);
         } else {
             return createPlaceholder(p2d);
         }
@@ -766,12 +839,12 @@ class EditingPanelFactory {
 
         JLabel label = new JLabel("GraphicPath2D");
         var strokePanel = create("stroke", path2d.stroke, root, path2d, 0);
-        var strokeColorPanel = create("color", path2d.strokeColor, path2d, 0);
+        var strokeColorPanel = create("color", path2d.strokeColor, root, path2d, 0);
         var thicknessPanel = create("thickness", path2d.thickness, root, 1, 15, 1, path2d, 0);
         var fillPanel = create("fill", path2d.fill, root, path2d, 0);
-        var fillColorPanel = create("color", path2d.fillColor, path2d, 0);
+        var fillColorPanel = create("color", path2d.fillColor, root, path2d, 0);
         var closedPanel = create("closed", path2d.closed, root, path2d, 0);
-        var p1Panel = create("p", path2d.p1, path2d, 1);
+        var p1Panel = create("p", path2d.p1, root, path2d, 1);
 
         var hGroup = layout.createParallelGroup(Alignment.LEADING).addComponent(label).addComponent(strokePanel)
                 .addComponent(strokeColorPanel).addComponent(thicknessPanel).addComponent(fillPanel)
@@ -787,7 +860,7 @@ class EditingPanelFactory {
         int dataIndex = 0;
         int debuggingStartI = 2;
         for (var v : path2d.data) {
-            var dataPanel = create(v, path2d, dataIndex, debuggingStartI);
+            var dataPanel = create(v, root, path2d, dataIndex, debuggingStartI);
             hGroup.addComponent(dataPanel);
             vGroup.addGap(2);
             vGroup.addComponent(dataPanel);
@@ -837,9 +910,9 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicCircle");
-        var colorPanel = create("color", circle.color, circle, 0);
+        var colorPanel = create("color", circle.color, root, circle, 0);
         var thicknessPanel = create("thickness", circle.thickness, root, 1, 15, 1, circle, 0);
-        var pointPanel = create("center", circle.center, circle, 1);
+        var pointPanel = create("center", circle.center, root, circle, 1);
         var radiusPanel = create("radius", circle.radius, root, 0, 50, 1, circle, 2);
 
         layout.setHorizontalGroup(
@@ -864,8 +937,8 @@ class EditingPanelFactory {
 
         var filePathPanel = create("file path", image.filePath, image, 0);
 
-        var originPanel = create("origin", image.origin, image, 1);
-        var sizePanel = create("size", image.size, image, 2);
+        var originPanel = create("origin", image.origin, root, image, 1);
+        var sizePanel = create("size", image.size, root, image, 2);
 
         var opacityPanel = create("opacity", image.opacity, root, 0.0, 1.0, 0.01, image, 0);
 

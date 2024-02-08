@@ -1,19 +1,23 @@
-import java.awt.Dimension;
 import java.awt.event.MouseEvent;
+import java.util.function.IntSupplier;
+import java.util.function.ToIntFunction;
 
 import javax.swing.JSpinner;
 import javax.swing.event.MouseInputListener;
 
-class PannerPanelWListener implements MouseInputListener {
+class PannerPanelListener implements MouseInputListener {
+    private static final int SLOW_FACTOR = 8;
     private boolean slowed = false;
-    private Dimension dim;
     private JSpinner spinner;
-    private int startX = 0;
-    private int originX = 0;
+    private int mouseStartV = 0;
+    private int startValue = 0;
+    private ToIntFunction<MouseEvent> getMouseV = MouseEvent::getX;
+    private IntSupplier getV;
 
-    PannerPanelWListener(JSpinner spinner, Dimension dim) {
+    PannerPanelListener(JSpinner spinner, IntSupplier getV, ToIntFunction<MouseEvent> getMouseV) {
         this.spinner = spinner;
-        this.dim = dim;
+        this.getV = getV;
+        this.getMouseV = getMouseV;
     }
 
     @Override
@@ -23,15 +27,15 @@ class PannerPanelWListener implements MouseInputListener {
     @Override
     public void mouseDragged(MouseEvent e) {
         if (GlobalState.pannerPanelSlow != slowed) {
-            startX = e.getX();
-            originX = dim.width;
+            mouseStartV = getMouseV.applyAsInt(e);
+            startValue = getV.getAsInt();
             slowed = GlobalState.pannerPanelSlow;
         }
 
         if (GlobalState.pannerPanelSlow) {
-            spinner.setValue(originX + (e.getX() - startX) / 8);
+            spinner.setValue(startValue + (getMouseV.applyAsInt(e) - mouseStartV) / SLOW_FACTOR);
         } else {
-            spinner.setValue(originX + (e.getX() - startX));
+            spinner.setValue(startValue + (getMouseV.applyAsInt(e) - mouseStartV));
         }
     }
 
@@ -41,8 +45,8 @@ class PannerPanelWListener implements MouseInputListener {
 
     @Override
     public void mousePressed(MouseEvent e) {
-        startX = e.getX();
-        originX = dim.width;
+        mouseStartV = getMouseV.applyAsInt(e);
+        startValue = getV.getAsInt();
         e.getComponent().requestFocusInWindow();
     }
 
