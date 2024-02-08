@@ -1,11 +1,10 @@
 import java.awt.Dimension;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 
 import javax.swing.JSpinner;
+import javax.swing.event.MouseInputListener;
 
-class PannerPanelHListener implements MouseMotionListener, MouseListener {
+class PannerPanelHListener implements MouseInputListener {
     private boolean slowed = false;
     private Dimension dim;
     private JSpinner spinner;

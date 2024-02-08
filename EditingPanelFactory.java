@@ -28,6 +28,7 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.MouseInputListener;
 
 class EditingPanelFactory {
 
@@ -73,25 +74,20 @@ class EditingPanelFactory {
 
     }
 
-    public static JPanel create(String labelText, Point point, GraphicObject obj, int debugValue) {
-        JPanel panel = new JPanel();
-        JLabel label = new JLabel(labelText);
-        GroupLayout layout = new GroupLayout(panel);
-        panel.setLayout(layout);
+    static class PannerPanels {
+        public final JPanel main;
+        public final JPanel x;
+        public final JPanel y;
 
-        SpinnerNumberModel xModel = new SpinnerNumberModel();
-        xModel.setValue(point.x);
-        SpinnerNumberModel yModel = new SpinnerNumberModel();
-        yModel.setValue(point.y);
-        JSpinner xSpinner = new JSpinner(xModel);
-        xSpinner.addChangeListener(e -> {
-            point.x = (int) xSpinner.getValue();
-        });
-        JSpinner ySpinner = new JSpinner(yModel);
-        ySpinner.addChangeListener(e -> {
-            point.y = (int) ySpinner.getValue();
-        });
+        public PannerPanels(JPanel main, JPanel x, JPanel y) {
+            this.main = main;
+            this.x = x;
+            this.y = y;
+        }
+    }
 
+    private static PannerPanels createPannerPanel(MouseInputListener xListener, MouseInputListener yListener,
+            Debuggable obj, int debugValue) {
         JPanel pannerPanel = new JPanel();
         pannerPanel.setPreferredSize(new Dimension(20, 20));
         pannerPanel.setMaximumSize(new Dimension(20, 20));
@@ -122,8 +118,6 @@ class EditingPanelFactory {
         pannerYPanel.setFocusable(true);
         addPannerKeybinds(pannerYPanel);
 
-        var xListener = new PannerPanelXListener(xSpinner, point);
-        var yListener = new PannerPanelYListener(ySpinner, point);
         pannerPanel.addMouseListener(xListener);
         pannerPanel.addMouseListener(yListener);
         pannerPanel.addMouseMotionListener(xListener);
@@ -133,13 +127,41 @@ class EditingPanelFactory {
         pannerYPanel.addMouseListener(yListener);
         pannerYPanel.addMouseMotionListener(yListener);
 
-        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED).addComponent(xSpinner).addComponent(ySpinner)
-                .addPreferredGap(ComponentPlacement.RELATED).addComponent(pannerYPanel).addGroup(layout
-                        .createParallelGroup(Alignment.CENTER).addComponent(pannerPanel).addComponent(pannerXPanel)));
-        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(pannerXPanel)
+        return new PannerPanels(pannerPanel, pannerXPanel, pannerYPanel);
+    }
+
+    public static JPanel create(String labelText, Point point, Debuggable obj, int debugValue) {
+        JPanel panel = new JPanel();
+        JLabel label = new JLabel(labelText);
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        SpinnerNumberModel xModel = new SpinnerNumberModel();
+        xModel.setValue(point.x);
+        SpinnerNumberModel yModel = new SpinnerNumberModel();
+        yModel.setValue(point.y);
+        JSpinner xSpinner = new JSpinner(xModel);
+        xSpinner.addChangeListener(e -> {
+            point.x = (int) xSpinner.getValue();
+        });
+        JSpinner ySpinner = new JSpinner(yModel);
+        ySpinner.addChangeListener(e -> {
+            point.y = (int) ySpinner.getValue();
+        });
+
+        var xListener = new PannerPanelXListener(xSpinner, point);
+        var yListener = new PannerPanelYListener(ySpinner, point);
+
+        var pannerPanels = createPannerPanel(xListener, yListener, obj, debugValue);
+
+        layout.setHorizontalGroup(
+                layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(xSpinner).addComponent(ySpinner).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(pannerPanels.y).addGroup(layout.createParallelGroup(Alignment.CENTER)
+                                .addComponent(pannerPanels.main).addComponent(pannerPanels.x)));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(pannerPanels.x)
                 .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(xSpinner)
-                        .addComponent(ySpinner).addComponent(pannerYPanel).addComponent(pannerPanel)));
+                        .addComponent(ySpinner).addComponent(pannerPanels.y).addComponent(pannerPanels.main)));
 
         return panel;
     }
@@ -165,51 +187,19 @@ class EditingPanelFactory {
             dim.height = (int) hSpinner.getValue();
         });
 
-        JPanel pannerPanel = new JPanel();
-        pannerPanel.setPreferredSize(new Dimension(20, 20));
-        pannerPanel.setMaximumSize(new Dimension(20, 20));
-        pannerPanel.setMinimumSize(new Dimension(20, 20));
-        pannerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
-        pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
-        addPannerKeybinds(pannerPanel);
-
-        JPanel pannerXPanel = new JPanel();
-        pannerXPanel.setPreferredSize(new Dimension(20, 8));
-        pannerXPanel.setMaximumSize(new Dimension(20, 8));
-        pannerXPanel.setMinimumSize(new Dimension(20, 8));
-        pannerXPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
-        pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
-        addPannerKeybinds(pannerXPanel);
-
-        JPanel pannerYPanel = new JPanel();
-        pannerYPanel.setPreferredSize(new Dimension(8, 20));
-        pannerYPanel.setMaximumSize(new Dimension(8, 20));
-        pannerYPanel.setMinimumSize(new Dimension(8, 20));
-        pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
-        pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
-        addPannerKeybinds(pannerYPanel);
-
         var xListener = new PannerPanelWListener(wSpinner, dim);
         var yListener = new PannerPanelHListener(hSpinner, dim);
-        pannerPanel.addMouseListener(xListener);
-        pannerPanel.addMouseListener(yListener);
-        pannerPanel.addMouseMotionListener(xListener);
-        pannerPanel.addMouseMotionListener(yListener);
-        pannerXPanel.addMouseListener(xListener);
-        pannerXPanel.addMouseMotionListener(xListener);
-        pannerYPanel.addMouseListener(yListener);
-        pannerYPanel.addMouseMotionListener(yListener);
 
-        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED).addComponent(wSpinner).addComponent(hSpinner)
-                .addPreferredGap(ComponentPlacement.RELATED).addComponent(pannerYPanel).addGroup(layout
-                        .createParallelGroup(Alignment.CENTER).addComponent(pannerPanel).addComponent(pannerXPanel)));
-        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(pannerXPanel)
+        var pannerPanels = createPannerPanel(xListener, yListener, obj, debugValue);
+
+        layout.setHorizontalGroup(
+                layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(wSpinner).addComponent(hSpinner).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(pannerPanels.y).addGroup(layout.createParallelGroup(Alignment.CENTER)
+                                .addComponent(pannerPanels.main).addComponent(pannerPanels.x)));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(pannerPanels.x)
                 .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(wSpinner)
-                        .addComponent(hSpinner).addComponent(pannerYPanel).addComponent(pannerPanel)));
+                        .addComponent(hSpinner).addComponent(pannerPanels.y).addComponent(pannerPanels.main)));
 
         return panel;
     }

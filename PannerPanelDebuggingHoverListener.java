@@ -2,12 +2,12 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 class PannerPanelDebuggingHoverListener implements MouseListener {
-    private GraphicObject obj;
+    private Debuggable obj;
     private int debugValue;
     private int cursorStartX = 0;
     private int cursorStartY = 0;
 
-    PannerPanelDebuggingHoverListener(GraphicObject obj, int debugValue) {
+    PannerPanelDebuggingHoverListener(Debuggable obj, int debugValue) {
         this.obj = obj;
         this.debugValue = debugValue;
     }
@@ -21,7 +21,7 @@ class PannerPanelDebuggingHoverListener implements MouseListener {
         if (GlobalState.pannerPanelDragging) {
             return;
         }
-        obj.debugging = debugValue;
+        obj.setDebugging(debugValue);
 
     }
 
@@ -30,7 +30,7 @@ class PannerPanelDebuggingHoverListener implements MouseListener {
         if (GlobalState.pannerPanelDragging) {
             return;
         }
-        obj.debugging = -1;
+        obj.unsetDebugging();
 
     }
 

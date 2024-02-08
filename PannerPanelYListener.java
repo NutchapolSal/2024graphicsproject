@@ -1,11 +1,10 @@
 import java.awt.Point;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 
 import javax.swing.JSpinner;
+import javax.swing.event.MouseInputListener;
 
-class PannerPanelYListener implements MouseMotionListener, MouseListener {
+class PannerPanelYListener implements MouseInputListener {
     private boolean slowed = false;
     private Point point;
     private JSpinner spinner;
