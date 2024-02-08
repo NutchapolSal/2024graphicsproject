@@ -22,7 +22,7 @@ public class Main {
 
         GraphicRoot root = PreloadedData.create();
 
-        GraphicsPanel panel = new GraphicsPanel(root.instructions);
+        GraphicsPanel panel = new GraphicsPanel(root);
 
         JFrame frame = new JFrame();
         frame.add(panel);
@@ -37,7 +37,7 @@ public class Main {
         long startTime = System.nanoTime();
         new Timer(1000 / 60, e -> {
             long currTime = System.nanoTime();
-            panel.time = (currTime - startTime) / 1_000_000_000.0;
+            root.setTime((currTime - startTime) / 1_000_000_000.0);
             panel.repaint();
         }).start();
 

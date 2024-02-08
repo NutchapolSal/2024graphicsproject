@@ -386,41 +386,129 @@ class EditingPanelFactory {
         return panel;
     }
 
-    public static JPanel create(String labelText, AnimBoolean animBool, Debuggable obj, int debuggingI) { // TODO
-        var panel = createPlaceholder(animBool, labelText);
-        panel.addMouseListener(new DebuggingHoverListener(obj, debuggingI));
+    public static JPanel create(String labelText, AnimBoolean animBool, GraphicRoot root, Debuggable obj,
+            int debugValue) {
+        JPanel panel = new JPanel();
+        JLabel label = new JLabel(labelText);
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        JCheckBox checkBox = new JCheckBox();
+        // checkBox.addActionListener(e -> {
+        //     animBool.get(root.getTime()) = checkBox.isSelected();
+        // });
+        checkBox.setEnabled(false); // TODO
+        root.subscribeToTime(t -> {
+            checkBox.setSelected(animBool.get(t));
+        });
+
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(checkBox));
+        layout.setVerticalGroup(
+                layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(checkBox));
+
+        checkBox.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+
         return panel;
     }
 
-    public static JPanel create(String labelText, AnimDouble animDouble, double min, double max, double stepSize,
-            Debuggable obj, int debuggingI) { // TODO
-        var panel = createPlaceholder(animDouble, labelText);
-        panel.addMouseListener(new DebuggingHoverListener(obj, debuggingI));
+    public static JPanel create(String labelText, AnimDouble animDouble, GraphicRoot root, double min, double max,
+            double stepSize, Debuggable obj, int debugValue) {
+        return create(labelText, animDouble, root, min, true, max, true, stepSize, obj, debugValue);
+    }
+
+    public static JPanel create(String labelText, AnimDouble animDouble, GraphicRoot root, double min,
+            boolean hardLimitMin, double max, boolean hardLimitMax, double stepSize, Debuggable obj, int debugValue) {
+        JPanel panel = new JPanel();
+        JLabel label = new JLabel(labelText);
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        int sliderSteps = (int) ((max - min) / stepSize);
+        JSlider slider = new JSlider(0, sliderSteps, 0);
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel(animDouble.get(root.getTime()),
+                hardLimitMin ? min : Double.MIN_VALUE, hardLimitMax ? max : Double.MAX_VALUE, stepSize));
+        root.subscribeToTime(t -> {
+            spinner.setValue(animDouble.get(t));
+            slider.setValue((int) ((animDouble.get(t) - min) / stepSize));
+        });
+
+        // spinner.addChangeListener(e -> {
+        //     doub.value = (double) spinner.getValue();
+        //     slider.setValue((int) ((doub.value - min) / stepSize));
+        // });
+        // slider.addChangeListener(e -> {
+        //     spinner.setValue(slider.getValue() * stepSize + min);
+        // });
+        spinner.setEnabled(false); // TODO
+        slider.setEnabled(false);
+
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(slider).addComponent(spinner));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(slider)
+                .addComponent(spinner));
+
+        slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+
         return panel;
     }
 
-    public static JPanel create(String labelText, AnimInt animInt, int min, int max, int stepSize, Debuggable obj,
-            int debuggingI) { // TODO
-        var panel = createPlaceholder(animInt, labelText);
-        panel.addMouseListener(new DebuggingHoverListener(obj, debuggingI));
+    public static JPanel create(String labelText, AnimInt animInt, GraphicRoot root, int min, int max, int stepSize,
+            Debuggable obj, int debugValue) {
+        return create(labelText, animInt, root, min, true, max, true, stepSize, obj, debugValue);
+    }
+
+    public static JPanel create(String labelText, AnimInt animInt, GraphicRoot root, int min, boolean hardLimitMin,
+            int max, boolean hardLimitMax, int stepSize, Debuggable obj, int debugValue) { // TODO
+        JPanel panel = new JPanel();
+        JLabel label = new JLabel(labelText);
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        int sliderSteps = (max - min) / stepSize;
+        JSlider slider = new JSlider(0, sliderSteps, 0);
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel(min, hardLimitMin ? min : Integer.MIN_VALUE,
+                hardLimitMax ? max : Integer.MAX_VALUE, stepSize));
+        ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(2);
+        root.subscribeToTime(t -> {
+            spinner.setValue(animInt.get(t));
+            slider.setValue((animInt.get(t) - min) / stepSize);
+        });
+        // spinner.addChangeListener(e -> {
+        //     integer.value = (int) spinner.getValue();
+        //     slider.setValue((integer.value - min) / stepSize);
+        // });
+        // slider.addChangeListener(e -> {
+        //     spinner.setValue(slider.getValue() * stepSize + min);
+        // });
+        spinner.setEnabled(false); // TODO
+        slider.setEnabled(false);
+
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(slider).addComponent(spinner));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(slider)
+                .addComponent(spinner));
+
+        slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+
         return panel;
     }
 
-    public static JPanel create(String labelText, AnimColor animColor, Debuggable obj, int debuggingI) { // TODO
+    public static JPanel create(String labelText, AnimColor animColor, Debuggable obj, int debugValue) { // TODO
         var panel = createPlaceholder(animColor, labelText);
-        panel.addMouseListener(new DebuggingHoverListener(obj, debuggingI));
+        panel.addMouseListener(new DebuggingHoverListener(obj, debugValue));
         return panel;
     }
 
-    public static JPanel create(String labelText, AnimPoint animPoint, Debuggable obj, int debuggingI) { // TODO
+    public static JPanel create(String labelText, AnimPoint animPoint, Debuggable obj, int debugValue) { // TODO
         var panel = createPlaceholder(animPoint, labelText);
-        panel.addMouseListener(new DebuggingHoverListener(obj, debuggingI));
+        panel.addMouseListener(new DebuggingHoverListener(obj, debugValue));
         return panel;
     }
 
-    public static JPanel create(String labelText, AnimDimension animDim, Debuggable obj, int debuggingI) { // TODO
+    public static JPanel create(String labelText, AnimDimension animDim, Debuggable obj, int debugValue) { // TODO
         var panel = createPlaceholder(animDim, labelText);
-        panel.addMouseListener(new DebuggingHoverListener(obj, debuggingI));
+        panel.addMouseListener(new DebuggingHoverListener(obj, debugValue));
         return panel;
     }
 
@@ -445,19 +533,19 @@ class EditingPanelFactory {
         return jPanel;
     }
 
-    public static JPanel create(GraphicObject object) {
+    public static JPanel create(GraphicObject object, GraphicRoot root) {
         if (object instanceof GraphicPath2D) {
-            return create((GraphicPath2D) object);
+            return create((GraphicPath2D) object, root);
         } else if (object instanceof GraphicCircle) {
-            return create((GraphicCircle) object);
+            return create((GraphicCircle) object, root);
         } else if (object instanceof GraphicImage) {
-            return create((GraphicImage) object);
+            return create((GraphicImage) object, root);
         } else {
             return createPlaceholder(object);
         }
     }
 
-    public static JPanel create(GraphicLayer layer) {
+    public static JPanel create(GraphicLayer layer, GraphicRoot root) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);
@@ -468,11 +556,16 @@ class EditingPanelFactory {
         layout.setVerticalGroup(vGroup);
 
         var layerNamePanel = create("layer", layer.name, null, 0);
-        // TODO add the rest of layer variables
-        vGroup.addComponent(layerNamePanel);
-        hGroup.addComponent(layerNamePanel);
+        var shownPanel = create("shown", layer.shown, root, layer, 0);
+        var translatePanel = create("translate", layer.translate, layer, 0);
+        var rotateOriginPanel = create("rotateOrigin", layer.rotateOrigin, layer, 0);
+        var rotatePanel = create("rotate", layer.rotate, root, -360, 360, 1, layer, 0);
+        vGroup.addComponent(layerNamePanel).addGap(2).addComponent(shownPanel).addGap(2).addComponent(translatePanel)
+                .addGap(2).addComponent(rotateOriginPanel).addGap(2).addComponent(rotatePanel);
+        hGroup.addComponent(layerNamePanel).addComponent(shownPanel).addComponent(translatePanel)
+                .addComponent(rotateOriginPanel).addComponent(rotatePanel);
         for (var gObj : layer.objects) {
-            var objPanel = create(gObj);
+            var objPanel = create(gObj, root);
             JPopupMenu popupMenu = new JPopupMenu();
             var deleteItem = popupMenu.add("Delete");
             deleteItem.addActionListener(e -> {
@@ -673,17 +766,21 @@ class EditingPanelFactory {
     }
 
     public static JPanel create(GraphicPath2D path2d) {
+        return create(path2d, null);
+    }
+
+    public static JPanel create(GraphicPath2D path2d, GraphicRoot root) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicPath2D");
-        var strokePanel = create("stroke", path2d.stroke, path2d, 0);
+        var strokePanel = create("stroke", path2d.stroke, root, path2d, 0);
         var strokeColorPanel = create("color", path2d.strokeColor, path2d, 0);
-        var thicknessPanel = create("thickness", path2d.thickness, 1, 15, 1, path2d, 0);
-        var fillPanel = create("fill", path2d.fill, path2d, 0);
+        var thicknessPanel = create("thickness", path2d.thickness, root, 1, 15, 1, path2d, 0);
+        var fillPanel = create("fill", path2d.fill, root, path2d, 0);
         var fillColorPanel = create("color", path2d.fillColor, path2d, 0);
-        var closedPanel = create("closed", path2d.closed, path2d, 0);
+        var closedPanel = create("closed", path2d.closed, root, path2d, 0);
         var p1Panel = create("p", path2d.p1, path2d, 1);
 
         var hGroup = layout.createParallelGroup(Alignment.LEADING).addComponent(label).addComponent(strokePanel)
@@ -744,16 +841,16 @@ class EditingPanelFactory {
         return panel;
     }
 
-    public static JPanel create(GraphicCircle circle) {
+    public static JPanel create(GraphicCircle circle, GraphicRoot root) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicCircle");
         var colorPanel = create("color", circle.color, circle, 0);
-        var thicknessPanel = create("thickness", circle.thickness, 1, 15, 1, circle, 0);
+        var thicknessPanel = create("thickness", circle.thickness, root, 1, 15, 1, circle, 0);
         var pointPanel = create("center", circle.center, circle, 1);
-        var radiusPanel = create("radius", circle.radius, 0, 50, 1, circle, 2);
+        var radiusPanel = create("radius", circle.radius, root, 0, 50, 1, circle, 2);
 
         layout.setHorizontalGroup(
                 layout.createParallelGroup(Alignment.LEADING).addComponent(label).addComponent(colorPanel)
@@ -768,7 +865,7 @@ class EditingPanelFactory {
         return panel;
     }
 
-    public static JPanel create(GraphicImage image) {
+    public static JPanel create(GraphicImage image, GraphicRoot root) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);
@@ -780,7 +877,7 @@ class EditingPanelFactory {
         var originPanel = create("origin", image.origin, image, 1);
         var sizePanel = create("size", image.size, image, 2);
 
-        var opacityPanel = create("opacity", image.opacity, 0.0, 1.0, 0.01, image, 0);
+        var opacityPanel = create("opacity", image.opacity, root, 0.0, 1.0, 0.01, image, 0);
 
         layout.setHorizontalGroup(
                 layout.createParallelGroup(Alignment.LEADING).addComponent(label).addComponent(filePathPanel)

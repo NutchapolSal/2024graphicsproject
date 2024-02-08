@@ -9,12 +9,16 @@ import javax.swing.JPanel;
 
 class GraphicsPanel extends JPanel {
     List<GraphicLayer> instructions;
-    double time = 0;
+    private double time = 0;
 
-    GraphicsPanel(List<GraphicLayer> instructions) {
+    GraphicsPanel(GraphicRoot root) {
         super();
         this.setPreferredSize(new Dimension(600, 600));
-        this.instructions = instructions;
+        this.instructions = root.instructions;
+        root.subscribeToTime(t -> {
+            time = t;
+            repaint();
+        });
     }
 
     @Override

@@ -1,14 +1,33 @@
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.DoubleConsumer;
 
 class GraphicRoot implements Exportable {
     public List<TimeKeypoint> timeKeypoints;
     public Palette palette;
     public List<GraphicLayer> instructions;
+    private double currentTime;
+    private List<DoubleConsumer> timeSubscribers = new ArrayList<>();
 
     public GraphicRoot(List<TimeKeypoint> timeKeypoints, Palette palette, List<GraphicLayer> instructions) {
         this.timeKeypoints = timeKeypoints;
         this.palette = palette;
         this.instructions = instructions;
+    }
+
+    /** subscribe now and get one 𝐓𝐢𝐦𝐞 for free!! */
+    public void subscribeToTime(DoubleConsumer subscriber) {
+        timeSubscribers.add(subscriber);
+        subscriber.accept(currentTime);
+    }
+
+    public void setTime(double time) {
+        currentTime = time;
+        timeSubscribers.forEach(sub -> sub.accept(time));
+    }
+
+    public double getTime() {
+        return currentTime;
     }
 
     public String exportString() {

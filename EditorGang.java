@@ -15,6 +15,7 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
@@ -225,7 +226,7 @@ class EditorGang {
         }
         boolean sameLayer = layerIndex == this.currentLayer.value;
         int scrollPos = editorScrollPane.getVerticalScrollBar().getValue();
-        editorScrollPane.setViewportView(EditingPanelFactory.create(this.root.instructions.get(layerIndex)));
+        editorScrollPane.setViewportView(EditingPanelFactory.create(this.root.instructions.get(layerIndex), this.root));
         if (sameLayer) {
             editorScrollPane.getVerticalScrollBar().setValue(scrollPos);
         } else {
@@ -294,7 +295,13 @@ class EditorGang {
         timeControlFrame.setSize(1200, 150);
         timeControlFrame.setVisible(true);
 
-        timeControlFrame.setContentPane(EditingPanelFactory.createPlaceholder(null, "timecontrol"));
+        JPanel timeControlPanel = new JPanel();
+        timeControlFrame.setContentPane(timeControlPanel);
+        JLabel timeLabel = new JLabel();
+        timeControlPanel.add(timeLabel);
+        root.subscribeToTime(t -> {
+            timeLabel.setText("time: " + t);
+        });
     }
 
     private void createPaletteFrame(JFrame frame) {
