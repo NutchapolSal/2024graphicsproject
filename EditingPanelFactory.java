@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
@@ -23,9 +24,8 @@ import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -73,8 +73,7 @@ class EditingPanelFactory {
 
     }
 
-    public static JPanel create(String labelText, Point point, GraphicObject obj,
-            int debugValue) {
+    public static JPanel create(String labelText, Point point, GraphicObject obj, int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
         GroupLayout layout = new GroupLayout(panel);
@@ -99,8 +98,7 @@ class EditingPanelFactory {
         pannerPanel.setMinimumSize(new Dimension(20, 20));
         pannerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
-        pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
-                debugValue));
+        pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
         pannerPanel.setFocusable(true);
         addPannerKeybinds(pannerPanel);
 
@@ -110,8 +108,7 @@ class EditingPanelFactory {
         pannerXPanel.setMinimumSize(new Dimension(20, 8));
         pannerXPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
-        pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
-                debugValue));
+        pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
         pannerXPanel.setFocusable(true);
         addPannerKeybinds(pannerXPanel);
 
@@ -121,8 +118,7 @@ class EditingPanelFactory {
         pannerYPanel.setMinimumSize(new Dimension(8, 20));
         pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
-        pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
-                debugValue));
+        pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
         pannerYPanel.setFocusable(true);
         addPannerKeybinds(pannerYPanel);
 
@@ -137,25 +133,13 @@ class EditingPanelFactory {
         pannerYPanel.addMouseListener(yListener);
         pannerYPanel.addMouseMotionListener(yListener);
 
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(xSpinner)
-                .addComponent(ySpinner)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(pannerYPanel)
-                .addGroup(layout.createParallelGroup(Alignment.CENTER)
-                        .addComponent(pannerPanel)
-                        .addComponent(pannerXPanel)));
-        layout.setVerticalGroup(
-                layout.createSequentialGroup()
-                        .addComponent(pannerXPanel)
-                        .addGroup(layout.createParallelGroup(Alignment.BASELINE)
-                                .addComponent(label)
-                                .addComponent(xSpinner)
-                                .addComponent(ySpinner)
-                                .addComponent(pannerYPanel)
-                                .addComponent(pannerPanel)));
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(xSpinner).addComponent(ySpinner)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(pannerYPanel).addGroup(layout
+                        .createParallelGroup(Alignment.CENTER).addComponent(pannerPanel).addComponent(pannerXPanel)));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(pannerXPanel)
+                .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(xSpinner)
+                        .addComponent(ySpinner).addComponent(pannerYPanel).addComponent(pannerPanel)));
 
         return panel;
     }
@@ -187,8 +171,7 @@ class EditingPanelFactory {
         pannerPanel.setMinimumSize(new Dimension(20, 20));
         pannerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
-        pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
-                debugValue));
+        pannerPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
         addPannerKeybinds(pannerPanel);
 
         JPanel pannerXPanel = new JPanel();
@@ -197,8 +180,7 @@ class EditingPanelFactory {
         pannerXPanel.setMinimumSize(new Dimension(20, 8));
         pannerXPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerXPanel.setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
-        pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
-                debugValue));
+        pannerXPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
         addPannerKeybinds(pannerXPanel);
 
         JPanel pannerYPanel = new JPanel();
@@ -207,8 +189,7 @@ class EditingPanelFactory {
         pannerYPanel.setMinimumSize(new Dimension(8, 20));
         pannerYPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         pannerYPanel.setCursor(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
-        pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj,
-                debugValue));
+        pannerYPanel.addMouseListener(new PannerPanelDebuggingHoverListener(obj, debugValue));
         addPannerKeybinds(pannerYPanel);
 
         var xListener = new PannerPanelWListener(wSpinner, dim);
@@ -222,31 +203,18 @@ class EditingPanelFactory {
         pannerYPanel.addMouseListener(yListener);
         pannerYPanel.addMouseMotionListener(yListener);
 
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(wSpinner)
-                .addComponent(hSpinner)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(pannerYPanel)
-                .addGroup(layout.createParallelGroup(Alignment.CENTER)
-                        .addComponent(pannerPanel)
-                        .addComponent(pannerXPanel)));
-        layout.setVerticalGroup(
-                layout.createSequentialGroup()
-                        .addComponent(pannerXPanel)
-                        .addGroup(layout.createParallelGroup(Alignment.BASELINE)
-                                .addComponent(label)
-                                .addComponent(wSpinner)
-                                .addComponent(hSpinner)
-                                .addComponent(pannerYPanel)
-                                .addComponent(pannerPanel)));
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(wSpinner).addComponent(hSpinner)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(pannerYPanel).addGroup(layout
+                        .createParallelGroup(Alignment.CENTER).addComponent(pannerPanel).addComponent(pannerXPanel)));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(pannerXPanel)
+                .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(wSpinner)
+                        .addComponent(hSpinner).addComponent(pannerYPanel).addComponent(pannerPanel)));
 
         return panel;
     }
 
-    public static JPanel create(String labelText, MutableString str,
-            GraphicObject obj, int debugValue) {
+    public static JPanel create(String labelText, MutableString str, GraphicObject obj, int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
         GroupLayout layout = new GroupLayout(panel);
@@ -264,20 +232,15 @@ class EditingPanelFactory {
             });
         }
 
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(textField));
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(textField));
         layout.setVerticalGroup(
-                layout.createParallelGroup(Alignment.BASELINE)
-                        .addComponent(label)
-                        .addComponent(textField));
+                layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(textField));
 
         return panel;
     }
 
-    public static JPanel create(String labelText, MutableDouble doub, double min,
-            double max, double stepSize,
+    public static JPanel create(String labelText, MutableDouble doub, double min, double max, double stepSize,
             Debuggable obj, int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
@@ -285,10 +248,8 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         int sliderSteps = (int) ((max - min) / stepSize);
-        JSlider slider = new JSlider(0, sliderSteps, (int) ((doub.value - min) /
-                stepSize));
-        JSpinner spinner = new JSpinner(new SpinnerNumberModel(doub.value, min, max,
-                stepSize));
+        JSlider slider = new JSlider(0, sliderSteps, (int) ((doub.value - min) / stepSize));
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel(doub.value, min, max, stepSize));
         spinner.addChangeListener(e -> {
             doub.value = (double) spinner.getValue();
             slider.setValue((int) ((doub.value - min) / stepSize));
@@ -297,25 +258,17 @@ class EditingPanelFactory {
             spinner.setValue(slider.getValue() * stepSize + min);
         });
 
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(slider)
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(slider).addComponent(spinner));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(slider)
                 .addComponent(spinner));
-        layout.setVerticalGroup(
-                layout.createParallelGroup(Alignment.BASELINE)
-                        .addComponent(label)
-                        .addComponent(slider)
-                        .addComponent(spinner));
 
         slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
 
         return panel;
     }
 
-    public static JPanel create(String labelText, MutableInt integer, int min,
-            int max, int stepSize,
-            Debuggable obj,
+    public static JPanel create(String labelText, MutableInt integer, int min, int max, int stepSize, Debuggable obj,
             int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
@@ -323,10 +276,8 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         int sliderSteps = (max - min) / stepSize;
-        JSlider slider = new JSlider(0, sliderSteps, (integer.value - min) /
-                stepSize);
-        JSpinner spinner = new JSpinner(new SpinnerNumberModel(integer.value, min,
-                Integer.MAX_VALUE, stepSize));
+        JSlider slider = new JSlider(0, sliderSteps, (integer.value - min) / stepSize);
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel(integer.value, min, Integer.MAX_VALUE, stepSize));
         ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(2);
         spinner.addChangeListener(e -> {
             integer.value = (int) spinner.getValue();
@@ -336,16 +287,10 @@ class EditingPanelFactory {
             spinner.setValue(slider.getValue() * stepSize + min);
         });
 
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(slider)
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(slider).addComponent(spinner));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(slider)
                 .addComponent(spinner));
-        layout.setVerticalGroup(
-                layout.createParallelGroup(Alignment.BASELINE)
-                        .addComponent(label)
-                        .addComponent(slider)
-                        .addComponent(spinner));
 
         slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
 
@@ -364,8 +309,7 @@ class EditingPanelFactory {
         JTextField textField = new JTextField(ColorHexer.encode(color.value));
 
         button.addActionListener(e -> {
-            Color newColor = JColorChooser.showDialog(null, "Choose a color",
-                    color.value);
+            Color newColor = JColorChooser.showDialog(null, "Choose a color", color.value);
             if (newColor != null) {
                 color.value = newColor;
                 button.setColor(color.value);
@@ -408,18 +352,12 @@ class EditingPanelFactory {
             color.value = parsedColor.orElse(Color.black);
         });
 
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(button)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(textField));
+        layout.setHorizontalGroup(
+                layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(button).addPreferredGap(ComponentPlacement.RELATED).addComponent(textField));
 
-        layout.setVerticalGroup(
-                layout.createParallelGroup(Alignment.BASELINE)
-                        .addComponent(label)
-                        .addComponent(button)
-                        .addComponent(textField));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(button)
+                .addComponent(textField));
 
         button.addMouseListener(new DebuggingHoverListener(obj, debugValue));
 
@@ -438,14 +376,10 @@ class EditingPanelFactory {
             bool.value = checkBox.isSelected();
         });
 
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED)
-                .addComponent(checkBox));
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(checkBox));
         layout.setVerticalGroup(
-                layout.createParallelGroup(Alignment.BASELINE)
-                        .addComponent(label)
-                        .addComponent(checkBox));
+                layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(checkBox));
 
         checkBox.addMouseListener(new DebuggingHoverListener(obj, debugValue));
 
@@ -529,10 +463,7 @@ class EditingPanelFactory {
         panel.setLayout(layout);
         var vGroup = layout.createSequentialGroup();
         var hGroup = layout.createParallelGroup();
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-                .addGap(10)
-                .addGroup(hGroup)
-                .addGap(10));
+        layout.setHorizontalGroup(layout.createSequentialGroup().addGap(10).addGroup(hGroup).addGap(10));
         vGroup.addGap(5);
         layout.setVerticalGroup(vGroup);
 
@@ -568,17 +499,17 @@ class EditingPanelFactory {
             Predicate<? super GraphicObject> pred;
             GraphicObject defaultObj = null;
             switch ((String) comboBox.getSelectedItem()) {
-                case "GraphicCircle":
-                    pred = obj -> obj instanceof GraphicCircle;
-                    // defaultObj = new GraphicCircle("#000000", 1, new Point(0, 0), 50);
-                    break;
-                case "GraphicImage":
-                    pred = obj -> obj instanceof GraphicImage;
-                    // defaultObj = new GraphicImage("image.png", new Point(0, 0), new Dimension(50,
-                    // 50), 1.0);
-                    break;
-                default:
-                    return;
+            case "GraphicCircle":
+                pred = obj -> obj instanceof GraphicCircle;
+                // defaultObj = new GraphicCircle("#000000", 1, new Point(0, 0), 50);
+                break;
+            case "GraphicImage":
+                pred = obj -> obj instanceof GraphicImage;
+                // defaultObj = new GraphicImage("image.png", new Point(0, 0), new Dimension(50,
+                // 50), 1.0);
+                break;
+            default:
+                return;
             }
 
             GlobalState.needsUpdateEditor = true;
@@ -589,30 +520,27 @@ class EditingPanelFactory {
                 return;
             }
             switch ((String) comboBox.getSelectedItem()) {
-                case "GraphicCircle": {
-                    var result = (GraphicCircle) streamResult.get().copy();
-                    // result.center.translate(10, 10);
-                    layer.add(result);
-                    break;
-                }
-                case "GraphicImage": {
-                    var result = (GraphicImage) streamResult.get().copy();
-                    // result.origin.translate(10, 10);
-                    layer.add(result);
-                    break;
-                }
+            case "GraphicCircle": {
+                var result = (GraphicCircle) streamResult.get().copy();
+                // result.center.translate(10, 10);
+                layer.add(result);
+                break;
+            }
+            case "GraphicImage": {
+                var result = (GraphicImage) streamResult.get().copy();
+                // result.origin.translate(10, 10);
+                layer.add(result);
+                break;
+            }
             }
         });
 
         addButton.setEnabled(false); // TODO
 
         vGroup.addPreferredGap(ComponentPlacement.RELATED);
-        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER, false)
-                .addComponent(comboBox)
-                .addComponent(addButton));
-        hGroup.addGroup(layout.createSequentialGroup()
-                .addComponent(comboBox)
-                .addComponent(addButton));
+        vGroup.addGroup(
+                layout.createParallelGroup(Alignment.CENTER, false).addComponent(comboBox).addComponent(addButton));
+        hGroup.addGroup(layout.createSequentialGroup().addComponent(comboBox).addComponent(addButton));
         return panel;
     }
 
@@ -663,14 +591,11 @@ class EditingPanelFactory {
         var insertLineItem = popupMenu.add("Insert Line");
         var insertBezierItem = popupMenu.add("Insert Bezier");
         var deleteItem = popupMenu.add("Delete");
-        p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d,
-                data, dataIndex);
+        p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d, data, dataIndex);
         pPanel.setComponentPopupMenu(popupMenu);
 
-        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(pPanel));
-        layout.setVerticalGroup(layout.createSequentialGroup()
-                .addComponent(pPanel));
+        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING).addComponent(pPanel));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(pPanel));
 
         panel.addMouseListener(new DebuggingHoverListener(p2d, 0));
 
@@ -693,8 +618,7 @@ class EditingPanelFactory {
         var insertLineItem = popupMenu.add("Insert Line");
         var insertBezierItem = popupMenu.add("Insert Bezier");
         var deleteItem = popupMenu.add("Delete");
-        p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d,
-                data, dataIndex);
+        p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d, data, dataIndex);
 
         var p1Panel = create(pointLetter + "2", data.pNext, p2d, debuggingStartI);
         hGroup.addComponent(p1Panel);
@@ -702,9 +626,7 @@ class EditingPanelFactory {
         p1Panel.setComponentPopupMenu(popupMenu);
 
         for (int i = 0; i < data.morePoints.size(); i++) {
-            var pointPanel = create(pointLetter + "" + (i + 3), data.morePoints.get(i),
-                    p2d,
-                    i + debuggingStartI + 1);
+            var pointPanel = create(pointLetter + "" + (i + 3), data.morePoints.get(i), p2d, i + debuggingStartI + 1);
             hGroup.addComponent(pointPanel);
             vGroup.addGap(2);
             vGroup.addComponent(pointPanel);
@@ -732,20 +654,15 @@ class EditingPanelFactory {
         });
         minusButton.setEnabled(data.morePoints.size() > 2);
 
-        hGroup.addGroup(layout.createSequentialGroup()
-                .addComponent(addButton)
-                .addComponent(minusButton));
-        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER)
-                .addComponent(addButton)
-                .addComponent(minusButton));
+        hGroup.addGroup(layout.createSequentialGroup().addComponent(addButton).addComponent(minusButton));
+        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER).addComponent(addButton).addComponent(minusButton));
 
         panel.addMouseListener(new DebuggingHoverListener(p2d, 0));
 
         return panel;
     }
 
-    public static JPanel create(Path2DData p2d, GraphicPath2D obj, int dataIndex,
-            int debugValue) {
+    public static JPanel create(Path2DData p2d, GraphicPath2D obj, int dataIndex, int debugValue) {
         if (p2d instanceof Path2DLine) {
             return create((Path2DLine) p2d, obj, dataIndex, debugValue);
         } else if (p2d instanceof Path2DBezier) {
@@ -763,36 +680,18 @@ class EditingPanelFactory {
         JLabel label = new JLabel("GraphicPath2D");
         var strokePanel = create("stroke", path2d.stroke, path2d, 0);
         var strokeColorPanel = create("color", path2d.strokeColor, path2d, 0);
-        var thicknessPanel = create("thickness", path2d.thickness, 1, 15, 1, path2d,
-                0);
+        var thicknessPanel = create("thickness", path2d.thickness, 1, 15, 1, path2d, 0);
         var fillPanel = create("fill", path2d.fill, path2d, 0);
         var fillColorPanel = create("color", path2d.fillColor, path2d, 0);
         var closedPanel = create("closed", path2d.closed, path2d, 0);
         var p1Panel = create("p", path2d.p1, path2d, 1);
 
-        var hGroup = layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(label)
-                .addComponent(strokePanel)
-                .addComponent(strokeColorPanel)
-                .addComponent(thicknessPanel)
-                .addComponent(fillPanel)
-                .addComponent(fillColorPanel)
-                .addComponent(closedPanel)
-                .addComponent(p1Panel);
-        var vGroup = layout.createSequentialGroup()
-                .addComponent(label)
-                .addComponent(strokePanel)
-                .addGap(2)
-                .addComponent(strokeColorPanel)
-                .addGap(2)
-                .addComponent(thicknessPanel)
-                .addGap(2)
-                .addComponent(fillPanel)
-                .addGap(2)
-                .addComponent(fillColorPanel)
-                .addGap(2)
-                .addComponent(closedPanel)
-                .addGap(2)
+        var hGroup = layout.createParallelGroup(Alignment.LEADING).addComponent(label).addComponent(strokePanel)
+                .addComponent(strokeColorPanel).addComponent(thicknessPanel).addComponent(fillPanel)
+                .addComponent(fillColorPanel).addComponent(closedPanel).addComponent(p1Panel);
+        var vGroup = layout.createSequentialGroup().addComponent(label).addComponent(strokePanel).addGap(2)
+                .addComponent(strokeColorPanel).addGap(2).addComponent(thicknessPanel).addGap(2).addComponent(fillPanel)
+                .addGap(2).addComponent(fillColorPanel).addGap(2).addComponent(closedPanel).addGap(2)
                 .addComponent(p1Panel);
 
         layout.setHorizontalGroup(hGroup);
@@ -835,14 +734,10 @@ class EditingPanelFactory {
         });
         minusButton.setEnabled(path2d.data.size() > 0);
 
-        hGroup.addGroup(layout.createSequentialGroup()
-                .addComponent(addLineButton)
-                .addComponent(addBezierButton)
+        hGroup.addGroup(layout.createSequentialGroup().addComponent(addLineButton).addComponent(addBezierButton)
                 .addComponent(minusButton));
-        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER)
-                .addComponent(addLineButton)
-                .addComponent(addBezierButton)
-                .addComponent(minusButton));
+        vGroup.addGroup(layout.createParallelGroup(Alignment.CENTER).addComponent(addLineButton)
+                .addComponent(addBezierButton).addComponent(minusButton));
 
         panel.addMouseListener(new DebuggingHoverListener(path2d, 0));
 
@@ -856,26 +751,15 @@ class EditingPanelFactory {
 
         JLabel label = new JLabel("GraphicCircle");
         var colorPanel = create("color", circle.color, circle, 0);
-        var thicknessPanel = create("thickness", circle.thickness, 1, 15, 1, circle,
-                0);
+        var thicknessPanel = create("thickness", circle.thickness, 1, 15, 1, circle, 0);
         var pointPanel = create("center", circle.center, circle, 1);
         var radiusPanel = create("radius", circle.radius, 0, 50, 1, circle, 2);
 
-        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(label)
-                .addComponent(colorPanel)
-                .addComponent(thicknessPanel)
-                .addComponent(pointPanel)
-                .addComponent(radiusPanel));
-        layout.setVerticalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addComponent(colorPanel)
-                .addGap(2)
-                .addComponent(thicknessPanel)
-                .addGap(2)
-                .addComponent(pointPanel)
-                .addGap(2)
-                .addComponent(radiusPanel));
+        layout.setHorizontalGroup(
+                layout.createParallelGroup(Alignment.LEADING).addComponent(label).addComponent(colorPanel)
+                        .addComponent(thicknessPanel).addComponent(pointPanel).addComponent(radiusPanel));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(label).addComponent(colorPanel).addGap(2)
+                .addComponent(thicknessPanel).addGap(2).addComponent(pointPanel).addGap(2).addComponent(radiusPanel));
 
         panel.addMouseListener(new DebuggingHoverListener(circle, 0));
         pointPanel.addMouseListener(new DebuggingHoverListener(circle, 1));
@@ -896,24 +780,13 @@ class EditingPanelFactory {
         var originPanel = create("origin", image.origin, image, 1);
         var sizePanel = create("size", image.size, image, 2);
 
-        var opacityPanel = create("opacity", image.opacity, 0.0, 1.0, 0.01, image,
-                0);
+        var opacityPanel = create("opacity", image.opacity, 0.0, 1.0, 0.01, image, 0);
 
-        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(label)
-                .addComponent(filePathPanel)
-                .addComponent(originPanel)
-                .addComponent(sizePanel)
-                .addComponent(opacityPanel));
-        layout.setVerticalGroup(layout.createSequentialGroup()
-                .addComponent(label)
-                .addComponent(filePathPanel)
-                .addGap(2)
-                .addComponent(originPanel)
-                .addGap(2)
-                .addComponent(sizePanel)
-                .addGap(2)
-                .addComponent(opacityPanel));
+        layout.setHorizontalGroup(
+                layout.createParallelGroup(Alignment.LEADING).addComponent(label).addComponent(filePathPanel)
+                        .addComponent(originPanel).addComponent(sizePanel).addComponent(opacityPanel));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(label).addComponent(filePathPanel).addGap(2)
+                .addComponent(originPanel).addGap(2).addComponent(sizePanel).addGap(2).addComponent(opacityPanel));
 
         panel.addMouseListener(new DebuggingHoverListener(image, 0));
         originPanel.addMouseListener(new DebuggingHoverListener(image, 1));

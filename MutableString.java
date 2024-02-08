@@ -1,4 +1,3 @@
-
 class MutableString {
     public String value;
 

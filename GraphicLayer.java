@@ -13,8 +13,7 @@ class GraphicLayer implements Exportable, Debuggable {
     private int debugging = -1;
 
     GraphicLayer() {
-        this("new layer", new AnimBoolean(), new AnimPoint(), new AnimPoint(), new AnimDouble(),
-                new ArrayList<>());
+        this("new layer", new AnimBoolean(), new AnimPoint(), new AnimPoint(), new AnimDouble(), new ArrayList<>());
     }
 
     GraphicLayer(String name, AnimBoolean shown, AnimPoint translate, AnimPoint rotateOrigin, AnimDouble rotate) {
@@ -65,10 +64,8 @@ class GraphicLayer implements Exportable, Debuggable {
         var rotate = this.rotate.get(time);
         debugCircle(g, translate.x, translate.y, debugging == 1);
         debugDot(g, rotateOrigin.x, rotateOrigin.y, debugging == 2);
-        debugLine(g, rotateOrigin.x, rotateOrigin.y,
-                (int) (Math.sin(rotate * Math.PI / 180) * 20 + rotateOrigin.x),
-                (int) (Math.cos(rotate * Math.PI / 180) * 20 + rotateOrigin.y),
-                debugging == 3);
+        debugLine(g, rotateOrigin.x, rotateOrigin.y, (int) (Math.sin(rotate * Math.PI / 180) * 20 + rotateOrigin.x),
+                (int) (Math.cos(rotate * Math.PI / 180) * 20 + rotateOrigin.y), debugging == 3);
 
     }
 

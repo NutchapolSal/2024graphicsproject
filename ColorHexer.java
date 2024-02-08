@@ -23,24 +23,18 @@ class ColorHexer {
         }
 
         if (hex.length() == 3) {
-            return Optional.of(Color.decode("#" +
-                    hex.substring(0, 1).repeat(2) +
-                    hex.substring(1, 2).repeat(2) +
-                    hex.substring(2, 3).repeat(2)));
+            return Optional.of(Color.decode("#" + hex.substring(0, 1).repeat(2) + hex.substring(1, 2).repeat(2)
+                    + hex.substring(2, 3).repeat(2)));
         } else if (hex.length() == 4) {
-            return Optional.of(new Color(
-                    Integer.parseInt(hex.substring(0, 1), 16) * 17,
-                    Integer.parseInt(hex.substring(1, 2), 16) * 17,
-                    Integer.parseInt(hex.substring(2, 3), 16) * 17,
+            return Optional.of(new Color(Integer.parseInt(hex.substring(0, 1), 16) * 17,
+                    Integer.parseInt(hex.substring(1, 2), 16) * 17, Integer.parseInt(hex.substring(2, 3), 16) * 17,
                     Integer.parseInt(hex.substring(3, 4), 16) * 17));
         } else if (hex.length() == 6) {
             return Optional.of(Color.decode("#" + hex));
         } else if (hex.length() == 8) {
-            return Optional.of(new Color(
-                    Integer.parseInt(hex.substring(0, 2), 16),
-                    Integer.parseInt(hex.substring(2, 4), 16),
-                    Integer.parseInt(hex.substring(4, 6), 16),
-                    Integer.parseInt(hex.substring(6, 8), 16)));
+            return Optional
+                    .of(new Color(Integer.parseInt(hex.substring(0, 2), 16), Integer.parseInt(hex.substring(2, 4), 16),
+                            Integer.parseInt(hex.substring(4, 6), 16), Integer.parseInt(hex.substring(6, 8), 16)));
         } else {
             return Optional.empty();
         }

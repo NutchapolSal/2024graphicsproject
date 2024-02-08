@@ -1,4 +1,3 @@
-
 class MutableInt {
     public int value;
 

@@ -13,24 +13,17 @@ class GraphicPath2D extends GraphicDrawFiller {
     public AnimBoolean closed;
 
     GraphicPath2D() {
-        this(new AnimBoolean(), new AnimColor(), new AnimInt(), new AnimBoolean(), new AnimColor(),
-                new AnimBoolean(),
+        this(new AnimBoolean(), new AnimColor(), new AnimInt(), new AnimBoolean(), new AnimColor(), new AnimBoolean(),
                 new AnimPoint(), new ArrayList<>());
     }
 
-    GraphicPath2D(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill,
-            AnimColor fillColor,
-            AnimBoolean closed,
-            AnimPoint p1,
-            Path2DData... data) {
+    GraphicPath2D(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill, AnimColor fillColor,
+            AnimBoolean closed, AnimPoint p1, Path2DData... data) {
         this(stroke, strokeColor, thickness, fill, fillColor, closed, p1, new ArrayList<>(Arrays.asList(data)));
     }
 
-    GraphicPath2D(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill,
-            AnimColor fillColor,
-            AnimBoolean closed,
-            AnimPoint p1,
-            List<Path2DData> data) {
+    GraphicPath2D(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill, AnimColor fillColor,
+            AnimBoolean closed, AnimPoint p1, List<Path2DData> data) {
         super(stroke, strokeColor, thickness, fill, fillColor);
         this.p1 = p1;
         this.data = data;
@@ -71,8 +64,7 @@ class GraphicPath2D extends GraphicDrawFiller {
                 i++;
             } else if (d instanceof Path2DBezier) {
                 Path2DBezier bezier = (Path2DBezier) d;
-                debugLine(g, pNextA.x, pNextA.y, bezier.pNext.get(time).x, bezier.pNext.get(time).y,
-                        debugging == i);
+                debugLine(g, pNextA.x, pNextA.y, bezier.pNext.get(time).x, bezier.pNext.get(time).y, debugging == i);
                 debugDot(g, bezier.pNext.get(time).x, bezier.pNext.get(time).y, debugging == i);
                 i++;
                 for (int j = 1; j < bezier.morePoints.size(); j += 2) {

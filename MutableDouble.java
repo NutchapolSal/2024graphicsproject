@@ -1,4 +1,3 @@
-
 class MutableDouble {
     public double value;
 

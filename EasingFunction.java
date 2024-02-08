@@ -1,11 +1,11 @@
-import java.util.Arrays;
-import java.util.function.DoubleUnaryOperator;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.function.DoubleUnaryOperator;
 
 enum EasingFunction implements DoubleUnaryOperator {
 

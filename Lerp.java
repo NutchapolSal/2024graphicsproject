@@ -54,6 +54,7 @@ class Lerp {
         public float g;
         public float b;
 
+        @SuppressWarnings("unused")
         public LinearSRGB(float r, float g, float b) {
             this.r = r;
             this.g = g;
@@ -102,10 +103,7 @@ class Lerp {
         }
 
         public Color toColor() {
-            return new Color(
-                    clamp(linearToSRGB(r)),
-                    clamp(linearToSRGB(g)),
-                    clamp(linearToSRGB(b)));
+            return new Color(clamp(linearToSRGB(r)), clamp(linearToSRGB(g)), clamp(linearToSRGB(b)));
         }
     }
 
@@ -169,15 +167,11 @@ class Lerp {
         var beforeOk = new OkLab(new LinearSRGB(before)).multiplyAlpha(before.getAlpha() / 255.0f);
         var afterOk = new OkLab(new LinearSRGB(after)).multiplyAlpha(after.getAlpha() / 255.0f);
         var lerpAlpha = run(before.getAlpha(), frac, after.getAlpha());
-        var lerpOk = new OkLab(
-                Lerp.run(beforeOk.L, frac, afterOk.L),
-                Lerp.run(beforeOk.a, frac, afterOk.a),
-                Lerp.run(beforeOk.b, frac, afterOk.b))
-                .divideAlpha(lerpAlpha / 255.0f);
+        var lerpOk = new OkLab(Lerp.run(beforeOk.L, frac, afterOk.L), Lerp.run(beforeOk.a, frac, afterOk.a),
+                Lerp.run(beforeOk.b, frac, afterOk.b)).divideAlpha(lerpAlpha / 255.0f);
         var lerp = new LinearSRGB(lerpOk).toColor();
 
-        return new Color(lerp.getRed(), lerp.getGreen(), lerp.getBlue(),
-                lerpAlpha);
+        return new Color(lerp.getRed(), lerp.getGreen(), lerp.getBlue(), lerpAlpha);
 
     }
 }

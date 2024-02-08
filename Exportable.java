@@ -1,4 +1,3 @@
-
 interface Exportable {
     public String exportString();
 

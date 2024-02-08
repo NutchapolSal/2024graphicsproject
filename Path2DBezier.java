@@ -19,10 +19,8 @@ class Path2DBezier extends Path2DData {
 
     @Override
     public void run(Path2D path, double time) {
-        path.curveTo(pNext.get(time).x, pNext.get(time).y, morePoints.get(0).get(time).x,
-                morePoints.get(0).get(time).y,
-                morePoints.get(1).get(time).x,
-                morePoints.get(1).get(time).y);
+        path.curveTo(pNext.get(time).x, pNext.get(time).y, morePoints.get(0).get(time).x, morePoints.get(0).get(time).y,
+                morePoints.get(1).get(time).x, morePoints.get(1).get(time).y);
         for (int i = 3; i < morePoints.size(); i += 2) {
             Point pA = morePoints.get(i - 2).get(time);
             Point pBtemp = morePoints.get(i - 3).get(time);

@@ -1,4 +1,3 @@
-
 import java.awt.Graphics;
 import java.awt.Point;
 
@@ -33,25 +32,17 @@ class GraphicCircle extends GraphicBezierPlotter {
         double perimeter = radius * 2 * Math.PI;
         int iters = (int) Math.round(perimeter);
 
-        plotBezier(g, time, roundPoint(center.x, center.y - radius),
-                roundPoint(center.x + offset, center.y - radius),
-                roundPoint(center.x + radius, center.y - offset),
-                roundPoint(center.x + radius, center.y), iters);
+        plotBezier(g, time, roundPoint(center.x, center.y - radius), roundPoint(center.x + offset, center.y - radius),
+                roundPoint(center.x + radius, center.y - offset), roundPoint(center.x + radius, center.y), iters);
 
-        plotBezier(g, time, roundPoint(center.x, center.y + radius),
-                roundPoint(center.x + offset, center.y + radius),
-                roundPoint(center.x + radius, center.y + offset),
-                roundPoint(center.x + radius, center.y), iters);
+        plotBezier(g, time, roundPoint(center.x, center.y + radius), roundPoint(center.x + offset, center.y + radius),
+                roundPoint(center.x + radius, center.y + offset), roundPoint(center.x + radius, center.y), iters);
 
-        plotBezier(g, time, roundPoint(center.x, center.y + radius),
-                roundPoint(center.x - offset, center.y + radius),
-                roundPoint(center.x - radius, center.y + offset),
-                roundPoint(center.x - radius, center.y), iters);
+        plotBezier(g, time, roundPoint(center.x, center.y + radius), roundPoint(center.x - offset, center.y + radius),
+                roundPoint(center.x - radius, center.y + offset), roundPoint(center.x - radius, center.y), iters);
 
-        plotBezier(g, time, roundPoint(center.x, center.y - radius),
-                roundPoint(center.x - offset, center.y - radius),
-                roundPoint(center.x - radius, center.y - offset),
-                roundPoint(center.x - radius, center.y), iters);
+        plotBezier(g, time, roundPoint(center.x, center.y - radius), roundPoint(center.x - offset, center.y - radius),
+                roundPoint(center.x - radius, center.y - offset), roundPoint(center.x - radius, center.y), iters);
     }
 
     @Override

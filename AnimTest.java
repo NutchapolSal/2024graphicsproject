@@ -1,4 +1,3 @@
-
 class AnimTest extends AnimatedValue<Integer> {
     public static void test() {
         System.out.println("AnimatedValue test");

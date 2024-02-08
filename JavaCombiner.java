@@ -14,10 +14,8 @@ import java.util.stream.Stream;
 class JavaCombiner {
     public static void main(String[] args) {
         var folder = new File(".");
-        var fileList = folder.listFiles(
-                (f) -> f.isFile() &&
-                        f.getName().endsWith(".java") &&
-                        !f.getName().equals(JavaCombiner.class.getSimpleName() + ".java"));
+        var fileList = folder.listFiles((f) -> f.isFile() && f.getName().endsWith(".java")
+                && !f.getName().equals(JavaCombiner.class.getSimpleName() + ".java"));
 
         System.out.println(fileList.length + " files");
 
@@ -54,9 +52,8 @@ class JavaCombiner {
             Files.write(Path.of("Main.java.out"), lines, StandardCharsets.UTF_8);
             System.out.println("output at Main.java.out");
             System.out.println(lines.size() + " lines");
-            System.out.println(
-                    (lines.stream().mapToInt(String::length).sum() + lines.size() * 2)
-                            + " characters (windows line endings)");
+            System.out.println((lines.stream().mapToInt(String::length).sum() + lines.size() * 2)
+                    + " characters (windows line endings)");
             System.out.println(
                     (lines.stream().mapToInt(String::length).sum() + lines.size()) + " characters (unix line endings)");
         } catch (Exception e) {

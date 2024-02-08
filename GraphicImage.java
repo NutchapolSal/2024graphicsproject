@@ -64,8 +64,7 @@ class GraphicImage extends GraphicObject {
 
     @Override
     public GraphicObject copy() {
-        return new GraphicImage(filePath.value, origin, size,
-                opacity);
+        return new GraphicImage(filePath.value, origin, size, opacity);
     }
 
     public String exportString() {

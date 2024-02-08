@@ -1,4 +1,3 @@
-
 class GlobalState {
     public static boolean pannerPanelDragging = false;
     public static boolean pannerPanelSlow = false;

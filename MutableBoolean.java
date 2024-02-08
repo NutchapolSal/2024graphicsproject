@@ -1,4 +1,3 @@
-
 class MutableBoolean {
     public boolean value;
 
