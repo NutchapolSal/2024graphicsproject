@@ -15,10 +15,12 @@ class GraphicsPanel extends JPanel {
         super();
         this.setPreferredSize(new Dimension(600, 600));
         this.instructions = root.instructions;
-        root.subscribeToTime(t -> {
+        var timeCallback = root.subscribeToTime(t -> {
             time = t;
             repaint();
         });
+        this.putClientProperty("timeCallback", timeCallback);
+
     }
 
     @Override

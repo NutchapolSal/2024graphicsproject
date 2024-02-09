@@ -1,5 +1,9 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 
 class GraphicRoot implements Exportable {
@@ -7,7 +11,8 @@ class GraphicRoot implements Exportable {
     public Palette palette;
     public List<GraphicLayer> instructions;
     private double currentTime;
-    private List<DoubleConsumer> timeSubscribers = new ArrayList<>();
+    private Set<DoubleConsumer> timeSubscribers = Collections.newSetFromMap(new WeakHashMap<>());
+    private Set<Consumer<TimeKeypoint>> tkpFocusSubscribers = Collections.newSetFromMap(new WeakHashMap<>());
 
     public GraphicRoot(List<TimeKeypoint> timeKeypoints, Palette palette, List<GraphicLayer> instructions) {
         this.timeKeypoints = timeKeypoints;
@@ -15,15 +20,38 @@ class GraphicRoot implements Exportable {
         this.instructions = instructions;
     }
 
-    /** subscribe now and get one 𝐓𝐢𝐦𝐞 for free!! */
-    public void subscribeToTime(DoubleConsumer subscriber) {
+    /**
+     * subscribe now and get one 𝐓𝐢𝐦𝐞 for free!!
+     * 
+     * @return the subscriber, for putting in a non-weak reference if you want to
+     *         keep it around
+     */
+    public DoubleConsumer subscribeToTime(DoubleConsumer subscriber) {
         timeSubscribers.add(subscriber);
         subscriber.accept(currentTime);
+        return subscriber;
     }
 
     public void setTime(double time) {
         currentTime = time;
         timeSubscribers.forEach(sub -> sub.accept(time));
+    }
+
+    /**
+     * subscribe now and get one 𝐓𝐊𝐏 for free!!
+     * 
+     * @return the subscriber, for putting in a non-weak reference if you want to
+     *         keep it around
+     */
+    public Consumer<TimeKeypoint> subscribeToTKP(Consumer<TimeKeypoint> subscriber) {
+        tkpFocusSubscribers.add(subscriber);
+        timeKeypoints.forEach(subscriber);
+        return subscriber;
+    }
+
+    public void addTimeKeypoint(TimeKeypoint tkp) {
+        timeKeypoints.add(tkp);
+        tkpFocusSubscribers.forEach(sub -> sub.accept(tkp));
     }
 
     public double getTime() {

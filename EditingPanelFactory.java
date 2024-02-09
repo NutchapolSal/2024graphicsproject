@@ -542,7 +542,8 @@ class EditingPanelFactory {
         checkBox.addActionListener(e -> {
             checkBox.setBackground(EditorColor.Temporary.color());
         });
-        root.subscribeToTime(t -> {
+
+        var timeCallback = root.subscribeToTime(t -> {
             checkBox.setSelected(animBool.get(t));
             if (animBool.isAnimated()) {
                 if (animBool.isTimepoint(t)) {
@@ -554,6 +555,7 @@ class EditingPanelFactory {
                 checkBox.setBackground(EditorColor.Static.color(checkBox));
             }
         });
+        panel.putClientProperty("timeCallback", timeCallback);
 
         var animPanel = createAnimPanel();
         var filler = Box.createHorizontalGlue();
@@ -585,10 +587,11 @@ class EditingPanelFactory {
         JSlider slider = new JSlider(0, sliderSteps, 0);
         JSpinner spinner = new JSpinner(new SpinnerNumberModel(animDouble.get(root.getTime()),
                 hardLimitMin ? min : Double.MIN_VALUE, hardLimitMax ? max : Double.MAX_VALUE, stepSize));
-        root.subscribeToTime(t -> {
+        var timeCallback = root.subscribeToTime(t -> {
             spinner.setValue(animDouble.get(t));
             slider.setValue((int) ((animDouble.get(t) - min) / stepSize));
         });
+        panel.putClientProperty("timeCallback", timeCallback);
 
         // spinner.addChangeListener(e -> {
         //     doub.value = (double) spinner.getValue();
@@ -627,10 +630,11 @@ class EditingPanelFactory {
         JSpinner spinner = new JSpinner(new SpinnerNumberModel(min, hardLimitMin ? min : Integer.MIN_VALUE,
                 hardLimitMax ? max : Integer.MAX_VALUE, stepSize));
         ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(2);
-        root.subscribeToTime(t -> {
+        var timeCallback = root.subscribeToTime(t -> {
             spinner.setValue(animInt.get(t));
             slider.setValue((animInt.get(t) - min) / stepSize);
         });
+        panel.putClientProperty("timeCallback", timeCallback);
         // spinner.addChangeListener(e -> {
         //     integer.value = (int) spinner.getValue();
         //     slider.setValue((integer.value - min) / stepSize);
@@ -661,10 +665,11 @@ class EditingPanelFactory {
         ColorButton button = new ColorButton();
         JTextField textField = new JTextField();
 
-        root.subscribeToTime(t -> {
+        var timeCallback = root.subscribeToTime(t -> {
             button.setColor(animColor.get(t));
             textField.setText(ColorHexer.encode(animColor.get(t)));
         });
+        panel.putClientProperty("timeCallback", timeCallback);
 
         // button.addActionListener(e -> {
         //     Color newColor = JColorChooser.showDialog(null, "Choose a color", color.value);
@@ -733,10 +738,11 @@ class EditingPanelFactory {
 
         SpinnerNumberModel xModel = new SpinnerNumberModel();
         SpinnerNumberModel yModel = new SpinnerNumberModel();
-        root.subscribeToTime(t -> {
+        var timeCallback = root.subscribeToTime(t -> {
             xModel.setValue(animPoint.get(t).x);
             yModel.setValue(animPoint.get(t).y);
         });
+        panel.putClientProperty("timeCallback", timeCallback);
         JSpinner xSpinner = new JSpinner(xModel);
         JSpinner ySpinner = new JSpinner(yModel);
         // xSpinner.addChangeListener(e -> {
@@ -774,10 +780,12 @@ class EditingPanelFactory {
 
         SpinnerNumberModel xModel = new SpinnerNumberModel();
         SpinnerNumberModel yModel = new SpinnerNumberModel();
-        root.subscribeToTime(t -> {
+        var timeCallback = root.subscribeToTime(t -> {
             xModel.setValue(animDim.get(t).width);
             yModel.setValue(animDim.get(t).height);
         });
+        panel.putClientProperty("timeCallback", timeCallback);
+
         JSpinner xSpinner = new JSpinner(xModel);
         JSpinner ySpinner = new JSpinner(yModel);
         // xSpinner.addChangeListener(e -> {
@@ -840,6 +848,7 @@ class EditingPanelFactory {
     }
 
     public static JPanel create(GraphicLayer layer, GraphicRoot root) {
+        System.out.println("Creating layer panel for " + layer.name);
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);

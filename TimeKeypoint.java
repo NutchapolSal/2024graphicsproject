@@ -6,8 +6,8 @@ import java.util.UUID;
 class TimeKeypoint implements Referenceable {
     public final String id;
     public String label = "a time keypoint";
-    public double offset;
-    public Optional<TimeKeypoint> reference = Optional.empty();
+    private double offset;
+    private Optional<TimeKeypoint> reference = Optional.empty();
     public List<TimeKeypoint> children = new ArrayList<>();
 
     public TimeKeypoint(String id, double offset, TimeKeypoint reference, String label) {
@@ -21,8 +21,11 @@ class TimeKeypoint implements Referenceable {
         this(UUID.randomUUID().toString(), offset, reference, label);
     }
 
-    void setReference(TimeKeypoint reference) {
-        var newReference = Optional.ofNullable(reference);
+    public void setReference(TimeKeypoint reference) {
+        setReference(Optional.ofNullable(reference));
+    }
+
+    public void setReference(Optional<TimeKeypoint> newReference) {
         if (this.reference.isPresent()) {
             this.reference.get().children.remove(this);
         }
@@ -30,6 +33,18 @@ class TimeKeypoint implements Referenceable {
             newReference.get().children.add(this);
         }
         this.reference = newReference;
+    }
+
+    public Optional<TimeKeypoint> getReference() {
+        return reference;
+    }
+
+    public double getOffset() {
+        return offset;
+    }
+
+    public void setOffset(double offset) {
+        this.offset = offset;
     }
 
     public int referenceDepth() {
@@ -46,6 +61,22 @@ class TimeKeypoint implements Referenceable {
             time += current.get().offset;
         }
         return time;
+    }
+
+    public boolean isValidReference(Optional<TimeKeypoint> tkp) {
+        return isValidReference(tkp.orElse(null));
+    }
+
+    public boolean isValidReference(TimeKeypoint tkp) {
+        if (tkp == null) {
+            return true;
+        }
+        for (var current = tkp; current != null; current = current.reference.orElse(null)) {
+            if (current == this) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public String exportInitString() {

@@ -1,4 +1,5 @@
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusAdapter;
@@ -16,6 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.prefs.Preferences;
@@ -47,6 +49,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionListener;
 
 class EditorGang {
 
@@ -79,6 +82,7 @@ class EditorGang {
     });
     private boolean bringingToFront = false;
     private List<Consumer<Boolean>> timerStateSubscribers = new ArrayList<>();
+    private WeakHashMap<GraphicLayer, JPanel> layerPanels = new WeakHashMap<>();
 
     EditorGang(JFrame frame, GraphicRoot root) {
         this.root = root;
@@ -391,7 +395,10 @@ class EditorGang {
         }
         boolean sameLayer = layerIndex == this.currentLayer.value;
         int scrollPos = editorScrollPane.getVerticalScrollBar().getValue();
-        editorScrollPane.setViewportView(EditingPanelFactory.create(this.root.instructions.get(layerIndex), this.root));
+
+        var layer = this.root.instructions.get(layerIndex);
+        editorScrollPane
+                .setViewportView(layerPanels.computeIfAbsent(layer, l -> EditingPanelFactory.create(l, this.root)));
         if (sameLayer) {
             editorScrollPane.getVerticalScrollBar().setValue(scrollPos);
         } else {
@@ -413,7 +420,6 @@ class EditorGang {
         ButtonGroup layerButtonGroup = new ButtonGroup();
 
         changeEditorPane(Math.max(0, Math.min(this.currentLayer.value, root.instructions.size() - 1)));
-
         int layerI = 0;
         for (GraphicLayer layer : root.instructions) {
 
@@ -423,7 +429,9 @@ class EditorGang {
             }
             final int layerI2 = layerI;
             layerEditRadio.addActionListener(e -> {
-                changeEditorPane(layerI2);
+                if (currentLayer.value != layerI2) {
+                    changeEditorPane(layerI2);
+                }
             });
             layerButtonGroup.add(layerEditRadio);
 
@@ -446,27 +454,29 @@ class EditorGang {
     }
 
     private static String formatTime(double time) {
-        return String.format("%.3f", time).replaceAll("\\.?0+$", ".0");
+        return String.format("%.3f", time).replaceAll("(?<!\\.)0+$", "");
     }
 
     private static String formatOffset(double offset) {
-        return String.format("%+.3f", offset).replaceAll("\\.?0+$", ".0");
+        return String.format("%+.3f", offset).replaceAll("(?<!\\.)0+$", "");
     }
 
     enum TimepointSort {
         LABEL(value -> value.label + " @ " + formatTime(value.time()), Comparator.comparing(v -> v.label)),
         TIME(value -> value.label + " @ " + formatTime(value.time()), Comparator.comparingDouble(TimeKeypoint::time)),
-        HIERARCHY(value -> value.label + " @ " + formatTime(value.time()) + " (" + formatOffset(value.offset) + ")",
+        HIERARCHY(
+                value -> value.label + " @ " + formatTime(value.time()) + " (" + formatOffset(value.getOffset()) + ")",
                 (a, b) -> {
-                    if (a.reference.orElse(null) == b) {
+                    if (a.getReference().orElse(null) == b) {
                         return 1;
                     }
-                    if (b.reference.orElse(null) == a) {
+                    if (b.getReference().orElse(null) == a) {
                         return -1;
                     }
 
                     return a.id.compareTo(b.id);
-                });
+                }),
+        ID(value -> value.label + " - " + value.id, Comparator.comparing(v -> v.id));
 
         public final Function<TimeKeypoint, String> toStringFunction;
         public final Comparator<TimeKeypoint> comparator;
@@ -478,11 +488,14 @@ class EditorGang {
     }
 
     private TimepointSort currentSort = TimepointSort.TIME;
+    private Optional<TimeKeypoint> changingReference = Optional.empty();
 
     private void createTimepointsFrame(JFrame frame) {
+        root.timeKeypoints.sort(currentSort.comparator);
+
         timepointsFrame.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
         timepointsFrame.setTitle("timepoints");
-        timepointsFrame.setSize(400, 600);
+        timepointsFrame.setSize(450, 600);
 
         JPanel timepointsPanel = new JPanel();
         timepointsFrame.setContentPane(timepointsPanel);
@@ -498,6 +511,9 @@ class EditorGang {
         listModel.addAll(root.timeKeypoints);
 
         JList<TimeKeypoint> list = new JList<>(listModel);
+        listScrollPane.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
+        listScrollPane.setPreferredSize(new Dimension(300, Short.MAX_VALUE));
+        listScrollPane.setMinimumSize(new Dimension(150, 0));
         GroupLayout listLayout = new GroupLayout(list);
         list.setLayout(listLayout);
 
@@ -517,14 +533,18 @@ class EditorGang {
         }
         sortComboBox.setSelectedItem(currentSort.name().toLowerCase());
 
-        sortComboBox.addActionListener(e -> {
+        Runnable sortTimepointsFunc = () -> {
             var selectedTimepoint = list.getSelectedValue();
-            var sort = TimepointSort.values()[sortComboBox.getSelectedIndex()];
-            currentSort = sort;
-            root.timeKeypoints.sort(sort.comparator);
+            root.timeKeypoints.sort(currentSort.comparator);
             listModel.clear();
             listModel.addAll(root.timeKeypoints);
             list.setSelectedValue(selectedTimepoint, true);
+        };
+
+        sortComboBox.addActionListener(e -> {
+            var sort = TimepointSort.values()[sortComboBox.getSelectedIndex()];
+            currentSort = sort;
+            sortTimepointsFunc.run();
         });
 
         list.setCellRenderer(new ListCellRenderer<>() {
@@ -560,21 +580,143 @@ class EditorGang {
             }
         });
 
+        var idLabel = new JLabel("id");
+        var labelLabel = new JLabel("label");
+        var offsetLabel = new JLabel("offset");
+        var referenceLabel = new JLabel("reference");
+        var idField = new JTextField();
         var labelField = new JTextField();
         var offsetField = new JTextField();
-        var referenceComboBox = new JComboBox<TimeKeypoint>();
+        var referenceField = new JTextField();
+        var changeReferenceButton = new JButton("🔀");
+        var removeReferenceButton = new JButton("❌");
 
-        list.addListSelectionListener(e -> {
+        idField.setEnabled(false);
+        referenceField.setEnabled(false);
+
+        ListSelectionListener selectionChanged = e -> {
+            if (changingReference.isPresent()) {
+                var changeRef = changingReference.get();
+                var selected = Optional.ofNullable(list.getSelectedValue());
+                if (selected.isPresent()) {
+                    if (changeRef.isValidReference(selected)) {
+                        changeRef.setReference(selected);
+                        changingReference = Optional.empty();
+                        list.setSelectedValue(changeRef, true);
+                    } else {
+                        referenceField.setText("<-- invalid reference");
+                        list.setSelectedValue(null, false);
+                    }
+                }
+                return;
+            }
+
             if (list.getSelectedValue() == null) {
+                idField.setText("");
                 labelField.setText("");
                 offsetField.setText("");
-                referenceComboBox.setSelectedItem(null);
+                referenceField.setText("");
+                changeReferenceButton.setText("🔀");
+                labelField.setEnabled(false);
+                offsetField.setEnabled(false);
+                changeReferenceButton.setEnabled(false);
+                removeReferenceButton.setEnabled(false);
                 return;
             }
             var selected = list.getSelectedValue();
+            idField.setText(selected.id);
             labelField.setText(selected.label);
-            offsetField.setText(Double.toString(selected.offset));
-            referenceComboBox.setSelectedItem(selected.reference.orElse(null));
+            offsetField.setText(Double.toString(selected.getOffset()));
+            referenceField.setText(
+                    selected.getReference().map(r -> r.label + " @ " + formatTime(r.time()) + " - " + r.id).orElse(""));
+            idField.setCaretPosition(0);
+            referenceField.setCaretPosition(0);
+            labelField.setEnabled(true);
+            offsetField.setEnabled(true);
+            changeReferenceButton.setText("🔀");
+            changeReferenceButton.setEnabled(true);
+            removeReferenceButton.setEnabled(selected.getReference().isPresent());
+        };
+        selectionChanged.valueChanged(null);
+        list.addListSelectionListener(selectionChanged);
+
+        changeReferenceButton.addActionListener(e -> {
+            if (changingReference.isPresent()) {
+                var selected = changingReference.get();
+                list.setSelectedValue(selected, true);
+                changingReference = Optional.empty();
+                selectionChanged.valueChanged(null);
+                sortTimepointsFunc.run();
+                return;
+            }
+            changingReference = Optional.ofNullable(list.getSelectedValue());
+            referenceField.setText("<-- select new reference");
+            referenceField.setCaretPosition(0);
+            removeReferenceButton.setEnabled(false);
+            changeReferenceButton.setText("⛔");
+            list.setSelectedValue(null, false);
+        });
+
+        removeReferenceButton.addActionListener(e -> {
+            list.getSelectedValue().setReference(Optional.empty());
+            selectionChanged.valueChanged(null);
+            sortTimepointsFunc.run();
+        });
+
+        Runnable commitChanges = () -> {
+            var selected = list.getSelectedValue();
+            selected.label = labelField.getText();
+            try {
+                selected.setOffset(Double.parseDouble(offsetField.getText()));
+            } catch (NumberFormatException e) {
+                offsetField.setText(Double.toString(selected.getOffset()));
+            }
+            sortTimepointsFunc.run();
+        };
+
+        Runnable validateChanges = () -> {
+            try {
+                Double.parseDouble(offsetField.getText());
+                offsetField.setBackground(EditorColor.Static.color(offsetField));
+            } catch (NumberFormatException ex) {
+                offsetField.setBackground(EditorColor.Invalid.color());
+            }
+        };
+
+        offsetField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                validateChanges.run();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                validateChanges.run();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                validateChanges.run();
+            }
+        });
+
+        labelField.addActionListener(e -> {
+            commitChanges.run();
+        });
+        offsetField.addActionListener(e -> {
+            commitChanges.run();
+        });
+        labelField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                commitChanges.run();
+            }
+        });
+        offsetField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                commitChanges.run();
+            }
         });
 
         var addTimepointButton = new JButton("add timepoint");
@@ -582,16 +724,48 @@ class EditorGang {
             var newTKP = new TimeKeypoint(time, null, "new timepoint");
             root.timeKeypoints.add(newTKP);
             listModel.addElement(newTKP);
+            list.setSelectedValue(newTKP, true);
+            sortTimepointsFunc.run();
         });
 
-        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING).addGroup(
-                layout.createSequentialGroup().addGap(2).addComponent(sortLabel).addGap(2).addComponent(sortComboBox))
-                .addComponent(listScrollPane));
-        layout.setVerticalGroup(
-                layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(Alignment.CENTER).addComponent(sortLabel)
-                                .addComponent(sortComboBox, GroupLayout.DEFAULT_SIZE, 25, 25))
-                        .addComponent(listScrollPane));
+        var filler = Box.createGlue();
+
+        layout.setHorizontalGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup().addGap(2).addComponent(sortLabel).addGap(2)
+                                .addComponent(sortComboBox))
+                        .addComponent(listScrollPane))
+                .addGap(10)
+                .addGroup(layout.createParallelGroup(Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup().addComponent(idLabel)
+                                .addPreferredGap(ComponentPlacement.RELATED).addComponent(idField))
+                        .addGroup(layout.createSequentialGroup().addComponent(labelLabel)
+                                .addPreferredGap(ComponentPlacement.RELATED).addComponent(labelField))
+                        .addGroup(layout.createSequentialGroup().addComponent(offsetLabel)
+                                .addPreferredGap(ComponentPlacement.RELATED).addComponent(offsetField))
+                        .addGroup(layout.createSequentialGroup().addComponent(referenceLabel)
+                                .addGap(0, 300, Short.MAX_VALUE).addComponent(changeReferenceButton)
+                                .addComponent(removeReferenceButton))
+                        .addComponent(referenceField).addComponent(filler).addComponent(addTimepointButton))
+                .addGap(10));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING).addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(Alignment.CENTER).addComponent(sortLabel)
+                        .addComponent(sortComboBox, GroupLayout.DEFAULT_SIZE, 25, 25))
+                .addComponent(listScrollPane))
+                .addGroup(layout.createSequentialGroup().addGap(5)
+                        .addGroup(layout
+                                .createParallelGroup(Alignment.BASELINE).addComponent(idLabel).addComponent(idField))
+                        .addGap(2)
+                        .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(labelLabel)
+                                .addComponent(labelField))
+                        .addGap(2)
+                        .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(offsetLabel)
+                                .addComponent(offsetField))
+                        .addGap(2)
+                        .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(referenceLabel)
+                                .addComponent(changeReferenceButton).addComponent(removeReferenceButton))
+                        .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(referenceField))
+                        .addComponent(filler).addComponent(addTimepointButton)));
 
     }
 
@@ -624,9 +798,11 @@ class EditorGang {
         });
 
         JTextField timeField = new JTextField();
-        root.subscribeToTime(time -> SwingUtilities.invokeLater(() -> {
+        var timeCallback = root.subscribeToTime(time -> SwingUtilities.invokeLater(() -> {
             timeField.setText(Double.toString(time));
         }));
+        timeControlPanel.putClientProperty("timeCallback", timeCallback);
+
         Runnable changedTimeFunction = () -> {
             try {
                 Double.parseDouble(timeField.getText());
