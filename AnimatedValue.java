@@ -149,6 +149,14 @@ abstract class AnimatedValue<T> implements Exportable {
 
     abstract public AnimatedValue<T> addForEditor(TimeKeypoint tkp, T value, EasingFunction easingToNext);
 
+    public void replaceForEditor(TimeKeypoint tkp, T value) {
+        timepoints.stream().filter(tp -> tp.tkp == tkp).forEach(tp -> tp.value = value);
+    }
+
+    public void replaceForEditor(TimeKeypoint tkp, EasingFunction easing) {
+        timepoints.stream().filter(tp -> tp.tkp == tkp).forEach(tp -> tp.easingToNext = easing);
+    }
+
     protected String exportString(Function<T, String> exporter) {
         return timepoints.stream().map(tp -> ImEx.exportString(tp.tkp) + " " + exporter.apply(tp.value) + " "
                 + ImEx.exportString(tp.easingToNext)).collect(Collectors.joining(" ", "", " END"));

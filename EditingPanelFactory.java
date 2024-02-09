@@ -11,6 +11,7 @@ import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.Predicate;
@@ -503,8 +504,26 @@ class EditingPanelFactory {
         easingPopup.show(locationRef, 0, locationRef.getHeight());
     }
 
-    public static <T> JPanel createAnimPanel(AnimatedValue<T> animValue, GraphicRoot root,
-            Supplier<T> getCurrentUIValue) {
+    private static class AnimPanelReturns<T> {
+        public final JPanel panel;
+        public final Consumer<T> dataCallIn;
+
+        public AnimPanelReturns(JPanel panel, Consumer<T> dataCallIn) {
+            this.panel = panel;
+            this.dataCallIn = dataCallIn;
+        }
+    }
+
+    private static class AnimPanelState {
+        public double timeTempped;
+        public boolean isTempped;
+    }
+
+    public static <T> AnimPanelReturns<T> createAnimPanel(AnimatedValue<T> animValue, GraphicRoot root,
+            Supplier<T> getCurrentUIValue, DoubleConsumer stateSetter, Color staticColor, Consumer<Color> colorSetter) {
+
+        AnimPanelState state = new AnimPanelState();
+
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);
@@ -538,27 +557,49 @@ class EditingPanelFactory {
         easingsButton.setToolTipText(null);
 
         var ttkpFocusCallback = root.subscribeToTimeAndTKPFocus(ttkp -> {
+            if (state.isTempped && ttkp.time == state.timeTempped) {
+                colorSetter.accept(EditorColor.Temporary.color());
+            } else {
+                state.isTempped = false;
+                stateSetter.accept(ttkp.time);
+                if (animValue.isAnimated()) {
+                    colorSetter.accept(EditorColor.getTimepointTypeColor(animValue.getTimepointCount(ttkp.time),
+                            animValue.hasTimepoint(ttkp.tkpFocus), ttkp.isPresent() && ttkp.get().time() == ttkp.time));
+                } else {
+                    colorSetter.accept(staticColor);
+                }
+            }
+
             jumpToTKPButton.setEnabled(0 < animValue.getTimepointCount(ttkp.time));
             timeKeypointButton.setText(animValue.getTimepointCount(ttkp.time) == 0 ? "▪" : "🔶");
 
-            if (ttkp.isPresent() && ttkp.get().time() == ttkp.time && animValue.hasTimepoint(ttkp.get())) {
+            Optional<EasingFunction> easing = null;
+            timeKeypointButton.setToolTipText(null);
+            easingsButton.setEnabled(false);
+            timeKeypointButton.setEnabled(false);
+
+            if (ttkp.isPresent() && ttkp.get().time() == ttkp.time) {
                 timeKeypointButton.setEnabled(true);
-                easingsButton.setEnabled(true);
-                var easing = animValue.getEasingFunction(ttkp.get());
-                if (easing.isPresent()) {
-                    easingsButton.setIcon(easing.get().imageIcon());
-                } else {
-                    easingsButton.setIcon(EasingFunction.emptyImageIcon);
+
+                if (animValue.hasTimepoint(ttkp.get())) {
+                    easingsButton.setEnabled(true);
+                    easing = animValue.getEasingFunction(ttkp.get());
+
+                    if (!animValue.isAnimated()) {
+                        timeKeypointButton.setEnabled(false);
+                        timeKeypointButton.setToolTipText("you cannot remove the last timepoint");
+                    }
                 }
+            }
+
+            if (easing == null) {
+                easing = animValue.getEasingFunction(ttkp.time);
+            }
+
+            if (easing.isPresent()) {
+                easingsButton.setIcon(easing.get().imageIcon());
             } else {
-                timeKeypointButton.setEnabled(false);
-                easingsButton.setEnabled(false);
-                var easing = animValue.getEasingFunction(ttkp.time);
-                if (easing.isPresent()) {
-                    easingsButton.setIcon(easing.get().imageIcon());
-                } else {
-                    easingsButton.setIcon(EasingFunction.emptyImageIcon);
-                }
+                easingsButton.setIcon(EasingFunction.emptyImageIcon);
             }
         });
         easingsButton.addActionListener(e -> {
@@ -575,9 +616,26 @@ class EditingPanelFactory {
             if (animValue.hasTimepoint(tkp)) {
                 animValue.removeTimepoint(tkp.get());
             } else {
-                animValue.addForEditor(tkp.get(), animValue.get(root.getTime()), EasingFunction.snap);
+                animValue.addForEditor(tkp.get(), getCurrentUIValue.get(), EasingFunction.snap);
             }
+            ttkpFocusCallback.accept(root.getTimeAndTKPFocus());
         });
+
+        Consumer<T> dataCallIn = t -> {
+            if (!animValue.isAnimated()) {
+                animValue.staticSet(t);
+                return;
+            }
+            var ttkp = root.getTimeAndTKPFocus();
+            if (ttkp.isPresent() && ttkp.get().time() == ttkp.time && animValue.hasTimepoint(ttkp.get())) {
+                animValue.replaceForEditor(ttkp.get(), t);
+            } else {
+                state.timeTempped = ttkp.time;
+                state.isTempped = true;
+                colorSetter.accept(EditorColor.Temporary.color());
+            }
+
+        };
         panel.putClientProperty("timeTkpFocusCallback", ttkpFocusCallback);
 
         layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(jumpToTKPButton)
@@ -585,21 +643,7 @@ class EditingPanelFactory {
         layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(jumpToTKPButton)
                 .addComponent(timeKeypointButton).addComponent(easingsButton));
 
-        return panel;
-    }
-
-    private static <T> void subscribeToAnim(GraphicRoot root, AnimatedValue<T> animValue, JComponent callbackStorage,
-            Color staticColor, DoubleConsumer stateSetter, Consumer<Color> colorSetter) {
-        var tkpFocusCallback = root.subscribeToTimeAndTKPFocus(ttkp -> {
-            if (!animValue.isAnimated()) {
-                colorSetter.accept(staticColor);
-                return;
-            }
-
-            colorSetter.accept(EditorColor.getTimepointTypeColor(animValue.getTimepointCount(ttkp.time),
-                    animValue.hasTimepoint(ttkp.tkpFocus), ttkp.isPresent() && ttkp.get().time() == ttkp.time));
-        });
-        callbackStorage.putClientProperty("TimeTkpFocusCallback", tkpFocusCallback);
+        return new AnimPanelReturns<>(panel, dataCallIn);
     }
 
     public static JPanel create(String labelText, AnimBoolean animBool, GraphicRoot root, Debuggable obj,
@@ -610,22 +654,18 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JCheckBox checkBox = new JCheckBox();
-        checkBox.addActionListener(e -> {
-            if (!animBool.isAnimated()) {
-                animBool.staticSet(checkBox.isSelected());
-                return;
-            }
-            checkBox.setBackground(EditorColor.Temporary.color());
-        });
 
-        subscribeToAnim(root, animBool, panel, EditorColor.Static.color(checkBox), t -> {
+        var animPanelData = createAnimPanel(animBool, root, () -> checkBox.isSelected(), t -> {
             checkBox.setSelected(animBool.get(t));
-        }, c -> {
+        }, EditorColor.Static.color(checkBox), c -> {
             checkBox.setBackground(c);
         });
-
-        var animPanel = createAnimPanel(animBool, root, () -> checkBox.isSelected());
         var filler = Box.createHorizontalGlue();
+
+        var animPanel = animPanelData.panel;
+        checkBox.addActionListener(e -> {
+            animPanelData.dataCallIn.accept(checkBox.isSelected());
+        });
 
         layout.setHorizontalGroup(
                 layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
