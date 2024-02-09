@@ -198,6 +198,10 @@ class GraphicRoot implements Exportable {
         return new TimeAndTKPFocus(getTime(), getTimeKeypointFocus());
     }
 
+    public TimeKeypoint getFirstTimeKeypoint() {
+        return timeKeypoints.get(0);
+    }
+
     public String exportString() {
         StringBuilder sb = new StringBuilder();
         sb.append(ImEx.exportStringTKPs(timeKeypoints));

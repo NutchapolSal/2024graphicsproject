@@ -5,8 +5,6 @@ abstract class GraphicObject implements Exportable, Debuggable {
 
     protected int debugging = -1;
 
-    abstract public GraphicObject copy();
-
     @Override
     public void setDebugging(int index) {
         this.debugging = index;
@@ -16,7 +14,5 @@ abstract class GraphicObject implements Exportable, Debuggable {
     public void unsetDebugging() {
         this.debugging = -1;
     }
-
-    // abstract public GraphicObject editorCopy();
 
 }

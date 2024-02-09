@@ -1013,9 +1013,9 @@ class EditingPanelFactory {
 
         var layerNamePanel = create("layer", layer.name, null, 0);
         var shownPanel = create("shown", layer.shown, root, layer, 0);
-        var translatePanel = create("translate", layer.translate, root, layer, 0);
-        var rotateOriginPanel = create("rotateOrigin", layer.rotateOrigin, root, layer, 0);
-        var rotatePanel = create("rotate", layer.rotate, root, -360, false, 360, false, 1, layer, 0);
+        var translatePanel = create("translate", layer.translate, root, layer, 1);
+        var rotateOriginPanel = create("rotateOrigin", layer.rotateOrigin, root, layer, 2);
+        var rotatePanel = create("rotate", layer.rotate, root, -360, false, 360, false, 1, layer, 3);
         vGroup.addComponent(layerNamePanel).addGap(2).addComponent(shownPanel).addGap(2).addComponent(translatePanel)
                 .addGap(2).addComponent(rotateOriginPanel).addGap(2).addComponent(rotatePanel);
         hGroup.addComponent(layerNamePanel).addComponent(shownPanel).addComponent(translatePanel)
@@ -1071,34 +1071,18 @@ class EditingPanelFactory {
         return panel;
     }
 
-    static void p2DAddActionListeners(JMenuItem insertLineItem, JMenuItem insertBezierItem, JMenuItem deleteItem,
-            GraphicPath2D p2d, Path2DData data, int dataIndex) {
-        // insertLineItem.addActionListener(e -> {
-        // Point pRef;
-        // if (dataIndex == 0) {
-        // pRef = p2d.p1;
-        // } else {
-        // pRef = p2d.data.get(dataIndex - 1).lastPoint();
-        // }
-        // var newData = new Path2DLine(new Point(pRef.x + 20, pRef.y + 20));
-        // p2d.data.add(dataIndex, newData);
-        // GlobalState.needsUpdateEditor = true;
-        // });
-        // insertBezierItem.addActionListener(e -> {
-        // Point pRef;
-        // if (dataIndex == 0) {
-        // pRef = p2d.p1;
-        // } else {
-        // pRef = p2d.data.get(dataIndex - 1).lastPoint();
-        // }
-        // var newData = new Path2DBezier(new Point((pRef.x), (pRef.y + 20)),
-        // new Point((pRef.x + 20), (pRef.y)),
-        // new Point((pRef.x + 20), (pRef.y + 20)));
-        // p2d.data.add(dataIndex, newData);
-        // GlobalState.needsUpdateEditor = true;
-        // });
-        insertLineItem.setEnabled(false);
-        insertBezierItem.setEnabled(false); // TODO
+    static void p2DAddActionListeners(GraphicRoot root, JMenuItem insertLineItem, JMenuItem insertBezierItem,
+            JMenuItem deleteItem, GraphicPath2D p2d, Path2DData data, int dataIndex) {
+        insertLineItem.addActionListener(e -> {
+            var newData = new Path2DLine(root.getFirstTimeKeypoint());
+            p2d.data.add(dataIndex, newData);
+            GlobalState.needsUpdateEditor = true;
+        });
+        insertBezierItem.addActionListener(e -> {
+            var newData = new Path2DBezier(root.getFirstTimeKeypoint());
+            p2d.data.add(dataIndex, newData);
+            GlobalState.needsUpdateEditor = true;
+        });
         deleteItem.addActionListener(e -> {
             p2d.data.remove(data);
             GlobalState.needsUpdateEditor = true;
@@ -1119,7 +1103,7 @@ class EditingPanelFactory {
         var insertLineItem = popupMenu.add("Insert Line");
         var insertBezierItem = popupMenu.add("Insert Bezier");
         var deleteItem = popupMenu.add("Delete");
-        p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d, data, dataIndex);
+        p2DAddActionListeners(root, insertLineItem, insertBezierItem, deleteItem, p2d, data, dataIndex);
         pPanel.setComponentPopupMenu(popupMenu);
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING).addComponent(pPanel));
@@ -1147,7 +1131,7 @@ class EditingPanelFactory {
         var insertLineItem = popupMenu.add("Insert Line");
         var insertBezierItem = popupMenu.add("Insert Bezier");
         var deleteItem = popupMenu.add("Delete");
-        p2DAddActionListeners(insertLineItem, insertBezierItem, deleteItem, p2d, data, dataIndex);
+        p2DAddActionListeners(root, insertLineItem, insertBezierItem, deleteItem, p2d, data, dataIndex);
 
         var p1Panel = create(pointLetter + "2", data.pNext, root, p2d, debuggingStartI);
         hGroup.addComponent(p1Panel);
@@ -1165,16 +1149,10 @@ class EditingPanelFactory {
 
         JButton addButton = new JButton("+");
         JButton minusButton = new JButton("-");
-        // addButton.addActionListener(e -> {
-        // var newCp = new Point(data.morePoints.get(data.morePoints.size() - 2).x + 20,
-        // data.morePoints.get(data.morePoints.size() - 2).y + 20);
-        // var newPp = new Point(data.morePoints.get(data.morePoints.size() - 1).x + 20,
-        // data.morePoints.get(data.morePoints.size() - 1).y + 20);
-        // data.morePoints.add(newCp);
-        // data.morePoints.add(newPp);
-        // GlobalState.needsUpdateEditor = true;
-        // });
-        addButton.setEnabled(false); // TODO
+        addButton.addActionListener(e -> {
+            data.editorAddNewPoints(root.getFirstTimeKeypoint());
+            GlobalState.needsUpdateEditor = true;
+        });
         minusButton.addActionListener(e -> {
             if (data.morePoints.size() > 2) {
                 data.morePoints.remove(data.morePoints.size() - 1);
@@ -1245,21 +1223,14 @@ class EditingPanelFactory {
         JButton addLineButton = new JButton("++ Line");
         JButton addBezierButton = new JButton("++ Bezier");
         JButton minusButton = new JButton("--");
-        // addLineButton.addActionListener(e -> {
-        // var lastPoint = path2d.lastPoint();
-        // path2d.data.add(new Path2DLine(new Point(lastPoint.x + 20, lastPoint.y +
-        // 20)));
-        // GlobalState.needsUpdateEditor = true;
-        // });
-        // addBezierButton.addActionListener(e -> {
-        // var lastPoint = path2d.lastPoint();
-        // path2d.data.add(new Path2DBezier(new Point(lastPoint.x, lastPoint.y + 20),
-        // new Point(lastPoint.x + 20, lastPoint.y), new Point(lastPoint.x + 20,
-        // lastPoint.y + 20)));
-        // GlobalState.needsUpdateEditor = true;
-        // });
-        addLineButton.setEnabled(false);
-        addBezierButton.setEnabled(false); // TODO
+        addLineButton.addActionListener(e -> {
+            path2d.data.add(new Path2DLine(root.getFirstTimeKeypoint()));
+            GlobalState.needsUpdateEditor = true;
+        });
+        addBezierButton.addActionListener(e -> {
+            path2d.data.add(new Path2DBezier(root.getFirstTimeKeypoint()));
+            GlobalState.needsUpdateEditor = true;
+        });
         minusButton.addActionListener(e -> {
             if (path2d.data.size() > 0) {
                 path2d.data.remove(path2d.data.size() - 1);

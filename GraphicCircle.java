@@ -7,8 +7,11 @@ class GraphicCircle extends GraphicBezierPlotter {
     public AnimPoint center;
     public AnimInt radius;
 
-    GraphicCircle() {
-        this(new AnimColor(), new AnimInt(), new AnimPoint(), new AnimInt());
+    /** editor default */
+    GraphicCircle(TimeKeypoint tkp) {
+        this(new AnimColor().add(tkp, "#000", EasingFunction.linear), new AnimInt().add(tkp, 1, EasingFunction.linear),
+                new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
+                new AnimInt().add(tkp, 10, EasingFunction.linear));
     }
 
     GraphicCircle(AnimColor color, AnimInt thickness, AnimPoint center, AnimInt radius) {
@@ -52,11 +55,6 @@ class GraphicCircle extends GraphicBezierPlotter {
         debugLine(g, center.x, center.y, center.x + radius, center.y, debugging == 2);
         debugDot(g, center.x + radius, center.y, debugging == 2);
         debugCircle(g, center.x, center.y, debugging == 1);
-    }
-
-    @Override
-    public GraphicObject copy() {
-        return null; // TODO
     }
 
     public String exportString() {

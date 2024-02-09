@@ -8,6 +8,13 @@ class Path2DBezier extends Path2DData {
     public AnimPoint pNext;
     public List<AnimPoint> morePoints;
 
+    /** editor default */
+    Path2DBezier(TimeKeypoint tkp) {
+        this(new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
+                new AnimPoint().add(tkp, new Point(0, 20), EasingFunction.linear),
+                new AnimPoint().add(tkp, new Point(20, 20), EasingFunction.linear));
+    }
+
     Path2DBezier(AnimPoint pNext, AnimPoint... morePoints) {
         this(pNext, new ArrayList<>(Arrays.asList(morePoints)));
     }
@@ -40,6 +47,11 @@ class Path2DBezier extends Path2DData {
     @Override
     AnimPoint lastPoint() {
         return morePoints.get(morePoints.size() - 1);
+    }
+
+    void editorAddNewPoints(TimeKeypoint tkp) {
+        this.morePoints.add(new AnimPoint().add(tkp, new Point(0, 20), EasingFunction.linear));
+        this.morePoints.add(new AnimPoint().add(tkp, new Point(20, 20), EasingFunction.linear));
     }
 
     @Override

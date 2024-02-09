@@ -1,5 +1,6 @@
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,14 +47,15 @@ class GraphicLayer implements Exportable, Debuggable {
 
     @Override
     public void debugDraw(Graphics gOuter, double time) {
-        Graphics2D g = transform(gOuter, time);
+        Graphics2D g = (Graphics2D) gOuter.create();
         if (this.debugging != -1) {
             debugDrawSelf(g, time);
         }
 
+        Graphics2D gt = transform(g, time);
         for (GraphicObject object : objects) {
             if (object.debugging != -1) {
-                object.debugDraw(g, time);
+                object.debugDraw(gt, time);
             }
         }
     }
@@ -61,11 +63,15 @@ class GraphicLayer implements Exportable, Debuggable {
     private void debugDrawSelf(Graphics2D g, double time) {
         var translate = this.translate.get(time);
         var rotateOrigin = this.rotateOrigin.get(time);
+        var rotateOriginLocal = new Point(rotateOrigin.x + translate.x, rotateOrigin.y + translate.y);
         var rotate = this.rotate.get(time);
+        var rotateOriginVectorEnd = new Point((int) (Math.sin(rotate * Math.PI / 180) * 30 + rotateOriginLocal.x),
+                (int) (Math.cos(rotate * Math.PI / 180) * -30 + rotateOriginLocal.y));
         debugCircle(g, translate.x, translate.y, debugging == 1);
-        debugDot(g, rotateOrigin.x, rotateOrigin.y, debugging == 2);
-        debugLine(g, rotateOrigin.x, rotateOrigin.y, (int) (Math.sin(rotate * Math.PI / 180) * 20 + rotateOrigin.x),
-                (int) (Math.cos(rotate * Math.PI / 180) * 20 + rotateOrigin.y), debugging == 3);
+        debugLine(g, rotateOriginLocal.x, rotateOriginLocal.y, rotateOriginVectorEnd.x, rotateOriginVectorEnd.y,
+                debugging == 3);
+        debugDot(g, rotateOriginVectorEnd.x, rotateOriginVectorEnd.y, debugging == 3);
+        debugDot(g, rotateOriginLocal.x, rotateOriginLocal.y, debugging == 2);
 
     }
 

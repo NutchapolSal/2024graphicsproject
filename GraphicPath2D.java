@@ -12,9 +12,16 @@ class GraphicPath2D extends GraphicDrawFiller {
     public List<Path2DData> data;
     public AnimBoolean closed;
 
-    GraphicPath2D() {
-        this(new AnimBoolean(), new AnimColor(), new AnimInt(), new AnimBoolean(), new AnimColor(), new AnimBoolean(),
-                new AnimPoint(), new ArrayList<>());
+    /** editor default */
+    GraphicPath2D(TimeKeypoint tkp) {
+        this(new AnimBoolean().add(tkp, true, EasingFunction.snap),
+                new AnimColor().add(tkp, "#000", EasingFunction.linear),
+                new AnimInt().add(tkp, 1, EasingFunction.linear),
+                new AnimBoolean().add(tkp, false, EasingFunction.snap),
+                new AnimColor().add(tkp, "#222", EasingFunction.linear),
+                new AnimBoolean().add(tkp, false, EasingFunction.snap),
+                new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
+                new Path2DLine(new AnimPoint().add(tkp, new Point(20, 20), EasingFunction.linear)));
     }
 
     GraphicPath2D(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill, AnimColor fillColor,
@@ -83,17 +90,6 @@ class GraphicPath2D extends GraphicDrawFiller {
             pNextA = d.lastPoint().get(time);
         }
 
-    }
-
-    Point lastPoint() {
-        // TODO
-        return new Point(0, 0);
-    }
-
-    @Override
-    public GraphicObject copy() {
-        // TODO
-        return null;
     }
 
     @Override

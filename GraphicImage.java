@@ -1,7 +1,9 @@
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
@@ -14,6 +16,13 @@ class GraphicImage extends GraphicObject {
     public AnimPoint origin;
     public AnimDimension size;
     public AnimDouble opacity;
+
+    /** editor default */
+    GraphicImage(TimeKeypoint tkp) {
+        this("image.png", new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
+                new AnimDimension().add(tkp, new Dimension(50, 50), EasingFunction.linear),
+                new AnimDouble().add(tkp, 1.0, EasingFunction.linear));
+    }
 
     GraphicImage(String filePath, AnimPoint origin, AnimDimension size, AnimDouble opacity) {
         this.filePath = new MutableString(filePath);
@@ -61,11 +70,6 @@ class GraphicImage extends GraphicObject {
         debugLine(g, origin.x, origin.y, origin.x + size.width, origin.y + size.height, debugging == 2);
         debugDot(g, origin.x + size.width, origin.y + size.height, debugging == 2);
         debugCircle(g, origin.x, origin.y, debugging == 1);
-    }
-
-    @Override
-    public GraphicObject copy() {
-        return new GraphicImage(filePath.value, origin, size, opacity);
     }
 
     public String exportString() {

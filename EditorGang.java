@@ -89,7 +89,7 @@ class EditorGang {
 
         new Timer(250, e -> {
             if (GlobalState.needsUpdateEditor) {
-                changeEditorPane(this.currentLayer.value);
+                changeEditorPane(this.currentLayer.value, true);
                 GlobalState.needsUpdateEditor = false;
             }
             if (GlobalState.needsUpdateLayers) {
@@ -355,6 +355,10 @@ class EditorGang {
     }
 
     private void changeEditorPane(int layerIndex) {
+        changeEditorPane(layerIndex, false);
+    }
+
+    private void changeEditorPane(int layerIndex, boolean force) {
         if (layerIndex < 0 || layerIndex >= root.instructions.size()) {
             editorScrollPane.setViewportView(new JPanel());
             this.currentLayer.value = layerIndex;
@@ -362,8 +366,10 @@ class EditorGang {
         }
         boolean sameLayer = layerIndex == this.currentLayer.value;
         int scrollPos = editorScrollPane.getVerticalScrollBar().getValue();
-
         var layer = this.root.instructions.get(layerIndex);
+        if (force) {
+            layerPanels.remove(layer);
+        }
         editorScrollPane
                 .setViewportView(layerPanels.computeIfAbsent(layer, l -> EditingPanelFactory.create(l, this.root)));
         if (sameLayer) {
