@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 class TimeKeypoint implements Referenceable {
     public final String id;
@@ -9,6 +10,7 @@ class TimeKeypoint implements Referenceable {
     private double offset;
     private Optional<TimeKeypoint> reference = Optional.empty();
     public List<TimeKeypoint> children = new ArrayList<>();
+    private Store<TimeKeypoint> timeChangesStore = new Store<>(() -> this);
 
     public TimeKeypoint(String id, double offset, TimeKeypoint reference, String label) {
         this.id = id;
@@ -33,6 +35,16 @@ class TimeKeypoint implements Referenceable {
             newReference.get().children.add(this);
         }
         this.reference = newReference;
+        timeChangesStore.broadcast();
+    }
+
+    /**
+     * subscribe now and get one 𝐓𝐢𝐦𝐞𝐊𝐞𝐲𝐩𝐨𝐢𝐧𝐭 for free!!
+     * 
+     * @return the subscriber, for keeping in a non-weak reference
+     */
+    public Consumer<TimeKeypoint> subscribeToTimeChanges(Consumer<TimeKeypoint> subscriber) {
+        return timeChangesStore.subscribe(subscriber);
     }
 
     public Optional<TimeKeypoint> getReference() {
@@ -45,6 +57,7 @@ class TimeKeypoint implements Referenceable {
 
     public void setOffset(double offset) {
         this.offset = offset;
+        timeChangesStore.broadcast();
     }
 
     public int referenceDepth() {

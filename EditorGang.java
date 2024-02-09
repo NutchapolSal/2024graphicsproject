@@ -11,14 +11,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.WeakHashMap;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.prefs.Preferences;
 
@@ -42,9 +39,9 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
-import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
@@ -81,7 +78,7 @@ class EditorGang {
         root.setTime(time);
     });
     private boolean bringingToFront = false;
-    private List<Consumer<Boolean>> timerStateSubscribers = new ArrayList<>();
+    private Store<Boolean> timerStateStore = new Store<>(() -> timeRunning());
     private WeakHashMap<GraphicLayer, JPanel> layerPanels = new WeakHashMap<>();
 
     EditorGang(JFrame frame, GraphicRoot root) {
@@ -153,21 +150,16 @@ class EditorGang {
     private void timePlay() {
         lastTime = System.nanoTime();
         timeTicker.start();
-        timerStateSubscribers.forEach(sub -> sub.accept(true));
+        timerStateStore.broadcast();
     }
 
     private void timePause() {
         timeTicker.stop();
-        timerStateSubscribers.forEach(sub -> sub.accept(false));
+        timerStateStore.broadcast();
     }
 
     private boolean timeRunning() {
         return timeTicker.isRunning();
-    }
-
-    private void addTimerStateSubscriber(Consumer<Boolean> subscriber) {
-        timerStateSubscribers.add(subscriber);
-        subscriber.accept(timeRunning());
     }
 
     private void createEditorFrame(JFrame frame) {
@@ -781,7 +773,7 @@ class EditorGang {
         timeControlPanel.setLayout(layout);
 
         JButton playButton = new JButton();
-        addTimerStateSubscriber(running -> playButton.setText(running ? "⏸" : "▶"));
+        timerStateStore.subscribe(running -> playButton.setText(running ? "⏸" : "▶"));
         playButton.addActionListener(e -> {
             if (timeRunning()) {
                 timePause();
