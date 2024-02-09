@@ -6,15 +6,15 @@
     "configurations": [
         {
             "type": "java",
-            "name": "JavaCombiner",
-            "request": "launch",
-            "mainClass": "JavaCombiner"
-        },
-        {
-            "type": "java",
             "name": "Main",
             "request": "launch",
             "mainClass": "Main"
+        },
+        {
+            "type": "java",
+            "name": "JavaCombiner",
+            "request": "launch",
+            "mainClass": "JavaCombiner"
         }
     ]
 }

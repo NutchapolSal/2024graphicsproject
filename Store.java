@@ -5,7 +5,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class Store<T> {
+class Store<T> {
     private Supplier<T> supplier;
     private Set<BiConsumer<T, Object>> bisubscribers = Collections.newSetFromMap(new WeakHashMap<>());
     private Set<Consumer<T>> subscribers = Collections.newSetFromMap(new WeakHashMap<>());

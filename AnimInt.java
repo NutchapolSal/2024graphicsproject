@@ -1,4 +1,4 @@
-public class AnimInt extends AnimatedValue<Integer> {
+class AnimInt extends AnimatedValue<Integer> {
 
     /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
     public AnimInt add(TimeKeypoint tkp, int value, EasingFunction easingToNext) {
