@@ -3,11 +3,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.GridLayout;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -18,12 +14,11 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import javax.swing.AbstractAction;
-import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.GroupLayout;
-import javax.swing.ImageIcon;
 import javax.swing.GroupLayout.Alignment;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
@@ -38,9 +33,9 @@ import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
-import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.ToolTipManager;
 import javax.swing.event.DocumentEvent;
@@ -49,7 +44,6 @@ import javax.swing.event.MouseInputAdapter;
 import javax.swing.event.MouseInputListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
-import javax.swing.plaf.basic.BasicButtonUI;
 
 class EditingPanelFactory {
 
@@ -514,15 +508,13 @@ class EditingPanelFactory {
         }
     }
 
-    private static class AnimPanelState {
-        public double timeTempped;
-        public boolean isTempped;
-    }
-
     public static <T> AnimPanelReturns<T> createAnimPanel(AnimatedValue<T> animValue, GraphicRoot root,
-            Supplier<T> getCurrentUIValue, DoubleConsumer stateSetter, Color staticColor, Consumer<Color> colorSetter) {
+            Supplier<T> getCurrentUIValue, DoubleConsumer stateSetter, Consumer<EditorColor> colorSetter) {
 
-        AnimPanelState state = new AnimPanelState();
+        var state = new Object() {
+            public double timeTempped;
+            public boolean isTempped;
+        };
 
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
@@ -558,7 +550,7 @@ class EditingPanelFactory {
 
         var ttkpFocusCallback = root.subscribeToTimeAndTKPFocus(ttkp -> {
             if (state.isTempped && ttkp.time == state.timeTempped) {
-                colorSetter.accept(EditorColor.Temporary.color());
+                colorSetter.accept(EditorColor.Temporary);
             } else {
                 state.isTempped = false;
                 stateSetter.accept(ttkp.time);
@@ -566,12 +558,19 @@ class EditingPanelFactory {
                     colorSetter.accept(EditorColor.getTimepointTypeColor(animValue.getTimepointCount(ttkp.time),
                             animValue.hasTimepoint(ttkp.tkpFocus), ttkp.isPresent() && ttkp.get().time() == ttkp.time));
                 } else {
-                    colorSetter.accept(staticColor);
+                    colorSetter.accept(EditorColor.Static);
                 }
             }
 
-            jumpToTKPButton.setEnabled(0 < animValue.getTimepointCount(ttkp.time));
-            timeKeypointButton.setText(animValue.getTimepointCount(ttkp.time) == 0 ? "▪" : "🔶");
+            var tpCount = animValue.getTimepointCount(ttkp.time);
+            if (1 < tpCount) {
+                jumpToTKPButton.setEnabled(true);
+            } else if (tpCount == 1) {
+                jumpToTKPButton.setEnabled(animValue.getTimepoint(ttkp.time).get(0) != ttkp.tkpFocus.orElse(null));
+            } else if (tpCount == 0) {
+                jumpToTKPButton.setEnabled(false);
+            }
+            timeKeypointButton.setText(tpCount == 0 ? "▪" : "🔶");
 
             Optional<EasingFunction> easing = null;
             timeKeypointButton.setToolTipText(null);
@@ -632,10 +631,15 @@ class EditingPanelFactory {
             } else {
                 state.timeTempped = ttkp.time;
                 state.isTempped = true;
-                colorSetter.accept(EditorColor.Temporary.color());
+                colorSetter.accept(EditorColor.Temporary);
             }
 
         };
+
+        // new Timer(1000, e -> {
+        //     colorSetter.accept(EditorColor.TestColor);
+        // }).start();
+
         panel.putClientProperty("timeTkpFocusCallback", ttkpFocusCallback);
 
         layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(jumpToTKPButton)
@@ -657,8 +661,8 @@ class EditingPanelFactory {
 
         var animPanelData = createAnimPanel(animBool, root, () -> checkBox.isSelected(), t -> {
             checkBox.setSelected(animBool.get(t));
-        }, EditorColor.Static.color(checkBox), c -> {
-            checkBox.setBackground(c);
+        }, c -> {
+            checkBox.setBackground(c.color(checkBox));
         });
         var filler = Box.createHorizontalGlue();
 
@@ -692,28 +696,38 @@ class EditingPanelFactory {
 
         int sliderSteps = (int) ((max - min) / stepSize);
         JSlider slider = new JSlider(0, sliderSteps, 0);
-        JSpinner spinner = new JSpinner(new SpinnerNumberModel((double) animDouble.get(root.getTime()),
-                hardLimitMin ? min : Double.MIN_VALUE, hardLimitMax ? max : Double.MAX_VALUE, stepSize));
-        var timeCallback = root.subscribeToTime(t -> {
+        var spinModel = new SpinnerNumberModel();
+        if (hardLimitMin) {
+            spinModel.setMinimum(min);
+        }
+        if (hardLimitMax) {
+            spinModel.setMaximum(max);
+        }
+        spinModel.setStepSize(stepSize);
+        spinModel.setValue(animDouble.get(root.getTime()));
+
+        JSpinner spinner = new JSpinner(spinModel);
+
+        var animPanelData = createAnimPanel(animDouble, root, () -> (double) spinner.getValue(), t -> {
             spinner.setValue(animDouble.get(t));
             slider.setValue((int) ((animDouble.get(t) - min) / stepSize));
+        }, c -> {
+            spinner.setBackground(c.color(spinner));
+            slider.setBackground(c.color(slider));
         });
-        panel.putClientProperty("timeCallback", timeCallback);
 
-        // spinner.addChangeListener(e -> {
-        //     doub.value = (double) spinner.getValue();
-        //     slider.setValue((int) ((doub.value - min) / stepSize));
-        // });
-        // slider.addChangeListener(e -> {
-        //     spinner.setValue(slider.getValue() * stepSize + min);
-        // });
-        spinner.setEnabled(false); // TODO
-        slider.setEnabled(false);
+        slider.addChangeListener(e -> {
+            spinner.setValue(slider.getValue() * stepSize + min);
+        });
+        spinner.addChangeListener(e -> {
+            animPanelData.dataCallIn.accept((double) spinner.getValue());
+        });
 
-        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED).addComponent(slider).addComponent(spinner));
+        layout.setHorizontalGroup(
+                layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(slider).addComponent(spinner).addComponent(animPanelData.panel));
         layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(slider)
-                .addComponent(spinner));
+                .addComponent(spinner).addComponent(animPanelData.panel));
 
         slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
 
@@ -726,7 +740,7 @@ class EditingPanelFactory {
     }
 
     public static JPanel create(String labelText, AnimInt animInt, GraphicRoot root, int min, boolean hardLimitMin,
-            int max, boolean hardLimitMax, int stepSize, Debuggable obj, int debugValue) { // TODO
+            int max, boolean hardLimitMax, int stepSize, Debuggable obj, int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
         GroupLayout layout = new GroupLayout(panel);
@@ -734,28 +748,39 @@ class EditingPanelFactory {
 
         int sliderSteps = (max - min) / stepSize;
         JSlider slider = new JSlider(0, sliderSteps, 0);
-        JSpinner spinner = new JSpinner(new SpinnerNumberModel(min, hardLimitMin ? min : Integer.MIN_VALUE,
-                hardLimitMax ? max : Integer.MAX_VALUE, stepSize));
+        var spinModel = new SpinnerNumberModel();
+        if (hardLimitMin) {
+            spinModel.setMinimum(min);
+        }
+        if (hardLimitMax) {
+            spinModel.setMaximum(max);
+        }
+        spinModel.setStepSize(stepSize);
+        spinModel.setValue(animInt.get(root.getTime()));
+
+        JSpinner spinner = new JSpinner(spinModel);
         ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(2);
-        var timeCallback = root.subscribeToTime(t -> {
+
+        var animPanelData = createAnimPanel(animInt, root, () -> (int) spinner.getValue(), t -> {
             spinner.setValue(animInt.get(t));
             slider.setValue((animInt.get(t) - min) / stepSize);
+        }, c -> {
+            spinner.setBackground(c.color(spinner));
+            slider.setBackground(c.color(slider));
         });
-        panel.putClientProperty("timeCallback", timeCallback);
-        // spinner.addChangeListener(e -> {
-        //     integer.value = (int) spinner.getValue();
-        //     slider.setValue((integer.value - min) / stepSize);
-        // });
-        // slider.addChangeListener(e -> {
-        //     spinner.setValue(slider.getValue() * stepSize + min);
-        // });
-        spinner.setEnabled(false); // TODO
-        slider.setEnabled(false);
 
-        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
-                .addPreferredGap(ComponentPlacement.RELATED).addComponent(slider).addComponent(spinner));
+        slider.addChangeListener(e -> {
+            spinner.setValue(slider.getValue() * stepSize + min);
+        });
+        spinner.addChangeListener(e -> {
+            animPanelData.dataCallIn.accept((int) spinner.getValue());
+        });
+
+        layout.setHorizontalGroup(
+                layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
+                        .addComponent(slider).addComponent(spinner).addComponent(animPanelData.panel));
         layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(slider)
-                .addComponent(spinner));
+                .addComponent(spinner).addComponent(animPanelData.panel));
 
         slider.addMouseListener(new DebuggingHoverListener(obj, debugValue));
 
@@ -772,11 +797,18 @@ class EditingPanelFactory {
         ColorButton button = new ColorButton();
         JTextField textField = new JTextField();
 
-        var timeCallback = root.subscribeToTime(t -> {
+        var state = new Object() {
+            public AnimColor.MaybePaletteValue mpv;
+        };
+
+        var animPanelData = createAnimPanel(animColor, root, () -> state.mpv, t -> {
+            state.mpv = animColor.get(t);
             button.setColor(animColor.get(t).get());
             textField.setText(ColorHexer.encode(animColor.get(t).get()));
+        }, c -> {
+            button.setBackground(c.color(button));
+            textField.setBackground(c.color(textField));
         });
-        panel.putClientProperty("timeCallback", timeCallback);
 
         // button.addActionListener(e -> {
         //     Color newColor = JColorChooser.showDialog(null, "Choose a color", color.value);
@@ -824,12 +856,12 @@ class EditingPanelFactory {
         //     color.value = parsedColor.orElse(Color.black);
         // });
 
-        layout.setHorizontalGroup(
-                layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
-                        .addComponent(button).addPreferredGap(ComponentPlacement.RELATED).addComponent(textField));
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(button)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(textField).addComponent(animPanelData.panel));
 
         layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(button)
-                .addComponent(textField));
+                .addComponent(textField).addComponent(animPanelData.panel));
 
         button.addMouseListener(new DebuggingHoverListener(obj, debugValue));
 
@@ -837,7 +869,7 @@ class EditingPanelFactory {
     }
 
     public static JPanel create(String labelText, AnimPoint animPoint, GraphicRoot root, Debuggable obj,
-            int debugValue) { // TODO
+            int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
         GroupLayout layout = new GroupLayout(panel);
@@ -845,41 +877,51 @@ class EditingPanelFactory {
 
         SpinnerNumberModel xModel = new SpinnerNumberModel();
         SpinnerNumberModel yModel = new SpinnerNumberModel();
-        var timeCallback = root.subscribeToTime(t -> {
-            xModel.setValue(animPoint.get(t).x);
-            yModel.setValue(animPoint.get(t).y);
-        });
-        panel.putClientProperty("timeCallback", timeCallback);
         JSpinner xSpinner = new JSpinner(xModel);
         JSpinner ySpinner = new JSpinner(yModel);
-        // xSpinner.addChangeListener(e -> {
-        //     point.x = (int) xSpinner.getValue();
-        // });
-        // ySpinner.addChangeListener(e -> {
-        //     point.y = (int) ySpinner.getValue();
-        // });
-        xSpinner.setEnabled(false); // TODO
-        ySpinner.setEnabled(false);
 
         var xListener = new PannerPanelListener(xSpinner, () -> animPoint.get(root.getTime()).x, MouseEvent::getX);
         var yListener = new PannerPanelListener(ySpinner, () -> animPoint.get(root.getTime()).y, MouseEvent::getY);
 
         var pannerPanels = createPannerPanel(xListener, yListener, obj, debugValue);
 
+        var animPanelData = createAnimPanel(animPoint, root,
+                () -> new Point((int) xSpinner.getValue(), (int) ySpinner.getValue()), t -> {
+                    var p = animPoint.get(t);
+                    xSpinner.setValue(p.x);
+                    ySpinner.setValue(p.y);
+                }, c -> {
+                    // xSpinner.getEditor().getComponent(0).setBackground(c.color(xSpinner));
+                    // ySpinner.setBackground(c.color(ySpinner));
+
+                    pannerPanels.x.setBackground(c.color(pannerPanels.x));
+                    pannerPanels.y.setBackground(c.color(pannerPanels.y));
+                    pannerPanels.main.setBackground(c.color(pannerPanels.main));
+                });
+
+        xSpinner.addChangeListener(e -> {
+            animPanelData.dataCallIn.accept(new Point((int) xSpinner.getValue(), (int) ySpinner.getValue()));
+        });
+        ySpinner.addChangeListener(e -> {
+            animPanelData.dataCallIn.accept(new Point((int) xSpinner.getValue(), (int) ySpinner.getValue()));
+        });
+
         layout.setHorizontalGroup(
                 layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
                         .addComponent(xSpinner).addComponent(ySpinner).addPreferredGap(ComponentPlacement.RELATED)
                         .addComponent(pannerPanels.y).addGroup(layout.createParallelGroup(Alignment.CENTER)
-                                .addComponent(pannerPanels.main).addComponent(pannerPanels.x)));
+                                .addComponent(pannerPanels.main).addComponent(pannerPanels.x))
+                        .addComponent(animPanelData.panel));
         layout.setVerticalGroup(layout.createSequentialGroup().addComponent(pannerPanels.x)
                 .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(xSpinner)
-                        .addComponent(ySpinner).addComponent(pannerPanels.y).addComponent(pannerPanels.main)));
+                        .addComponent(ySpinner).addComponent(pannerPanels.y).addComponent(pannerPanels.main)
+                        .addComponent(animPanelData.panel)));
 
         return panel;
     }
 
     public static JPanel create(String labelText, AnimDimension animDim, GraphicRoot root, Debuggable obj,
-            int debugValue) { // TODO
+            int debugValue) {
         JPanel panel = new JPanel();
         JLabel label = new JLabel(labelText);
         GroupLayout layout = new GroupLayout(panel);
@@ -887,22 +929,25 @@ class EditingPanelFactory {
 
         SpinnerNumberModel xModel = new SpinnerNumberModel();
         SpinnerNumberModel yModel = new SpinnerNumberModel();
-        var timeCallback = root.subscribeToTime(t -> {
-            xModel.setValue(animDim.get(t).width);
-            yModel.setValue(animDim.get(t).height);
-        });
-        panel.putClientProperty("timeCallback", timeCallback);
-
         JSpinner xSpinner = new JSpinner(xModel);
         JSpinner ySpinner = new JSpinner(yModel);
-        // xSpinner.addChangeListener(e -> {
-        //     point.x = (int) xSpinner.getValue();
-        // });
-        // ySpinner.addChangeListener(e -> {
-        //     point.y = (int) ySpinner.getValue();
-        // });
-        xSpinner.setEnabled(false); // TODO
-        ySpinner.setEnabled(false);
+
+        var animPanelData = createAnimPanel(animDim, root,
+                () -> new Dimension((int) xSpinner.getValue(), (int) ySpinner.getValue()), t -> {
+                    var d = animDim.get(t);
+                    xSpinner.setValue(d.width);
+                    ySpinner.setValue(d.height);
+                }, c -> {
+                    xSpinner.setBackground(c.color(xSpinner));
+                    ySpinner.setBackground(c.color(ySpinner));
+                });
+
+        xSpinner.addChangeListener(e -> {
+            animPanelData.dataCallIn.accept(new Dimension((int) xSpinner.getValue(), (int) ySpinner.getValue()));
+        });
+        ySpinner.addChangeListener(e -> {
+            animPanelData.dataCallIn.accept(new Dimension((int) xSpinner.getValue(), (int) ySpinner.getValue()));
+        });
 
         var xListener = new PannerPanelListener(xSpinner, () -> animDim.get(root.getTime()).width, MouseEvent::getX);
         var yListener = new PannerPanelListener(ySpinner, () -> animDim.get(root.getTime()).height, MouseEvent::getY);
@@ -913,10 +958,12 @@ class EditingPanelFactory {
                 layout.createSequentialGroup().addComponent(label).addPreferredGap(ComponentPlacement.RELATED)
                         .addComponent(xSpinner).addComponent(ySpinner).addPreferredGap(ComponentPlacement.RELATED)
                         .addComponent(pannerPanels.y).addGroup(layout.createParallelGroup(Alignment.CENTER)
-                                .addComponent(pannerPanels.main).addComponent(pannerPanels.x)));
+                                .addComponent(pannerPanels.main).addComponent(pannerPanels.x))
+                        .addComponent(animPanelData.panel));
         layout.setVerticalGroup(layout.createSequentialGroup().addComponent(pannerPanels.x)
                 .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label).addComponent(xSpinner)
-                        .addComponent(ySpinner).addComponent(pannerPanels.y).addComponent(pannerPanels.main)));
+                        .addComponent(ySpinner).addComponent(pannerPanels.y).addComponent(pannerPanels.main)
+                        .addComponent(animPanelData.panel)));
 
         return panel;
     }
@@ -968,7 +1015,7 @@ class EditingPanelFactory {
         var shownPanel = create("shown", layer.shown, root, layer, 0);
         var translatePanel = create("translate", layer.translate, root, layer, 0);
         var rotateOriginPanel = create("rotateOrigin", layer.rotateOrigin, root, layer, 0);
-        var rotatePanel = create("rotate", layer.rotate, root, -360, 360, 1, layer, 0);
+        var rotatePanel = create("rotate", layer.rotate, root, -360, false, 360, false, 1, layer, 0);
         vGroup.addComponent(layerNamePanel).addGap(2).addComponent(shownPanel).addGap(2).addComponent(translatePanel)
                 .addGap(2).addComponent(rotateOriginPanel).addGap(2).addComponent(rotatePanel);
         hGroup.addComponent(layerNamePanel).addComponent(shownPanel).addComponent(translatePanel)
@@ -997,18 +1044,15 @@ class EditingPanelFactory {
 
         JButton addButton = new JButton("+");
         addButton.addActionListener(e -> {
-            GlobalState.lastSelectedNewObjI = comboBox.getSelectedIndex();
-            Predicate<? super GraphicObject> pred;
-            GraphicObject defaultObj = null;
             switch ((String) comboBox.getSelectedItem()) {
+            case "GraphicPath2D":
+                layer.add(new GraphicPath2D(root.getFirstTimeKeypoint()));
+                break;
             case "GraphicCircle":
-                pred = obj -> obj instanceof GraphicCircle;
-                // defaultObj = new GraphicCircle("#000000", 1, new Point(0, 0), 50);
+                layer.add(new GraphicCircle(root.getFirstTimeKeypoint()));
                 break;
             case "GraphicImage":
-                pred = obj -> obj instanceof GraphicImage;
-                // defaultObj = new GraphicImage("image.png", new Point(0, 0), new Dimension(50,
-                // 50), 1.0);
+                layer.add(new GraphicImage(root.getFirstTimeKeypoint()));
                 break;
             default:
                 return;
@@ -1016,28 +1060,9 @@ class EditingPanelFactory {
 
             GlobalState.needsUpdateEditor = true;
 
-            var streamResult = layer.objects.stream().filter(pred).reduce((a, b) -> b);
-            if (!streamResult.isPresent()) {
-                layer.objects.add(defaultObj);
-                return;
-            }
-            switch ((String) comboBox.getSelectedItem()) {
-            case "GraphicCircle": {
-                var result = (GraphicCircle) streamResult.get().copy();
-                // result.center.translate(10, 10);
-                layer.add(result);
-                break;
-            }
-            case "GraphicImage": {
-                var result = (GraphicImage) streamResult.get().copy();
-                // result.origin.translate(10, 10);
-                layer.add(result);
-                break;
-            }
-            }
         });
 
-        addButton.setEnabled(false); // TODO
+        GlobalState.lastSelectedNewObjI = comboBox.getSelectedIndex();
 
         vGroup.addPreferredGap(ComponentPlacement.RELATED);
         vGroup.addGroup(

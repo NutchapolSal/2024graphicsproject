@@ -25,10 +25,17 @@ enum EditorColor {
 
     Invalid("#f00"),
 
-    Temporary("#f70");
+    Temporary("#f70"),
+
+    TestColor(true);
 
     private Color color;
     private static Map<Class<? extends Component>, Color> defaultColors = new HashMap<>();
+    private boolean testColor;
+
+    EditorColor(boolean testColor) {
+        this.testColor = testColor;
+    }
 
     EditorColor(String color) {
         if (color == null) {
@@ -64,6 +71,10 @@ enum EditorColor {
     }
 
     public Color color(Component component) {
+        if (testColor) {
+            return new Color(Color.HSBtoRGB((float) Math.random(), 0.75f + (float) Math.random() * 0.25f,
+                    0.75f * (float) Math.random() + 0.25f));
+        }
         registerDefaultColor(component);
         if (color == null) {
             return defaultColors.getOrDefault(component.getClass(), ColorHexer.decode("#fff"));
@@ -72,29 +83,28 @@ enum EditorColor {
         return color;
     }
 
-    public static Color getTimepointTypeColor(int countTPAtAnimValTime, boolean timelineHasTP,
+    public static EditorColor getTimepointTypeColor(int countTPAtAnimValTime, boolean timelineHasTP,
             boolean editorOnFocusTP) {
         if (editorOnFocusTP && timelineHasTP) {
-            return countTPAtAnimValTime <= 1 ? EditorColor.HereTimepoint.color()
-                    : EditorColor.HereMultiTimepoint.color();
+            return countTPAtAnimValTime <= 1 ? EditorColor.HereTimepoint : EditorColor.HereMultiTimepoint;
         }
         if (timelineHasTP) {
             switch (countTPAtAnimValTime) {
             case 0:
-                return EditorColor.SelectedAnimated.color();
+                return EditorColor.SelectedAnimated;
             case 1:
-                return EditorColor.SelectedTimepoint.color();
+                return EditorColor.SelectedTimepoint;
             default:
-                return EditorColor.SelectedMultiTimepoint.color();
+                return EditorColor.SelectedMultiTimepoint;
             }
         } else {
             switch (countTPAtAnimValTime) {
             case 0:
-                return EditorColor.Animated.color();
+                return EditorColor.Animated;
             case 1:
-                return EditorColor.Timepoint.color();
+                return EditorColor.Timepoint;
             default:
-                return EditorColor.MultiTimepoint.color();
+                return EditorColor.MultiTimepoint;
             }
         }
     }
