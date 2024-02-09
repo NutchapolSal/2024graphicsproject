@@ -66,16 +66,17 @@ class AnimColor extends AnimatedValue<AnimColor.MaybePaletteValue> {
         return this;
     }
 
-    public Color get(double time) {
+    public MaybePaletteValue get(double time) {
         if (timepoints.isEmpty()) {
-            return Color.black;
+            return new MaybePaletteValue(Color.black);
         }
         var stepValue = getValue(time);
         if (stepValue.frac == 0) {
-            return this.getIndex(stepValue.index).get();
+            return this.getIndex(stepValue.index);
         }
 
-        return Lerp.run(this.getIndex(stepValue.index).get(), stepValue.frac, this.getIndex(stepValue.index + 1).get());
+        return new MaybePaletteValue(Lerp.run(this.getIndex(stepValue.index).get(), stepValue.frac,
+                this.getIndex(stepValue.index + 1).get()));
     }
 
     public AnimColor copy() {
@@ -94,5 +95,16 @@ class AnimColor extends AnimatedValue<AnimColor.MaybePaletteValue> {
 
     public String exportCode() {
         return super.exportCode("AnimColor", v -> v.exportCode());
+    }
+
+    @Override
+    public void setEasingFunction(TimeKeypoint tkp, EasingFunction easing) {
+        super.setEasingFunction(tkp, EasingFunction.snap);
+    }
+
+    @Override
+    public AnimatedValue<MaybePaletteValue> addForEditor(TimeKeypoint tkp, MaybePaletteValue value,
+            EasingFunction easingToNext) {
+        return add(tkp, value, easingToNext);
     }
 }

@@ -372,7 +372,7 @@ class ImEx {
         timeKeypoints.put(id, tkp);
         if (timeAwaits.containsKey(id)) {
             for (String awaitId : timeAwaits.get(id)) {
-                timeKeypoints.get(awaitId).setReference(tkp);
+                timeKeypoints.get(awaitId).setReference(tkp, null);
             }
             timeAwaits.remove(id);
         }
@@ -381,7 +381,7 @@ class ImEx {
         } else {
             String referenceId = importStringId(sc);
             if (timeKeypoints.containsKey(referenceId)) {
-                tkp.setReference(timeKeypoints.get(referenceId));
+                tkp.setReference(timeKeypoints.get(referenceId), null);
             } else {
                 timeAwaits.computeIfAbsent(referenceId, k -> new HashSet<>()).add(id);
             }

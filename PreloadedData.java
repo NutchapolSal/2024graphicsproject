@@ -12,6 +12,7 @@ class PreloadedData {
         var tkp_3muk = new TimeKeypoint("3muk", 1.0, tkp_2zxc, "rota");
         var tkp_4vwr = new TimeKeypoint("4vwr", 2.0, tkp_3muk, "rotato");
         var tkp_5rty = new TimeKeypoint("5rty", 6.0, null, "disappearance");
+        var tkp_6uio = new TimeKeypoint("6uio", 0.0, tkp_5rty, "swing");
         var pv_0fgh = new PaletteValue("0fgh", "#113", "bgDark");
         var pv_1vbn = new PaletteValue("1vbn", "#374A71", "bgSunrise");
         var pv_2uio = new PaletteValue("2uio", "#2266AA", "path thing");
@@ -22,6 +23,7 @@ class PreloadedData {
         timeKeypoints.add(tkp_3muk);
         timeKeypoints.add(tkp_4vwr);
         timeKeypoints.add(tkp_5rty);
+        timeKeypoints.add(tkp_6uio);
         Palette palette = new Palette().set(0, 0, pv_0fgh).set(1, 0, pv_1vbn).set(0, 1, pv_2uio);
         List<GraphicLayer> instructions = new ArrayList<>();
         instructions.add(new GraphicLayer("bg", new AnimBoolean().add(tkp_0qwe, true, EasingFunction.snap),
@@ -45,7 +47,7 @@ class PreloadedData {
         );
         instructions.add(new GraphicLayer("third point six swing",
                 new AnimBoolean().add(tkp_0qwe, true, EasingFunction.snap).add(tkp_5rty, false, EasingFunction.snap)
-                        .add(tkp_1asd, true, EasingFunction.snap),
+                        .add(tkp_1asd, true, EasingFunction.snap).add(tkp_6uio, false, EasingFunction.easeInPower2),
                 new AnimPoint().add(tkp_0qwe, new Point(), EasingFunction.easeInOutPower2).add(tkp_2zxc,
                         new Point(50, 50), EasingFunction.easeInOutPower2),
                 new AnimPoint().add(tkp_0qwe, new Point(), EasingFunction.snap),

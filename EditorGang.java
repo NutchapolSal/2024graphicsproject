@@ -16,6 +16,7 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.WeakHashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.prefs.Preferences;
 
@@ -67,18 +68,7 @@ class EditorGang {
     private JFrame timeControlFrame = new JFrame();
     private JFrame paletteFrame = new JFrame();
 
-    private long lastTime;
-    private double time;
-    private Timer timeTicker = new Timer(1000 / 60, e -> {
-        long currTime = System.nanoTime();
-        double deltaSecs = (currTime - lastTime) / 1_000_000_000.0;
-        lastTime = currTime;
-
-        time += deltaSecs;
-        root.setTime(time);
-    });
     private boolean bringingToFront = false;
-    private Store<Boolean> timerStateStore = new Store<>(() -> timeRunning());
     private WeakHashMap<GraphicLayer, JPanel> layerPanels = new WeakHashMap<>();
 
     EditorGang(JFrame frame, GraphicRoot root) {
@@ -145,21 +135,6 @@ class EditorGang {
         timeControlFrame.setAutoRequestFocus(true);
         paletteFrame.setAutoRequestFocus(true);
         bringingToFront = false;
-    }
-
-    private void timePlay() {
-        lastTime = System.nanoTime();
-        timeTicker.start();
-        timerStateStore.broadcast();
-    }
-
-    private void timePause() {
-        timeTicker.stop();
-        timerStateStore.broadcast();
-    }
-
-    private boolean timeRunning() {
-        return timeTicker.isRunning();
     }
 
     private void createEditorFrame(JFrame frame) {
@@ -445,30 +420,12 @@ class EditorGang {
         layerScrollPane.setViewportView(layerPane);
     }
 
-    private static String formatTime(double time) {
-        return String.format("%.3f", time).replaceAll("(?<!\\.)0+$", "");
-    }
-
-    private static String formatOffset(double offset) {
-        return String.format("%+.3f", offset).replaceAll("(?<!\\.)0+$", "");
-    }
-
     enum TimepointSort {
-        LABEL(value -> value.label + " @ " + formatTime(value.time()), Comparator.comparing(v -> v.label)),
-        TIME(value -> value.label + " @ " + formatTime(value.time()), Comparator.comparingDouble(TimeKeypoint::time)),
-        HIERARCHY(
-                value -> value.label + " @ " + formatTime(value.time()) + " (" + formatOffset(value.getOffset()) + ")",
-                (a, b) -> {
-                    if (a.getReference().orElse(null) == b) {
-                        return 1;
-                    }
-                    if (b.getReference().orElse(null) == a) {
-                        return -1;
-                    }
-
-                    return a.id.compareTo(b.id);
-                }),
-        ID(value -> value.label + " - " + value.id, Comparator.comparing(v -> v.id));
+        LABEL(value -> value.exportDisplayString(true, true, false, false), Comparator.comparing(v -> v.label)),
+        TIME(value -> value.exportDisplayString(true, true, false, false),
+                Comparator.comparingDouble(TimeKeypoint::time)),
+        HIERARCHY(value -> value.exportDisplayString(true, true, true, false), TimeKeypoint::compareHierarchy),
+        ID(value -> value.exportDisplayString(true, false, false, true), Comparator.comparing(v -> v.id));
 
         public final Function<TimeKeypoint, String> toStringFunction;
         public final Comparator<TimeKeypoint> comparator;
@@ -582,24 +539,32 @@ class EditorGang {
         var referenceField = new JTextField();
         var changeReferenceButton = new JButton("🔀");
         var removeReferenceButton = new JButton("❌");
+        var goToTimeButton = new JButton("go to time");
 
         idField.setEnabled(false);
         referenceField.setEnabled(false);
 
+        Runnable tryUpdateReference = () -> {
+            var changeRef = changingReference.get();
+            var selected = Optional.ofNullable(list.getSelectedValue());
+            if (selected.isPresent()) {
+                if (changeRef.isValidReference(selected)) {
+                    changeRef.setReference(selected, changeReferenceButton);
+                    changingReference = Optional.empty();
+                    list.setSelectedValue(changeRef, true);
+                    sortTimepointsFunc.run();
+                } else {
+                    referenceField.setText("<-- invalid reference");
+                    list.setSelectedValue(null, false);
+                }
+            }
+        };
+
+        // call with null for rendering refreshes,
+        // call with forged event for root tkp focus updates
         ListSelectionListener selectionChanged = e -> {
             if (changingReference.isPresent()) {
-                var changeRef = changingReference.get();
-                var selected = Optional.ofNullable(list.getSelectedValue());
-                if (selected.isPresent()) {
-                    if (changeRef.isValidReference(selected)) {
-                        changeRef.setReference(selected);
-                        changingReference = Optional.empty();
-                        list.setSelectedValue(changeRef, true);
-                    } else {
-                        referenceField.setText("<-- invalid reference");
-                        list.setSelectedValue(null, false);
-                    }
-                }
+                tryUpdateReference.run();
                 return;
             }
 
@@ -611,6 +576,7 @@ class EditorGang {
                 changeReferenceButton.setText("🔀");
                 labelField.setEnabled(false);
                 offsetField.setEnabled(false);
+                goToTimeButton.setEnabled(false);
                 changeReferenceButton.setEnabled(false);
                 removeReferenceButton.setEnabled(false);
                 return;
@@ -620,25 +586,34 @@ class EditorGang {
             labelField.setText(selected.label);
             offsetField.setText(Double.toString(selected.getOffset()));
             referenceField.setText(
-                    selected.getReference().map(r -> r.label + " @ " + formatTime(r.time()) + " - " + r.id).orElse(""));
+                    selected.getReference().map(r -> r.exportDisplayString(true, true, false, true)).orElse(""));
             idField.setCaretPosition(0);
             referenceField.setCaretPosition(0);
             labelField.setEnabled(true);
             offsetField.setEnabled(true);
+            goToTimeButton.setEnabled(true);
             changeReferenceButton.setText("🔀");
             changeReferenceButton.setEnabled(true);
             removeReferenceButton.setEnabled(selected.getReference().isPresent());
+
+            if (e != null) {
+                root.setTimeKeypointFocus(selected, e.getSource());
+            }
         };
-        selectionChanged.valueChanged(null);
         list.addListSelectionListener(selectionChanged);
+
+        var tkpFocusCallback = root.subscribeToTKPFocus(tkp -> {
+            list.setSelectedValue(tkp, true);
+            selectionChanged.valueChanged(null);
+        });
+        timepointsPanel.putClientProperty("tkpFocusCallback", tkpFocusCallback);
 
         changeReferenceButton.addActionListener(e -> {
             if (changingReference.isPresent()) {
                 var selected = changingReference.get();
-                list.setSelectedValue(selected, true);
                 changingReference = Optional.empty();
+                list.setSelectedValue(selected, true);
                 selectionChanged.valueChanged(null);
-                sortTimepointsFunc.run();
                 return;
             }
             changingReference = Optional.ofNullable(list.getSelectedValue());
@@ -650,16 +625,20 @@ class EditorGang {
         });
 
         removeReferenceButton.addActionListener(e -> {
-            list.getSelectedValue().setReference(Optional.empty());
+            list.getSelectedValue().setReference(Optional.empty(), removeReferenceButton);
             selectionChanged.valueChanged(null);
             sortTimepointsFunc.run();
+        });
+
+        goToTimeButton.addActionListener(e -> {
+            root.setTime(list.getSelectedValue().time(), goToTimeButton);
         });
 
         Runnable commitChanges = () -> {
             var selected = list.getSelectedValue();
             selected.label = labelField.getText();
             try {
-                selected.setOffset(Double.parseDouble(offsetField.getText()));
+                selected.setOffset(Double.parseDouble(offsetField.getText()), offsetField);
             } catch (NumberFormatException e) {
                 offsetField.setText(Double.toString(selected.getOffset()));
             }
@@ -667,6 +646,9 @@ class EditorGang {
         };
 
         Runnable validateChanges = () -> {
+            if (list.getSelectedValue() == null) {
+                return;
+            }
             try {
                 Double.parseDouble(offsetField.getText());
                 offsetField.setBackground(EditorColor.Static.color(offsetField));
@@ -713,11 +695,46 @@ class EditorGang {
 
         var addTimepointButton = new JButton("add timepoint");
         addTimepointButton.addActionListener(e -> {
-            var newTKP = new TimeKeypoint(time, null, "new timepoint");
-            root.timeKeypoints.add(newTKP);
-            listModel.addElement(newTKP);
-            list.setSelectedValue(newTKP, true);
+            TimeKeypoint newTKP;
+            if (list.getSelectedValue() == null) {
+                newTKP = new TimeKeypoint(root.getTime(), null, "new timepoint");
+            } else {
+                newTKP = new TimeKeypoint(root.getTime() - list.getSelectedValue().time(), list.getSelectedValue(),
+                        "new timepoint");
+            }
+            root.addTimeKeypoint(newTKP, addTimepointButton);
             sortTimepointsFunc.run();
+            list.setSelectedValue(newTKP, true);
+        });
+
+        var removeTimepointButton = new JButton("🚫");
+
+        var removeConfirmPopup = new JPopupMenu();
+        var removeConfirmMenuItem = removeConfirmPopup.add("Delete Timepoint");
+        var removalTkpFocusCallback = root.subscribeToTKPFocus(tkp -> {
+            if (!tkp.isPresent()) {
+                removeTimepointButton.setEnabled(false);
+                removeTimepointButton.setToolTipText(null);
+                return;
+            }
+            if (0 < tkp.get().children.size()) {
+                removeTimepointButton.setEnabled(false);
+                removeTimepointButton.setToolTipText("remove all references to this timepoint first");
+            } else {
+                removeTimepointButton.setEnabled(true);
+                removeTimepointButton.setToolTipText(null);
+            }
+        });
+        removeTimepointButton.putClientProperty("tkpFocusCallback", removalTkpFocusCallback);
+
+        removeConfirmMenuItem.addActionListener(e -> {
+            var selected = list.getSelectedValue();
+            root.removeTimeKeypoint(selected, removeTimepointButton);
+            sortTimepointsFunc.run();
+        });
+
+        removeTimepointButton.addActionListener(e -> {
+            removeConfirmPopup.show(removeTimepointButton, 0, removeTimepointButton.getHeight());
         });
 
         var filler = Box.createGlue();
@@ -728,17 +745,20 @@ class EditorGang {
                                 .addComponent(sortComboBox))
                         .addComponent(listScrollPane))
                 .addGap(10)
-                .addGroup(layout.createParallelGroup(Alignment.LEADING)
-                        .addGroup(layout.createSequentialGroup().addComponent(idLabel)
-                                .addPreferredGap(ComponentPlacement.RELATED).addComponent(idField))
-                        .addGroup(layout.createSequentialGroup().addComponent(labelLabel)
-                                .addPreferredGap(ComponentPlacement.RELATED).addComponent(labelField))
-                        .addGroup(layout.createSequentialGroup().addComponent(offsetLabel)
-                                .addPreferredGap(ComponentPlacement.RELATED).addComponent(offsetField))
-                        .addGroup(layout.createSequentialGroup().addComponent(referenceLabel)
-                                .addGap(0, 300, Short.MAX_VALUE).addComponent(changeReferenceButton)
-                                .addComponent(removeReferenceButton))
-                        .addComponent(referenceField).addComponent(filler).addComponent(addTimepointButton))
+                .addGroup(
+                        layout.createParallelGroup(Alignment.LEADING)
+                                .addGroup(layout.createSequentialGroup().addComponent(idLabel)
+                                        .addPreferredGap(ComponentPlacement.RELATED).addComponent(idField))
+                                .addGroup(layout.createSequentialGroup().addComponent(labelLabel)
+                                        .addPreferredGap(ComponentPlacement.RELATED).addComponent(labelField))
+                                .addGroup(layout.createSequentialGroup().addComponent(offsetLabel)
+                                        .addPreferredGap(ComponentPlacement.RELATED).addComponent(offsetField))
+                                .addGroup(layout.createSequentialGroup().addComponent(referenceLabel)
+                                        .addGap(0, 300, Short.MAX_VALUE).addComponent(changeReferenceButton)
+                                        .addComponent(removeReferenceButton))
+                                .addComponent(referenceField).addComponent(goToTimeButton).addComponent(filler)
+                                .addGroup(layout.createSequentialGroup().addComponent(addTimepointButton)
+                                        .addGap(0, 0, Short.MAX_VALUE).addComponent(removeTimepointButton)))
                 .addGap(10));
         layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING).addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(Alignment.CENTER).addComponent(sortLabel)
@@ -756,8 +776,10 @@ class EditorGang {
                         .addGap(2)
                         .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(referenceLabel)
                                 .addComponent(changeReferenceButton).addComponent(removeReferenceButton))
-                        .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(referenceField))
-                        .addComponent(filler).addComponent(addTimepointButton)));
+                        .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(referenceField)).addGap(2)
+                        .addComponent(goToTimeButton).addComponent(filler)
+                        .addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(addTimepointButton)
+                                .addComponent(removeTimepointButton))));
 
     }
 
@@ -773,20 +795,21 @@ class EditorGang {
         timeControlPanel.setLayout(layout);
 
         JButton playButton = new JButton();
-        timerStateStore.subscribe(running -> playButton.setText(running ? "⏸" : "▶"));
+        var timerStateCallback = root.subscribeToTimeRunning(running -> playButton.setText(running ? "⏸" : "▶"));
+        timeControlPanel.putClientProperty("timerStateCallback", timerStateCallback);
+
         playButton.addActionListener(e -> {
-            if (timeRunning()) {
-                timePause();
+            if (root.getTimeRunning()) {
+                root.pauseTime(playButton);
             } else {
-                timePlay();
+                root.startTime(playButton);
             }
         });
 
         JButton stopButton = new JButton("⏹");
         stopButton.addActionListener(e -> {
-            timePause();
-            time = 0;
-            root.setTime(time);
+            root.pauseTime(stopButton);
+            root.setTime(0, stopButton);
         });
 
         JTextField timeField = new JTextField();
@@ -805,10 +828,9 @@ class EditorGang {
         };
         Runnable commitTimeFunction = () -> {
             try {
-                time = Double.parseDouble(timeField.getText());
-                root.setTime(time);
+                root.setTime(Double.parseDouble(timeField.getText()), timeControlPanel);
             } catch (NumberFormatException ex) {
-                timeField.setText(Double.toString(time));
+                timeField.setText(Double.toString(root.getTime()));
             }
         };
         timeField.getDocument().addDocumentListener(new DocumentListener() {

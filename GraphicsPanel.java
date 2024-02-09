@@ -6,10 +6,15 @@ import java.awt.RenderingHints;
 import java.util.List;
 
 import javax.swing.JPanel;
+import javax.swing.Timer;
 
 class GraphicsPanel extends JPanel {
     List<GraphicLayer> instructions;
     private double time = 0;
+
+    private Timer repainter = new Timer(1000 / 60, e -> {
+        this.repaint();
+    });
 
     GraphicsPanel(GraphicRoot root) {
         super();
@@ -20,6 +25,15 @@ class GraphicsPanel extends JPanel {
             repaint();
         });
         this.putClientProperty("timeCallback", timeCallback);
+
+        var timeRunningCallback = root.subscribeToTimeRunning(r -> {
+            if (!r) {
+                repainter.start();
+            } else {
+                repainter.stop();
+            }
+        });
+        this.putClientProperty("timeRunningCallback", timeRunningCallback);
 
     }
 

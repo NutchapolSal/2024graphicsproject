@@ -48,7 +48,8 @@ class GraphicImage extends GraphicObject {
 
         updateImage();
 
-        AlphaComposite alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) opacity.get(time));
+        AlphaComposite alphaComposite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                (float) (double) opacity.get(time));
         g.setComposite(alphaComposite);
         g.drawImage(image, origin.x, origin.y, size.width, size.height, null);
     }

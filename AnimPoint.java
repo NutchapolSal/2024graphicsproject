@@ -33,4 +33,14 @@ class AnimPoint extends AnimatedValue<Point> {
     public String exportCode() {
         return super.exportCode("AnimPoint", v -> ImEx.exportCode(v));
     }
+
+    @Override
+    public void setEasingFunction(TimeKeypoint tkp, EasingFunction easing) {
+        super.setEasingFunction(tkp, EasingFunction.snap);
+    }
+
+    @Override
+    public AnimatedValue<Point> addForEditor(TimeKeypoint tkp, Point value, EasingFunction easingToNext) {
+        return add(tkp, value, easingToNext);
+    }
 }

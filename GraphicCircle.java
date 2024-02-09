@@ -24,7 +24,7 @@ class GraphicCircle extends GraphicBezierPlotter {
     @Override
     public void draw(Graphics gOuter, double time) {
         Graphics g = gOuter.create();
-        g.setColor(color.get(time));
+        g.setColor(color.get(time).get());
 
         Point center = this.center.get(time);
         int radius = this.radius.get(time);

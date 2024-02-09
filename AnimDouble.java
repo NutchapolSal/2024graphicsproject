@@ -11,9 +11,9 @@ class AnimDouble extends AnimatedValue<Double> {
         return this;
     }
 
-    public double get(double time) {
+    public Double get(double time) {
         if (timepoints.isEmpty()) {
-            return 0;
+            return 0.0;
         }
         var stepValue = getValue(time);
         if (stepValue.frac == 0) {
@@ -39,5 +39,15 @@ class AnimDouble extends AnimatedValue<Double> {
 
     public String exportCode() {
         return super.exportCode("AnimDouble", v -> ImEx.exportCode(v));
+    }
+
+    @Override
+    public void setEasingFunction(TimeKeypoint tkp, EasingFunction easing) {
+        super.setEasingFunction(tkp, EasingFunction.snap);
+    }
+
+    @Override
+    public AnimatedValue<Double> addForEditor(TimeKeypoint tkp, Double value, EasingFunction easingToNext) {
+        return add(tkp, value, easingToNext);
     }
 }

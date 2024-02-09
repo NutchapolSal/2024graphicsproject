@@ -7,6 +7,8 @@ import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.function.DoubleUnaryOperator;
 
+import javax.swing.ImageIcon;
+
 enum EasingFunction implements DoubleUnaryOperator {
 
     linear(x -> x, ""), snap(x -> x < 1 ? 0 : 1, ""), easeInSine(x -> 1 - Math.cos((x * Math.PI) / 2.0), "s"),
@@ -63,9 +65,13 @@ enum EasingFunction implements DoubleUnaryOperator {
     private static final int ICON_HEIGHT = 15;
     private static final double ICON_CALC_STEPS_FACTOR = 2.0;
 
+    public static final Image emptyIcon = new BufferedImage(ICON_WIDTH, ICON_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+    public static final ImageIcon emptyImageIcon = new ImageIcon(emptyIcon);
+
     private final DoubleUnaryOperator easing;
     private final String iconText;
     private Image icon;
+    private ImageIcon imageIcon;
 
     EasingFunction(DoubleUnaryOperator easing, String iconText) {
         this.easing = easing;
@@ -125,6 +131,13 @@ enum EasingFunction implements DoubleUnaryOperator {
             generateIcon();
         }
         return icon;
+    }
+
+    public ImageIcon imageIcon() {
+        if (imageIcon == null) {
+            imageIcon = new ImageIcon(icon());
+        }
+        return imageIcon;
     }
 
     public double applyAsDouble(double x) {

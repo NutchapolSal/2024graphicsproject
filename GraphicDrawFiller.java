@@ -21,7 +21,7 @@ abstract class GraphicDrawFiller extends GraphicObject {
         if (!stroke.get(time)) {
             return false;
         }
-        g.setColor(strokeColor.get(time));
+        g.setColor(strokeColor.get(time).get());
         g.setStroke(new BasicStroke(thickness.get(time)));
         return true;
     }
@@ -30,7 +30,7 @@ abstract class GraphicDrawFiller extends GraphicObject {
         if (!fill.get(time)) {
             return false;
         }
-        g.setColor(fillColor.get(time));
+        g.setColor(fillColor.get(time).get());
         return true;
     }
 

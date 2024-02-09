@@ -3,15 +3,21 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import javax.swing.AbstractAction;
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.GroupLayout;
@@ -42,6 +48,7 @@ import javax.swing.event.MouseInputAdapter;
 import javax.swing.event.MouseInputListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
+import javax.swing.plaf.basic.BasicButtonUI;
 
 class EditingPanelFactory {
 
@@ -496,39 +503,103 @@ class EditingPanelFactory {
         easingPopup.show(locationRef, 0, locationRef.getHeight());
     }
 
-    public static JPanel createAnimPanel() {
+    public static <T> JPanel createAnimPanel(AnimatedValue<T> animValue, GraphicRoot root,
+            Supplier<T> getCurrentUIValue) {
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);
 
-        JButton timeKeypointButton = new JButton("▪");
-        timeKeypointButton.addActionListener(e -> {
-            // TODO
-            timeKeypointButton.setText("🔶");
+        JButton jumpToTKPButton = new JButton("↗");
+
+        JPopupMenu jumpToMenu = new JPopupMenu();
+        jumpToTKPButton.addActionListener(e -> {
+            jumpToMenu.removeAll();
+            var timepoints = animValue.getTimepoint(root.getTime());
+            if (timepoints.isEmpty()) {
+                return;
+            }
+            if (timepoints.size() == 1) {
+                root.setTimeKeypointFocus(timepoints.get(0), jumpToTKPButton);
+                return;
+            }
+            for (var tkp : timepoints) {
+                var menuItem = new JMenuItem(tkp.exportDisplayString(true, false, false, true));
+                menuItem.addActionListener(e2 -> {
+                    root.setTimeKeypointFocus(tkp, jumpToTKPButton);
+                });
+                jumpToMenu.add(menuItem);
+            }
+            jumpToMenu.show(jumpToTKPButton, 0, jumpToTKPButton.getHeight());
         });
 
-        JButton easingsButton = new JButton(new ImageIcon(EasingFunction.easeOutPower2.icon()));
-        easingsButton.setToolTipText(EasingFunction.easeOutPower2.name());
+        JButton timeKeypointButton = new JButton();
+
+        JButton easingsButton = new JButton(EasingFunction.emptyImageIcon);
+        easingsButton.setToolTipText(null);
+
+        var ttkpFocusCallback = root.subscribeToTimeAndTKPFocus(ttkp -> {
+            jumpToTKPButton.setEnabled(0 < animValue.getTimepointCount(ttkp.time));
+            timeKeypointButton.setText(animValue.getTimepointCount(ttkp.time) == 0 ? "▪" : "🔶");
+
+            if (ttkp.isPresent() && ttkp.get().time() == ttkp.time && animValue.hasTimepoint(ttkp.get())) {
+                timeKeypointButton.setEnabled(true);
+                easingsButton.setEnabled(true);
+                var easing = animValue.getEasingFunction(ttkp.get());
+                if (easing.isPresent()) {
+                    easingsButton.setIcon(easing.get().imageIcon());
+                } else {
+                    easingsButton.setIcon(EasingFunction.emptyImageIcon);
+                }
+            } else {
+                timeKeypointButton.setEnabled(false);
+                easingsButton.setEnabled(false);
+                var easing = animValue.getEasingFunction(ttkp.time);
+                if (easing.isPresent()) {
+                    easingsButton.setIcon(easing.get().imageIcon());
+                } else {
+                    easingsButton.setIcon(EasingFunction.emptyImageIcon);
+                }
+            }
+        });
         easingsButton.addActionListener(e -> {
             askForEasing(easingsButton, easing -> {
-                // TODO
-                easingsButton.setIcon(new ImageIcon(easing.icon()));
-                easingsButton.setToolTipText(easing.name());
+                animValue.setEasingFunction(root.getTimeKeypointFocus().get(), easing);
+                ttkpFocusCallback.accept(root.getTimeAndTKPFocus());
             });
         });
-
-        JButton jumpToTKPButton = new JButton("↗");
-        jumpToTKPButton.addActionListener(e -> {
-            // TODO
-            jumpToTKPButton.setEnabled(false);
+        timeKeypointButton.addActionListener(e -> {
+            var tkp = root.getTimeKeypointFocus();
+            if (!tkp.isPresent()) {
+                return;
+            }
+            if (animValue.hasTimepoint(tkp)) {
+                animValue.removeTimepoint(tkp.get());
+            } else {
+                animValue.addForEditor(tkp.get(), animValue.get(root.getTime()), EasingFunction.snap);
+            }
         });
+        panel.putClientProperty("timeTkpFocusCallback", ttkpFocusCallback);
 
-        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(easingsButton)
-                .addComponent(timeKeypointButton).addComponent(jumpToTKPButton));
-        layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(easingsButton)
-                .addComponent(timeKeypointButton).addComponent(jumpToTKPButton));
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(jumpToTKPButton)
+                .addComponent(timeKeypointButton).addComponent(easingsButton));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(jumpToTKPButton)
+                .addComponent(timeKeypointButton).addComponent(easingsButton));
 
         return panel;
+    }
+
+    private static <T> void subscribeToAnim(GraphicRoot root, AnimatedValue<T> animValue, JComponent callbackStorage,
+            Color staticColor, DoubleConsumer stateSetter, Consumer<Color> colorSetter) {
+        var tkpFocusCallback = root.subscribeToTimeAndTKPFocus(ttkp -> {
+            if (!animValue.isAnimated()) {
+                colorSetter.accept(staticColor);
+                return;
+            }
+
+            colorSetter.accept(EditorColor.getTimepointTypeColor(animValue.getTimepointCount(ttkp.time),
+                    animValue.hasTimepoint(ttkp.tkpFocus), ttkp.isPresent() && ttkp.get().time() == ttkp.time));
+        });
+        callbackStorage.putClientProperty("TimeTkpFocusCallback", tkpFocusCallback);
     }
 
     public static JPanel create(String labelText, AnimBoolean animBool, GraphicRoot root, Debuggable obj,
@@ -540,24 +611,20 @@ class EditingPanelFactory {
 
         JCheckBox checkBox = new JCheckBox();
         checkBox.addActionListener(e -> {
+            if (!animBool.isAnimated()) {
+                animBool.staticSet(checkBox.isSelected());
+                return;
+            }
             checkBox.setBackground(EditorColor.Temporary.color());
         });
 
-        var timeCallback = root.subscribeToTime(t -> {
+        subscribeToAnim(root, animBool, panel, EditorColor.Static.color(checkBox), t -> {
             checkBox.setSelected(animBool.get(t));
-            if (animBool.isAnimated()) {
-                if (animBool.isTimepoint(t)) {
-                    checkBox.setBackground(EditorColor.Timepoint.color());
-                } else {
-                    checkBox.setBackground(EditorColor.Animated.color());
-                }
-            } else {
-                checkBox.setBackground(EditorColor.Static.color(checkBox));
-            }
+        }, c -> {
+            checkBox.setBackground(c);
         });
-        panel.putClientProperty("timeCallback", timeCallback);
 
-        var animPanel = createAnimPanel();
+        var animPanel = createAnimPanel(animBool, root, () -> checkBox.isSelected());
         var filler = Box.createHorizontalGlue();
 
         layout.setHorizontalGroup(
@@ -585,7 +652,7 @@ class EditingPanelFactory {
 
         int sliderSteps = (int) ((max - min) / stepSize);
         JSlider slider = new JSlider(0, sliderSteps, 0);
-        JSpinner spinner = new JSpinner(new SpinnerNumberModel(animDouble.get(root.getTime()),
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel((double) animDouble.get(root.getTime()),
                 hardLimitMin ? min : Double.MIN_VALUE, hardLimitMax ? max : Double.MAX_VALUE, stepSize));
         var timeCallback = root.subscribeToTime(t -> {
             spinner.setValue(animDouble.get(t));
@@ -666,8 +733,8 @@ class EditingPanelFactory {
         JTextField textField = new JTextField();
 
         var timeCallback = root.subscribeToTime(t -> {
-            button.setColor(animColor.get(t));
-            textField.setText(ColorHexer.encode(animColor.get(t)));
+            button.setColor(animColor.get(t).get());
+            textField.setText(ColorHexer.encode(animColor.get(t).get()));
         });
         panel.putClientProperty("timeCallback", timeCallback);
 
@@ -848,7 +915,6 @@ class EditingPanelFactory {
     }
 
     public static JPanel create(GraphicLayer layer, GraphicRoot root) {
-        System.out.println("Creating layer panel for " + layer.name);
         JPanel panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);

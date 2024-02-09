@@ -36,4 +36,14 @@ class AnimDimension extends AnimatedValue<Dimension> {
     public String exportCode() {
         return super.exportCode("AnimDimension", v -> ImEx.exportCode(v));
     }
+
+    @Override
+    public void setEasingFunction(TimeKeypoint tkp, EasingFunction easing) {
+        super.setEasingFunction(tkp, EasingFunction.snap);
+    }
+
+    @Override
+    public AnimatedValue<Dimension> addForEditor(TimeKeypoint tkp, Dimension value, EasingFunction easingToNext) {
+        return add(tkp, value, easingToNext);
+    }
 }

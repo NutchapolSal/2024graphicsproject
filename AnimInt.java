@@ -11,7 +11,7 @@ public class AnimInt extends AnimatedValue<Integer> {
         return this;
     }
 
-    public int get(double time) {
+    public Integer get(double time) {
         if (timepoints.isEmpty()) {
             return 0;
         }
@@ -38,4 +38,15 @@ public class AnimInt extends AnimatedValue<Integer> {
     public String exportCode() {
         return super.exportCode("AnimInt", v -> ImEx.exportCode(v));
     }
+
+    @Override
+    public void setEasingFunction(TimeKeypoint tkp, EasingFunction easing) {
+        super.setEasingFunction(tkp, EasingFunction.snap);
+    }
+
+    @Override
+    public AnimatedValue<Integer> addForEditor(TimeKeypoint tkp, Integer value, EasingFunction easingToNext) {
+        return add(tkp, value, easingToNext);
+    }
+
 }

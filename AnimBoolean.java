@@ -1,8 +1,6 @@
-import java.util.function.DoubleUnaryOperator;
-
 class AnimBoolean extends AnimatedValue<Boolean> {
     /** @throws IllegalArgumentException if the same TimeKeypoint is added twice */
-    public AnimBoolean add(TimeKeypoint tkp, boolean value, DoubleUnaryOperator easingToNext) {
+    public AnimBoolean add(TimeKeypoint tkp, boolean value, EasingFunction easingToNext) {
         super.addTimepoint(tkp, value, EasingFunction.snap);
         return this;
     }
@@ -12,7 +10,7 @@ class AnimBoolean extends AnimatedValue<Boolean> {
         return this;
     }
 
-    public boolean get(double time) {
+    public Boolean get(double time) {
         if (timepoints.isEmpty()) {
             return false;
         }
@@ -38,5 +36,15 @@ class AnimBoolean extends AnimatedValue<Boolean> {
 
     public String exportCode() {
         return super.exportCode("AnimBoolean", v -> ImEx.exportCode(v));
+    }
+
+    @Override
+    public void setEasingFunction(TimeKeypoint tkp, EasingFunction easing) {
+        super.setEasingFunction(tkp, EasingFunction.snap);
+    }
+
+    @Override
+    public AnimatedValue<Boolean> addForEditor(TimeKeypoint tkp, Boolean value, EasingFunction easingToNext) {
+        return add(tkp, value, easingToNext);
     }
 }

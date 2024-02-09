@@ -41,4 +41,17 @@ class AnimTest extends AnimatedValue<Integer> {
     public String exportCode() {
         return "";
     }
+
+    @Override
+    public void setEasingFunction(TimeKeypoint tkp, EasingFunction easing) {
+    }
+
+    @Override
+    public AnimatedValue<Integer> addForEditor(TimeKeypoint tkp, Integer value, EasingFunction easingToNext) {
+        return null;
+    }
+
+    public Integer get(double time) {
+        return 0;
+    }
 }
