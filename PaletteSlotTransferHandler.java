@@ -67,7 +67,7 @@ final class PaletteSlotTransferHandler extends TransferHandler {
             if (data != null) {
                 var lastFlavor = ((TransferablePaletteValue) data).getLastUsedFlavor();
                 if (lastFlavor.equals(pvFlavor)) {
-                    ((PaletteSlotPanel) source).removePaletteValue();
+                    ((PaletteSlotPanel) source).exportDone();
                 }
             }
         }
@@ -103,7 +103,8 @@ final class PaletteSlotTransferHandler extends TransferHandler {
                 c.setPaletteValue(pv.editorCopy());
             }
             return true;
-        } catch (UnsupportedFlavorException | IOException ex) {
+        } catch (ClassCastException | UnsupportedFlavorException | IOException e) {
+
         }
 
         try {
@@ -112,7 +113,7 @@ final class PaletteSlotTransferHandler extends TransferHandler {
             PaletteSlotPanel c = (PaletteSlotPanel) support.getComponent();
             c.setPaletteValue(new PaletteValue(color, "a color"));
             return true;
-        } catch (UnsupportedFlavorException | IOException ex) {
+        } catch (UnsupportedFlavorException | IOException | ClassCastException ex) {
         }
         return false;
     }

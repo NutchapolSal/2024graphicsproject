@@ -53,14 +53,30 @@ public class PaletteSlotPanel extends JPanel {
         }
     }
 
+    boolean selfSetted = false;
+
     public void setPaletteValue(PaletteValue value) {
+        if (value == palette.get(x, y).orElse(null)) {
+            selfSetted = true;
+        } else {
+            selfSetted = false;
+        }
         palette.set(x, y, value);
         updatePanel();
     }
 
     public void removePaletteValue() {
+        selfSetted = true;
         palette.remove(x, y);
         updatePanel();
+    }
+
+    public void exportDone() {
+        if (selfSetted) {
+            selfSetted = false;
+            return;
+        }
+        removePaletteValue();
     }
 
 }
