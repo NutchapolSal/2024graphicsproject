@@ -35,9 +35,6 @@ public class PaletteSlotPanel extends JPanel {
         this.putClientProperty("canPaletteValueMove", true);
         this.addMouseMotionListener(new MouseMotionAdapter() {
             public void mouseDragged(MouseEvent e) {
-                if (MouseEvent.BUTTON1 != e.getButton()) {
-                    return;
-                }
                 JComponent c = (JComponent) e.getSource();
                 TransferHandler handler = c.getTransferHandler();
                 handler.exportAsDrag(c, e, TransferHandler.MOVE);
