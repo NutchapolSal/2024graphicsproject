@@ -1051,6 +1051,9 @@ class EditingPanelFactory {
             case "GraphicCircle":
                 layer.add(new GraphicCircle(root.getFirstTimeKeypoint()));
                 break;
+            case "GraphicEllipse":
+                layer.add(new GraphicEllipse(root.getFirstTimeKeypoint()));
+                break;
             case "GraphicImage":
                 layer.add(new GraphicImage(root.getFirstTimeKeypoint()));
                 break;

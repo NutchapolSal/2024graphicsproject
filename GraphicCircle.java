@@ -1,9 +1,8 @@
 import java.awt.Graphics;
 import java.awt.Point;
 
-// https://stackoverflow.com/q/1734745/3623350
-class GraphicCircle extends GraphicBezierPlotter {
-    private static final double BEZIER_CIRCLE_CONSTANT = 0.552284749831;
+class GraphicCircle extends GraphicPlotter {
+    public AnimInt thickness;
     public AnimPoint center;
     public AnimInt radius;
 
@@ -15,13 +14,10 @@ class GraphicCircle extends GraphicBezierPlotter {
     }
 
     GraphicCircle(AnimColor color, AnimInt thickness, AnimPoint center, AnimInt radius) {
-        super(color, thickness);
+        super(color);
+        this.thickness = thickness;
         this.center = center;
         this.radius = radius;
-    }
-
-    private Point roundPoint(double x, double y) {
-        return new Point((int) Math.round(x), (int) Math.round(y));
     }
 
     @Override
@@ -31,21 +27,37 @@ class GraphicCircle extends GraphicBezierPlotter {
 
         Point center = this.center.get(time);
         int radius = this.radius.get(time);
-        double offset = radius * BEZIER_CIRCLE_CONSTANT;
-        double perimeter = radius * 2 * Math.PI;
-        int iters = (int) Math.round(perimeter);
 
-        plotBezier(g, time, roundPoint(center.x, center.y - radius), roundPoint(center.x + offset, center.y - radius),
-                roundPoint(center.x + radius, center.y - offset), roundPoint(center.x + radius, center.y), iters);
+        int thickness = this.thickness.get(time);
+        midpointCircle(g, center.x, center.y, radius, thickness);
+    }
 
-        plotBezier(g, time, roundPoint(center.x, center.y + radius), roundPoint(center.x + offset, center.y + radius),
-                roundPoint(center.x + radius, center.y + offset), roundPoint(center.x + radius, center.y), iters);
+    private void midpointCircle(Graphics g, int xc, int yc, int r, int thickness) {
+        int x = 0;
+        int y = r;
+        int Dx = 2 * x;
+        int Dy = 2 * y;
+        int D = 1 - r;
 
-        plotBezier(g, time, roundPoint(center.x, center.y + radius), roundPoint(center.x - offset, center.y + radius),
-                roundPoint(center.x - radius, center.y + offset), roundPoint(center.x - radius, center.y), iters);
+        while (x <= y) {
+            plot(g, xc + x, yc + y, thickness);
+            plot(g, xc - x, yc + y, thickness);
+            plot(g, xc + x, yc - y, thickness);
+            plot(g, xc - x, yc - y, thickness);
+            plot(g, xc + y, yc + x, thickness);
+            plot(g, xc + y, yc - x, thickness);
+            plot(g, xc - y, yc + x, thickness);
+            plot(g, xc - y, yc - x, thickness);
 
-        plotBezier(g, time, roundPoint(center.x, center.y - radius), roundPoint(center.x - offset, center.y - radius),
-                roundPoint(center.x - radius, center.y - offset), roundPoint(center.x - radius, center.y), iters);
+            x++;
+            Dx += 2;
+            D += Dx + 1;
+            if (D >= 0) {
+                y--;
+                Dy -= 2;
+                D -= Dy;
+            }
+        }
     }
 
     @Override

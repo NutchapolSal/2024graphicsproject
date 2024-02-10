@@ -87,6 +87,11 @@ class PreloadedData {
                                         new AnimInt().add(tkp_0qwe, 1, EasingFunction.snap),
                                         new AnimPoint().add(tkp_0qwe, new Point(-220, -260), EasingFunction.snap),
                                         new AnimInt().add(tkp_0qwe, 20, EasingFunction.snap)))
+                                .add(new GraphicEllipse(new AnimColor().add(tkp_0qwe, pv_2uio, EasingFunction.snap),
+                                        new AnimInt().add(tkp_0qwe, 1, EasingFunction.snap),
+                                        new AnimPoint().add(tkp_0qwe, new Point(-220, -260), EasingFunction.snap),
+                                        new AnimInt().add(tkp_0qwe, 20, EasingFunction.snap),
+                                        new AnimInt().add(tkp_0qwe, 40, EasingFunction.snap)))
 
         );
         return new GraphicRoot(timeKeypoints, palette, instructions);

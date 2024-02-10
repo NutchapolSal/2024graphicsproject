@@ -417,6 +417,9 @@ class ImEx {
             case "CIRCLE":
                 objects.add(importCircle(sc, timeKeypoints, paletteValues));
                 break;
+            case "ELLIPSE":
+                objects.add(importEllipse(sc, timeKeypoints, paletteValues));
+                break;
             case "IMAGE":
                 objects.add(importImage(sc, timeKeypoints));
                 break;
@@ -494,6 +497,16 @@ class ImEx {
         AnimPoint center = importAnimPoint(sc, timeKeypoints);
         AnimInt radius = importAnimInt(sc, timeKeypoints);
         return new GraphicCircle(color, thickness, center, radius);
+    }
+
+    public static GraphicEllipse importEllipse(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints,
+            HashMap<String, PaletteValue> paletteValues) {
+        AnimColor color = importAnimColor(sc, timeKeypoints, paletteValues);
+        AnimInt thickness = importAnimInt(sc, timeKeypoints);
+        AnimPoint center = importAnimPoint(sc, timeKeypoints);
+        AnimInt radiusA = importAnimInt(sc, timeKeypoints);
+        AnimInt radiusB = importAnimInt(sc, timeKeypoints);
+        return new GraphicEllipse(color, thickness, center, radiusA, radiusB);
     }
 
     public static GraphicImage importImage(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
