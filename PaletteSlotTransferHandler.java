@@ -77,10 +77,14 @@ final class PaletteSlotTransferHandler extends TransferHandler {
 
     public boolean canImport(TransferSupport support) {
         if ((MOVE & support.getDropAction()) == MOVE) {
-            return support.isDataFlavorSupported(pvFlavor);
+            if (support.isDataFlavorSupported(pvFlavor) || support.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                return true;
+            }
         }
         if ((COPY & support.getDropAction()) == COPY) {
-            return support.isDataFlavorSupported(pvFlavor) || support.isDataFlavorSupported(DataFlavor.stringFlavor);
+            if (support.isDataFlavorSupported(pvFlavor) || support.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                return true;
+            }
         }
         return false;
     }
@@ -100,17 +104,15 @@ final class PaletteSlotTransferHandler extends TransferHandler {
             }
             return true;
         } catch (UnsupportedFlavorException | IOException ex) {
-            ex.printStackTrace();
         }
 
         try {
             String colorHex = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
             Color color = ColorHexer.decode(colorHex);
-            JComponent c = (JComponent) support.getComponent();
-            c.setBackground(color);
+            PaletteSlotPanel c = (PaletteSlotPanel) support.getComponent();
+            c.setPaletteValue(new PaletteValue(color, "a color"));
             return true;
         } catch (UnsupportedFlavorException | IOException ex) {
-            ex.printStackTrace();
         }
         return false;
     }

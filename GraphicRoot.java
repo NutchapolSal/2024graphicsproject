@@ -11,7 +11,7 @@ class GraphicRoot implements Exportable {
     public List<GraphicLayer> instructions;
 
     private double currentTime;
-    private int fps = 60;
+    private int fps = 1;
     private boolean useFps = false;
 
     private double startTime;
@@ -200,6 +200,23 @@ class GraphicRoot implements Exportable {
 
     public TimeKeypoint getFirstTimeKeypoint() {
         return timeKeypoints.get(0);
+    }
+
+    public Optional<Integer> getFps() {
+        if (useFps) {
+            return Optional.of(fps);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public void setFps(Optional<Integer> fps) {
+        if (fps.isPresent()) {
+            this.fps = fps.get();
+            useFps = true;
+        } else {
+            useFps = false;
+        }
     }
 
     public String exportString() {

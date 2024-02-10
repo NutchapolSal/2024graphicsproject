@@ -1,5 +1,6 @@
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusAdapter;
@@ -29,6 +30,7 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.GroupLayout.ParallelGroup;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -41,11 +43,13 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
@@ -795,7 +799,7 @@ class EditorGang {
     private void createTimeControlFrame(JFrame frame) {
         timeControlFrame.setLocation(frame.getLocation().x, frame.getLocation().y + frame.getHeight());
         timeControlFrame.setTitle("time control");
-        timeControlFrame.setSize(1200, 150);
+        timeControlFrame.setSize(600, 100);
 
         JPanel timeControlPanel = new JPanel();
         timeControlFrame.setContentPane(timeControlPanel);
@@ -868,6 +872,28 @@ class EditorGang {
             }
         });
 
+        SpinnerNumberModel fpsModel = new SpinnerNumberModel();
+        fpsModel.setMinimum(1);
+        fpsModel.setStepSize(1);
+        fpsModel.setValue(60);
+        JSpinner fpsSpinner = new JSpinner(fpsModel);
+        JCheckBox fpsCheckBox = new JCheckBox("fps");
+        fpsCheckBox.setSelected(root.getFps().isPresent());
+        fpsSpinner.setEnabled(root.getFps().isPresent());
+
+        fpsCheckBox.addActionListener(e -> {
+            if (fpsCheckBox.isSelected()) {
+                fpsSpinner.setEnabled(true);
+                root.setFps(Optional.of((int) fpsSpinner.getValue()));
+            } else {
+                fpsSpinner.setEnabled(false);
+                root.setFps(Optional.empty());
+            }
+        });
+        fpsSpinner.addChangeListener(e -> {
+            root.setFps(Optional.of((int) fpsSpinner.getValue()));
+        });
+
         var filler = Box.createGlue();
         var filler2 = Box.createGlue();
 
@@ -875,12 +901,14 @@ class EditorGang {
                 .addGroup(layout.createParallelGroup(Alignment.CENTER)
                         .addGroup(layout.createSequentialGroup().addComponent(playButton).addComponent(stopButton)
                                 .addComponent(timeField, GroupLayout.DEFAULT_SIZE, 150, 150)))
-                .addComponent(filler2));
+                .addComponent(filler2).addGroup(layout.createSequentialGroup().addComponent(fpsCheckBox)
+                        .addComponent(fpsSpinner, GroupLayout.DEFAULT_SIZE, 50, 50)));
         layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING).addComponent(filler)
                 .addGroup(layout.createParallelGroup(Alignment.LEADING).addComponent(playButton)
                         .addComponent(stopButton).addComponent(timeField, GroupLayout.DEFAULT_SIZE,
                                 GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                .addComponent(filler2));
+                .addComponent(filler2).addGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(fpsCheckBox)
+                        .addComponent(fpsSpinner)));
 
     }
 
@@ -909,11 +937,15 @@ class EditorGang {
         Map<Integer, ParallelGroup> slotsYGroups = new HashMap<>();
 
         var transferHandler = new PaletteSlotTransferHandler();
-        for (var value : root.palette.iterator()) {
-            var slotPanel = new PaletteSlotPanel(root.palette, value.x, value.y, transferHandler);
+        int maxX = root.palette.getMaxX();
+        int maxY = root.palette.getMaxY();
+        for (int x = root.palette.getMinX(); x <= maxX + 2; x++) {
+            for (int y = root.palette.getMinY(); y <= maxY + 5; y++) {
+                var slotPanel = new PaletteSlotPanel(root.palette, x, y, transferHandler);
 
-            slotsXGroups.computeIfAbsent(value.x, k -> slotsLayout.createParallelGroup()).addComponent(slotPanel);
-            slotsYGroups.computeIfAbsent(value.y, k -> slotsLayout.createParallelGroup()).addComponent(slotPanel);
+                slotsXGroups.computeIfAbsent(x, k -> slotsLayout.createParallelGroup()).addComponent(slotPanel);
+                slotsYGroups.computeIfAbsent(y, k -> slotsLayout.createParallelGroup()).addComponent(slotPanel);
+            }
         }
 
         var slotsXGroupsList = slotsXGroups.entrySet().stream().sorted(Comparator.comparingInt(e -> e.getKey()))
