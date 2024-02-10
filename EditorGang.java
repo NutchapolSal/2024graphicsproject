@@ -23,30 +23,14 @@ class EditorGang {
 
     private GraphicRoot root;
 
-    private JFrame displayFrame;
     private JFrame timeControlFrame = new JFrame();
-
-    private boolean bringingToFront = false;
 
     EditorGang(JFrame frame, GraphicRoot root) {
         this.root = root;
 
-        displayFrame = frame;
         createTimeControlFrame(frame);
 
         timeControlFrame.setVisible(true);
-    }
-
-    private void bringToFront() {
-        displayFrame.setAutoRequestFocus(false);
-        timeControlFrame.setAutoRequestFocus(false);
-
-        displayFrame.toFront();
-        timeControlFrame.toFront();
-
-        displayFrame.setAutoRequestFocus(true);
-        timeControlFrame.setAutoRequestFocus(true);
-        bringingToFront = false;
     }
 
     private void createTimeControlFrame(JFrame frame) {
