@@ -1256,9 +1256,9 @@ class EditingPanelFactory {
 
         JLabel label = new JLabel("GraphicCircle");
         var colorPanel = create("color", circle.color, root, circle, 0);
-        var thicknessPanel = create("thickness", circle.thickness, root, 1, 15, 1, circle, 0);
+        var thicknessPanel = create("thickness", circle.thickness, root, 1, true, 15, false, 1, circle, 0);
         var pointPanel = create("center", circle.center, root, circle, 1);
-        var radiusPanel = create("radius", circle.radius, root, 0, 50, 1, circle, 2);
+        var radiusPanel = create("radius", circle.radius, root, 0, true, 50, false, 1, circle, 2);
 
         layout.setHorizontalGroup(
                 layout.createParallelGroup(Alignment.LEADING).addComponent(label).addComponent(colorPanel)
