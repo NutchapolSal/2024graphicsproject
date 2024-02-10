@@ -565,10 +565,18 @@ class EditingPanelFactory {
             var tpCount = animValue.getTimepointCount(ttkp.time);
             if (1 < tpCount) {
                 jumpToTKPButton.setEnabled(true);
+                jumpToTKPButton.setToolTipText("focus on timepoint...");
             } else if (tpCount == 1) {
-                jumpToTKPButton.setEnabled(animValue.getTimepoint(ttkp.time).get(0) != ttkp.tkpFocus.orElse(null));
+                if (animValue.getTimepoint(ttkp.time).get(0) != ttkp.tkpFocus.orElse(null)) {
+                    jumpToTKPButton.setEnabled(true);
+                    jumpToTKPButton.setToolTipText("focus on timepoint");
+                } else {
+                    jumpToTKPButton.setEnabled(false);
+                    jumpToTKPButton.setToolTipText("already on timepoint");
+                }
             } else if (tpCount == 0) {
                 jumpToTKPButton.setEnabled(false);
+                jumpToTKPButton.setToolTipText(null);
             }
             timeKeypointButton.setText(tpCount == 0 ? "▪" : "🔶");
 
@@ -579,14 +587,16 @@ class EditingPanelFactory {
 
             if (ttkp.isPresent() && ttkp.get().time() == ttkp.time) {
                 timeKeypointButton.setEnabled(true);
+                timeKeypointButton.setToolTipText("bind to timepoint");
 
                 if (animValue.hasTimepoint(ttkp.get())) {
+                    timeKeypointButton.setToolTipText("unbind from timepoint");
                     easingsButton.setEnabled(true);
                     easing = animValue.getEasingFunction(ttkp.get());
 
                     if (!animValue.isAnimated()) {
                         timeKeypointButton.setEnabled(false);
-                        timeKeypointButton.setToolTipText("you cannot remove the last timepoint");
+                        timeKeypointButton.setToolTipText("you cannot unbind the last timepoint");
                     }
                 }
             }
@@ -594,6 +604,7 @@ class EditingPanelFactory {
             if (easing == null) {
                 easing = animValue.getEasingFunction(ttkp.time);
             }
+            easingsButton.setToolTipText(easing.map(e -> e.name()).orElse(null));
 
             if (easing.isPresent()) {
                 easingsButton.setIcon(easing.get().imageIcon());
