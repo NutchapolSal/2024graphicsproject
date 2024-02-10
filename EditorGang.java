@@ -647,7 +647,7 @@ class EditorGang {
         list.addListSelectionListener(selectionChanged);
 
         var tkpFocusCallback = root.subscribeToTKPFocus(tkp -> {
-            list.setSelectedValue(tkp, true);
+            list.setSelectedValue(tkp.orElse(null), true);
             selectionChanged.valueChanged(null);
         });
         timepointsPanel.putClientProperty("tkpFocusCallback", tkpFocusCallback);
