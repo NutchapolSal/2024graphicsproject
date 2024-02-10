@@ -59,7 +59,7 @@ class ImEx {
 
     public static String exportStringTKPs(List<TimeKeypoint> timeKeypoints) {
         var tkps = new ArrayList<>(timeKeypoints);
-        tkps.sort(Comparator.comparingInt(TimeKeypoint::referenceDepth));
+        tkps.sort(Comparator.comparing(v -> v.id));
         return tkps.stream().map(ImEx::exportInitString).collect(Collectors.joining());
     }
 
