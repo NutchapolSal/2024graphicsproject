@@ -26,8 +26,6 @@ public class PaletteSlotPanel extends JPanel {
         this.x = x;
         this.y = y;
 
-        this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-
         this.setPreferredSize(new Dimension(25, 25));
         this.setMaximumSize(new Dimension(25, 25));
 
@@ -71,6 +69,7 @@ public class PaletteSlotPanel extends JPanel {
         var value = palette.get(x, y);
         if (value.isPresent()) {
             this.setBackground(value.get().color);
+            this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
             this.setCursor(new Cursor(Cursor.MOVE_CURSOR));
             this.setToolTipText("<html>" + ColorHexer.encode(value.get().color) + "<br>" + value.get().label + "<br>"
                     + value.get().id);
@@ -78,6 +77,7 @@ public class PaletteSlotPanel extends JPanel {
             this.putClientProperty("paletteValue", value.get());
         } else {
             this.setBackground(null);
+            this.setBorder(BorderFactory.createLineBorder(Color.GRAY));
             this.setCursor(null);
             this.setToolTipText(null);
             this.setComponentPopupMenu(null);
