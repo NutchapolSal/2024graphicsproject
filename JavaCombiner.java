@@ -4,6 +4,8 @@ import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,6 +14,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class JavaCombiner {
+
+    public static String generateAnnotation(String className) {
+        return generateAnnotation(className, ZonedDateTime.now());
+    }
+
+    public static String generateAnnotation(String className, ZonedDateTime time) {
+        return "@Generated(value = \"" + (className) + "\", date = \""
+                + (time.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)) + "\")";
+    }
+
     public static void main(String[] args) {
         var className = JavaCombiner.class.getSimpleName();
         var folder = new File(".");
@@ -51,7 +63,7 @@ class JavaCombiner {
 
                 }
                 if (isMain) {
-                    bodyPart.add(0, ImEx.generateAnnotation(className));
+                    bodyPart.add(0, generateAnnotation(className));
                     body.add(0, bodyPart);
                 } else {
                     body.add(bodyPart);

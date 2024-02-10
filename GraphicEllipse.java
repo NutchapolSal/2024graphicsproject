@@ -7,16 +7,6 @@ class GraphicEllipse extends GraphicDrawFiller {
     public AnimInt radiusA;
     public AnimInt radiusB;
 
-    /** editor default */
-    GraphicEllipse(TimeKeypoint tkp) {
-        this(new AnimBoolean().add(tkp, false, EasingFunction.snap),
-                new AnimColor().add(tkp, "#000", EasingFunction.linear),
-                new AnimInt().add(tkp, 1, EasingFunction.linear), new AnimBoolean().add(tkp, true, EasingFunction.snap),
-                new AnimColor().add(tkp, "#000", EasingFunction.linear),
-                new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
-                new AnimInt().add(tkp, 10, EasingFunction.linear), new AnimInt().add(tkp, 20, EasingFunction.linear));
-    }
-
     GraphicEllipse(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill, AnimColor fillColor,
             AnimPoint center, AnimInt radiusA, AnimInt radiusB) {
         super(stroke, strokeColor, thickness, fill, fillColor);
@@ -96,42 +86,4 @@ class GraphicEllipse extends GraphicDrawFiller {
         }
     }
 
-    @Override
-    public void debugDraw(Graphics g, double time) {
-        Point center = this.center.get(time);
-        int radiusA = this.radiusA.get(time);
-        int radiusB = this.radiusB.get(time);
-        debugLine(g, center.x, center.y, center.x + radiusA, center.y, debugging == 2);
-        debugLine(g, center.x, center.y, center.x, center.y + radiusB, debugging == 3);
-        debugDot(g, center.x + radiusA, center.y, debugging == 2);
-        debugDot(g, center.x, center.y + radiusB, debugging == 3);
-        debugCircle(g, center.x, center.y, debugging == 1);
-    }
-
-    public String exportString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("ELLIPSE ");
-        sb.append(super.exportParamString());
-        sb.append(" ");
-        sb.append(ImEx.exportString(this.center));
-        sb.append(" ");
-        sb.append(ImEx.exportString(this.radiusA));
-        sb.append(" ");
-        sb.append(ImEx.exportString(this.radiusB));
-        return sb.toString();
-    }
-
-    public String exportCode() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicEllipse(");
-        sb.append(super.exportParamCode());
-        sb.append(", ");
-        sb.append(ImEx.exportCode(this.center));
-        sb.append(", ");
-        sb.append(ImEx.exportCode(this.radiusA));
-        sb.append(", ");
-        sb.append(ImEx.exportCode(this.radiusB));
-        sb.append(")");
-        return sb.toString();
-    }
 }

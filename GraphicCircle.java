@@ -6,17 +6,6 @@ class GraphicCircle extends GraphicDrawFiller {
     public AnimPoint center;
     public AnimInt radius;
 
-    /** editor default */
-    GraphicCircle(TimeKeypoint tkp) {
-        this(new AnimBoolean().add(tkp, true, EasingFunction.snap),
-                new AnimColor().add(tkp, "#000", EasingFunction.linear),
-                new AnimInt().add(tkp, 1, EasingFunction.linear),
-                new AnimBoolean().add(tkp, false, EasingFunction.snap),
-                new AnimColor().add(tkp, "#000", EasingFunction.linear),
-                new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
-                new AnimInt().add(tkp, 10, EasingFunction.linear));
-    }
-
     GraphicCircle(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill, AnimColor fillColor,
             AnimPoint center, AnimInt radius) {
         super(stroke, strokeColor, thickness, fill, fillColor);
@@ -73,35 +62,4 @@ class GraphicCircle extends GraphicDrawFiller {
         }
     }
 
-    @Override
-    public void debugDraw(Graphics g, double time) {
-        Point center = this.center.get(time);
-        int radius = this.radius.get(time);
-        debugLine(g, center.x, center.y, center.x + radius, center.y, debugging == 2);
-        debugDot(g, center.x + radius, center.y, debugging == 2);
-        debugCircle(g, center.x, center.y, debugging == 1);
-    }
-
-    public String exportString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("CIRCLE ");
-        sb.append(super.exportParamString());
-        sb.append(" ");
-        sb.append(ImEx.exportString(this.center));
-        sb.append(" ");
-        sb.append(ImEx.exportString(this.radius));
-        return sb.toString();
-    }
-
-    public String exportCode() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicCircle(");
-        sb.append(super.exportParamCode());
-        sb.append(", ");
-        sb.append(ImEx.exportCode(this.center));
-        sb.append(", ");
-        sb.append(ImEx.exportCode(this.radius));
-        sb.append(")");
-        return sb.toString();
-    }
 }

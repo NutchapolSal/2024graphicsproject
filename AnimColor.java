@@ -22,11 +22,6 @@ class AnimColor extends AnimatedValue<MaybePaletteValue> {
         return this;
     }
 
-    public AnimColor remove(TimeKeypoint tkp) {
-        super.removeTimepoint(tkp);
-        return this;
-    }
-
     public MaybePaletteValue get(double time) {
         if (timepoints.isEmpty()) {
             return new MaybePaletteValue(Color.black);
@@ -40,32 +35,4 @@ class AnimColor extends AnimatedValue<MaybePaletteValue> {
                 this.getIndex(stepValue.index + 1).get()));
     }
 
-    public AnimColor copy() {
-        var anim = new AnimColor();
-        for (int i = 0; i < timepoints.size(); i++) {
-            var tp = timepoints.get(i);
-            var value = this.getIndex(i);
-            anim.add(tp.tkp, value, tp.easingToNext);
-        }
-        return anim;
-    }
-
-    public String exportString() {
-        return super.exportString(v -> v.exportString());
-    }
-
-    public String exportCode() {
-        return super.exportCode("AnimColor", v -> v.exportCode());
-    }
-
-    @Override
-    public void setEasingFunction(TimeKeypoint tkp, EasingFunction easing) {
-        super.setEasingFunction(tkp, EasingFunction.snap);
-    }
-
-    @Override
-    public AnimatedValue<MaybePaletteValue> addForEditor(TimeKeypoint tkp, MaybePaletteValue value,
-            EasingFunction easingToNext) {
-        return add(tkp, value, easingToNext);
-    }
 }

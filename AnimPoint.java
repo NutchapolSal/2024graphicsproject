@@ -7,11 +7,6 @@ class AnimPoint extends AnimatedValue<Point> {
         return this;
     }
 
-    public AnimPoint remove(TimeKeypoint tkp) {
-        super.removeTimepoint(tkp);
-        return this;
-    }
-
     public Point get(double time) {
         if (timepoints.isEmpty()) {
             return new Point(0, 0);
@@ -26,21 +21,4 @@ class AnimPoint extends AnimatedValue<Point> {
                 Lerp.run(this.getIndex(stepValue.index).y, stepValue.frac, this.getIndex(stepValue.index + 1).y));
     }
 
-    public String exportString() {
-        return super.exportString(v -> ImEx.exportString(v));
-    }
-
-    public String exportCode() {
-        return super.exportCode("AnimPoint", v -> ImEx.exportCode(v));
-    }
-
-    @Override
-    public void setEasingFunction(TimeKeypoint tkp, EasingFunction easing) {
-        super.setEasingFunction(tkp, EasingFunction.snap);
-    }
-
-    @Override
-    public AnimatedValue<Point> addForEditor(TimeKeypoint tkp, Point value, EasingFunction easingToNext) {
-        return add(tkp, value, easingToNext);
-    }
 }

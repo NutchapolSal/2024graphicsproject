@@ -1,9 +1,7 @@
 import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
@@ -16,13 +14,6 @@ class GraphicImage extends GraphicObject {
     public AnimPoint origin;
     public AnimDimension size;
     public AnimDouble opacity;
-
-    /** editor default */
-    GraphicImage(TimeKeypoint tkp) {
-        this("image.png", new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
-                new AnimDimension().add(tkp, new Dimension(50, 50), EasingFunction.linear),
-                new AnimDouble().add(tkp, 1.0, EasingFunction.linear));
-    }
 
     GraphicImage(String filePath, AnimPoint origin, AnimDimension size, AnimDouble opacity) {
         this.filePath = new MutableString(filePath);
@@ -63,38 +54,4 @@ class GraphicImage extends GraphicObject {
         g.drawImage(image, origin.x, origin.y, size.width, size.height, null);
     }
 
-    @Override
-    public void debugDraw(Graphics g, double time) {
-        var origin = this.origin.get(time);
-        var size = this.size.get(time);
-        debugLine(g, origin.x, origin.y, origin.x + size.width, origin.y + size.height, debugging == 2);
-        debugDot(g, origin.x + size.width, origin.y + size.height, debugging == 2);
-        debugCircle(g, origin.x, origin.y, debugging == 1);
-    }
-
-    public String exportString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("IMAGE ");
-        sb.append(ImEx.exportStringUser(this.filePath.value));
-        sb.append(ImEx.exportString(this.origin));
-        sb.append(" ");
-        sb.append(ImEx.exportString(this.size));
-        sb.append(" ");
-        sb.append(ImEx.exportString(this.opacity));
-        return sb.toString();
-    }
-
-    public String exportCode() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicImage(");
-        sb.append(ImEx.exportCode(this.filePath.value));
-        sb.append(", ");
-        sb.append(ImEx.exportCode(this.origin));
-        sb.append(", ");
-        sb.append(ImEx.exportCode(this.size));
-        sb.append(", ");
-        sb.append(ImEx.exportCode(this.opacity));
-        sb.append(")");
-        return sb.toString();
-    }
 }

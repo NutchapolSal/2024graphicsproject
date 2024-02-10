@@ -8,13 +8,6 @@ class Path2DBezier extends Path2DData {
     public AnimPoint pNext;
     public List<AnimPoint> morePoints;
 
-    /** editor default */
-    Path2DBezier(TimeKeypoint tkp) {
-        this(new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
-                new AnimPoint().add(tkp, new Point(0, 20), EasingFunction.linear),
-                new AnimPoint().add(tkp, new Point(20, 20), EasingFunction.linear));
-    }
-
     Path2DBezier(AnimPoint pNext, AnimPoint... morePoints) {
         this(pNext, new ArrayList<>(Arrays.asList(morePoints)));
     }
@@ -44,41 +37,9 @@ class Path2DBezier extends Path2DData {
         return morePoints.size() + 1;
     }
 
-    @Override
-    AnimPoint lastPoint() {
-        return morePoints.get(morePoints.size() - 1);
-    }
-
     void editorAddNewPoints(TimeKeypoint tkp) {
         this.morePoints.add(new AnimPoint().add(tkp, new Point(0, 20), EasingFunction.linear));
         this.morePoints.add(new AnimPoint().add(tkp, new Point(20, 20), EasingFunction.linear));
-    }
-
-    @Override
-    public String exportCode() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("new Path2DBezier(");
-        sb.append(ImEx.exportCode(this.pNext));
-        for (var point : this.morePoints) {
-            sb.append(", ");
-            sb.append(ImEx.exportCode(point));
-        }
-        sb.append(")");
-        return sb.toString();
-    }
-
-    @Override
-    public String exportString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("BEZIER ");
-        sb.append(ImEx.exportString(this.pNext));
-        sb.append(" ");
-        for (var point : this.morePoints) {
-            sb.append(ImEx.exportString(point));
-            sb.append(" ");
-        }
-        sb.append("END");
-        return sb.toString();
     }
 
 }

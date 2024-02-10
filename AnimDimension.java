@@ -8,11 +8,6 @@ class AnimDimension extends AnimatedValue<Dimension> {
         return this;
     }
 
-    public AnimDimension remove(TimeKeypoint tkp) {
-        super.removeTimepoint(tkp);
-        return this;
-    }
-
     public Dimension get(double time) {
         if (timepoints.isEmpty()) {
             return new Dimension(0, 0);
@@ -29,21 +24,4 @@ class AnimDimension extends AnimatedValue<Dimension> {
                         this.getIndex(stepValue.index + 1).height));
     }
 
-    public String exportString() {
-        return super.exportString(v -> ImEx.exportString(v));
-    }
-
-    public String exportCode() {
-        return super.exportCode("AnimDimension", v -> ImEx.exportCode(v));
-    }
-
-    @Override
-    public void setEasingFunction(TimeKeypoint tkp, EasingFunction easing) {
-        super.setEasingFunction(tkp, EasingFunction.snap);
-    }
-
-    @Override
-    public AnimatedValue<Dimension> addForEditor(TimeKeypoint tkp, Dimension value, EasingFunction easingToNext) {
-        return add(tkp, value, easingToNext);
-    }
 }

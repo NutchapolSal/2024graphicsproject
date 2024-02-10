@@ -60,11 +60,6 @@ class GraphicsPanel extends JPanel {
             debugG.fillRect(300, 300 - i, 5, 1);
         }
 
-        if (!GlobalState.pannerPanelDragging || GlobalState.pannerShowDebugging) {
-            for (GraphicLayer layer : root.instructions) {
-                layer.debugDraw(debugG, time);
-            }
-        }
     }
 
 }

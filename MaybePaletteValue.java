@@ -1,6 +1,6 @@
 import java.awt.Color;
 
-class MaybePaletteValue implements Exportable {
+class MaybePaletteValue {
     public final boolean isPaletteValue;
     public final PaletteValue paletteValue;
     public final Color color;
@@ -22,19 +22,5 @@ class MaybePaletteValue implements Exportable {
             return paletteValue.color;
         }
         return color;
-    }
-
-    public String exportString() {
-        if (isPaletteValue) {
-            return "PALETTEVALUE " + ImEx.exportString(paletteValue);
-        }
-        return "COLOR " + ImEx.exportString(color);
-    }
-
-    public String exportCode() {
-        if (isPaletteValue) {
-            return ImEx.exportCode(paletteValue);
-        }
-        return ImEx.exportCode(color);
     }
 }

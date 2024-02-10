@@ -33,32 +33,4 @@ abstract class GraphicDrawFiller extends GraphicObject {
         g.setColor(fillColor.get(time).get());
         return true;
     }
-
-    protected String exportParamString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(ImEx.exportString(stroke));
-        sb.append(" ");
-        sb.append(ImEx.exportString(strokeColor));
-        sb.append(" ");
-        sb.append(ImEx.exportString(thickness));
-        sb.append(" ");
-        sb.append(ImEx.exportString(fill));
-        sb.append(" ");
-        sb.append(ImEx.exportString(fillColor));
-        return sb.toString();
-    }
-
-    protected String exportParamCode() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(ImEx.exportCode(stroke));
-        sb.append(", ");
-        sb.append(ImEx.exportCode(strokeColor));
-        sb.append(", ");
-        sb.append(ImEx.exportCode(thickness));
-        sb.append(", ");
-        sb.append(ImEx.exportCode(fill));
-        sb.append(", ");
-        sb.append(ImEx.exportCode(fillColor));
-        return sb.toString();
-    }
 }
