@@ -450,7 +450,9 @@ class EditorGang {
 
             layerI++;
         }
+        int scrollPos = layerScrollPane.getVerticalScrollBar().getValue();
         layerScrollPane.setViewportView(layerPane);
+        layerScrollPane.getVerticalScrollBar().setValue(scrollPos);
     }
 
     enum TimepointSort {
