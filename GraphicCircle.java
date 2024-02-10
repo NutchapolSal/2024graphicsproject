@@ -74,6 +74,8 @@ class GraphicCircle extends GraphicPlotter {
         sb.append("CIRCLE ");
         sb.append(super.exportParamString());
         sb.append(" ");
+        sb.append(ImEx.exportString(this.thickness));
+        sb.append(" ");
         sb.append(ImEx.exportString(this.center));
         sb.append(" ");
         sb.append(ImEx.exportString(this.radius));
@@ -84,6 +86,8 @@ class GraphicCircle extends GraphicPlotter {
         StringBuilder sb = new StringBuilder();
         sb.append("new GraphicCircle(");
         sb.append(super.exportParamCode());
+        sb.append(", ");
+        sb.append(ImEx.exportCode(this.thickness));
         sb.append(", ");
         sb.append(ImEx.exportCode(this.center));
         sb.append(", ");

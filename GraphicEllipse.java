@@ -90,7 +90,9 @@ class GraphicEllipse extends GraphicPlotter {
         int radiusA = this.radiusA.get(time);
         int radiusB = this.radiusB.get(time);
         debugLine(g, center.x, center.y, center.x + radiusA, center.y, debugging == 2);
+        debugLine(g, center.x, center.y, center.x, center.y + radiusB, debugging == 3);
         debugDot(g, center.x + radiusA, center.y, debugging == 2);
+        debugDot(g, center.x, center.y + radiusB, debugging == 3);
         debugCircle(g, center.x, center.y, debugging == 1);
     }
 
@@ -98,6 +100,8 @@ class GraphicEllipse extends GraphicPlotter {
         StringBuilder sb = new StringBuilder();
         sb.append("ELLIPSE ");
         sb.append(super.exportParamString());
+        sb.append(" ");
+        sb.append(ImEx.exportString(this.thickness));
         sb.append(" ");
         sb.append(ImEx.exportString(this.center));
         sb.append(" ");
@@ -111,6 +115,8 @@ class GraphicEllipse extends GraphicPlotter {
         StringBuilder sb = new StringBuilder();
         sb.append("new GraphicEllipse(");
         sb.append(super.exportParamCode());
+        sb.append(", ");
+        sb.append(ImEx.exportCode(this.thickness));
         sb.append(", ");
         sb.append(ImEx.exportCode(this.center));
         sb.append(", ");

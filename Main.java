@@ -12,7 +12,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        // runTests();
+        runTests();
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
