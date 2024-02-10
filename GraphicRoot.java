@@ -83,6 +83,10 @@ class GraphicRoot implements Exportable {
     }
 
     public void setTime(double time, Object source) {
+        if (source != timeTicker) {
+            startTime = time;
+            startNanoTime = System.nanoTime();
+        }
         currentTime = time;
         timeStore.broadcast(source);
         timeAndTKPFocusStore.broadcast(source);
