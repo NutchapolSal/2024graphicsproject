@@ -12,7 +12,6 @@ import java.awt.event.MouseEvent;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import javax.swing.AbstractAction;
