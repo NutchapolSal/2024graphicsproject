@@ -5,6 +5,8 @@ class PaletteValue implements Referenceable {
     public final String id;
     public Color color;
     public String label = "a color";
+    public boolean markedForRemoval = false;
+    private boolean usedMark = false;
 
     public PaletteValue(String id, Color color, String label) {
         this.id = id;
@@ -63,5 +65,17 @@ class PaletteValue implements Referenceable {
 
     public String exportCode() {
         return getCodeId();
+    }
+
+    public void markUsed() {
+        usedMark = true;
+    }
+
+    public boolean getUsedMark() {
+        return usedMark;
+    }
+
+    public void resetUsedMark() {
+        usedMark = false;
     }
 }

@@ -23,11 +23,11 @@ public class Main {
             e.printStackTrace();
         }
 
-        GraphicRoot root = PreloadedData.create();
-
-        GraphicsPanel panel = new GraphicsPanel(root);
-
         SwingUtilities.invokeLater(() -> {
+            GraphicRoot root = PreloadedData.create();
+
+            GraphicsPanel panel = new GraphicsPanel(root);
+
             JFrame frame = new JFrame();
             frame.add(panel);
             frame.setTitle("😋");

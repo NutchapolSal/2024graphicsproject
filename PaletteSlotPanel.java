@@ -1,6 +1,9 @@
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 
@@ -19,6 +22,7 @@ public class PaletteSlotPanel extends JPanel {
     private int y;
 
     private JPopupMenu popup = new JPopupMenu();
+    JMenuItem removeItem;
 
     PaletteSlotPanel(Palette palette, int x, int y, PaletteSlotTransferHandler transferHandler) {
         super();
@@ -38,8 +42,9 @@ public class PaletteSlotPanel extends JPanel {
                 handler.exportAsDrag(c, e, TransferHandler.MOVE);
             }
         });
-        JMenuItem editColorItem = popup.add("Edit Color");
         JMenuItem editLabel = popup.add("Edit Label");
+        JMenuItem editColorItem = popup.add("Edit Color");
+        removeItem = popup.add("Mark for Removal");
 
         editColorItem.addActionListener(e -> {
             var value = palette.get(x, y).get();
@@ -62,19 +67,49 @@ public class PaletteSlotPanel extends JPanel {
             }
         });
 
+        removeItem.addActionListener(e -> {
+            palette.get(x, y).ifPresent(value -> {
+                value.markedForRemoval = !value.markedForRemoval;
+                updatePanel();
+            });
+        });
+
         updatePanel();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        if (!palette.get(x, y).isPresent()) {
+            return;
+        }
+        if (palette.get(x, y).get().markedForRemoval) {
+            g.setColor(Color.BLACK);
+            g.drawLine(0, 0, getWidth() - 1, getHeight() - 1);
+            g.drawLine(getWidth() - 1, 0, 0, getHeight() - 1);
+        }
     }
 
     private void updatePanel() {
         var value = palette.get(x, y);
         if (value.isPresent()) {
             this.setBackground(value.get().color);
-            this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
             this.setCursor(new Cursor(Cursor.MOVE_CURSOR));
-            this.setToolTipText("<html>" + ColorHexer.encode(value.get().color) + "<br>" + value.get().label + "<br>"
-                    + value.get().id);
+            String tooltipText = "<html>" + ColorHexer.encode(value.get().color) + "<br>" + value.get().label + "<br>"
+                    + value.get().id;
             this.setComponentPopupMenu(popup);
             this.putClientProperty("paletteValue", value.get());
+            if (!value.get().markedForRemoval) {
+                removeItem.setText("Mark for Removal");
+                this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            } else {
+                removeItem.setText("Unmark for Removal");
+                this.setBorder(BorderFactory.createLineBorder(Color.RED));
+                tooltipText += "<br>Will be removed at next save if not used";
+            }
+            this.setToolTipText(tooltipText);
         } else {
             this.setBackground(null);
             this.setBorder(BorderFactory.createLineBorder(Color.GRAY));

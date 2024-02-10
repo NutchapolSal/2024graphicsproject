@@ -242,16 +242,22 @@ class GraphicRoot implements Exportable {
     }
 
     public String exportString() {
+        palette.resetUsedMarks();
+        var instructionsExport = ImEx.exportStringLayers(instructions);
+        palette.purge();
         StringBuilder sb = new StringBuilder();
         sb.append(ImEx.exportStringTKPs(timeKeypoints));
         sb.append(ImEx.exportInitStringPaletteValues(palette));
         sb.append(ImEx.exportString(palette));
         sb.append("\n");
-        sb.append(ImEx.exportStringLayers(instructions));
+        sb.append(instructionsExport);
         return sb.toString();
     }
 
     public String exportCode() {
+        palette.resetUsedMarks();
+        var instructionsExport = ImEx.exportCodeLayers(instructions);
+        palette.purge();
         StringBuilder sb = new StringBuilder();
         sb.append(ImEx.generateAnnotation("ImEx"));
         sb.append("\n");
@@ -267,7 +273,7 @@ class GraphicRoot implements Exportable {
         sb.append(ImEx.exportCode(palette));
         sb.append(";\n");
         sb.append("List<GraphicLayer> instructions = new ArrayList<>();\n");
-        sb.append(ImEx.exportCodeLayers(instructions));
+        sb.append(instructionsExport);
         sb.append("\n");
         sb.append("return new GraphicRoot(timeKeypoints, palette, instructions);");
         return sb.toString();

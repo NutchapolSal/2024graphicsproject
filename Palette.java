@@ -1,6 +1,9 @@
+import java.awt.Point;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -140,6 +143,24 @@ class Palette implements Exportable {
     private Stream<SparsePaletteSlot> sparseStreamSorted() {
         return StreamSupport.stream(this.sparseIterator().spliterator(), true)
                 .sorted(Comparator.comparing(slot -> slot.value.id));
+    }
+
+    public void resetUsedMarks() {
+        for (var slot : sparseIterator()) {
+            slot.value.resetUsedMark();
+        }
+    }
+
+    public void purge() {
+        List<Point> toRemove = new ArrayList<>();
+        for (var slot : sparseIterator()) {
+            if (slot.value.markedForRemoval && !slot.value.getUsedMark()) {
+                toRemove.add(new Point(slot.x, slot.y));
+            }
+        }
+        for (var point : toRemove) {
+            remove(point.x, point.y);
+        }
     }
 
     @Override

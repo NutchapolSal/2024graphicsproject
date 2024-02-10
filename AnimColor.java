@@ -51,10 +51,20 @@ class AnimColor extends AnimatedValue<MaybePaletteValue> {
     }
 
     public String exportString() {
+        for (Timepoint timepoint : timepoints) {
+            if (timepoint.value.isPaletteValue) {
+                timepoint.value.paletteValue.markUsed();
+            }
+        }
         return super.exportString(v -> v.exportString());
     }
 
     public String exportCode() {
+        for (Timepoint timepoint : timepoints) {
+            if (timepoint.value.isPaletteValue) {
+                timepoint.value.paletteValue.markUsed();
+            }
+        }
         return super.exportCode("AnimColor", v -> v.exportCode());
     }
 
