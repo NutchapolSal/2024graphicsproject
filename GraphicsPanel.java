@@ -9,7 +9,7 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 
 class GraphicsPanel extends JPanel {
-    List<GraphicLayer> instructions;
+    GraphicRoot root;
     private double time = 0;
 
     private Timer repainter = new Timer(1000 / 60, e -> {
@@ -19,7 +19,7 @@ class GraphicsPanel extends JPanel {
     GraphicsPanel(GraphicRoot root) {
         super();
         this.setPreferredSize(new Dimension(600, 600));
-        this.instructions = root.instructions;
+        this.root = root;
         var timeCallback = root.subscribeToTime(t -> {
             time = t;
             repaint();
@@ -47,7 +47,7 @@ class GraphicsPanel extends JPanel {
         debugG.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         debugG.translate(size.width / 2, size.height / 2);
 
-        for (GraphicLayer layer : instructions) {
+        for (GraphicLayer layer : root.instructions) {
             if (layer.shown.get(time)) {
                 layer.draw(g, time);
             }
@@ -62,7 +62,7 @@ class GraphicsPanel extends JPanel {
         }
 
         if (!GlobalState.pannerPanelDragging || GlobalState.pannerShowDebugging) {
-            for (GraphicLayer layer : instructions) {
+            for (GraphicLayer layer : root.instructions) {
                 layer.debugDraw(debugG, time);
             }
         }
