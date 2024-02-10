@@ -39,6 +39,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -96,8 +97,6 @@ class EditorGang {
         paletteFrame.setVisible(true);
         editorFrame.setVisible(true);
 
-        setupBringToFront();
-
         new Timer(250, e -> {
             if (GlobalState.needsUpdateEditor) {
                 changeEditorPane(this.currentLayer.value, true);
@@ -108,23 +107,6 @@ class EditorGang {
                 GlobalState.needsUpdateLayers = false;
             }
         }).start();
-    }
-
-    private void setupBringToFront() {
-        var focusListener = new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (bringingToFront) {
-                    return;
-                }
-                bringToFront();
-            }
-        };
-        displayFrame.addFocusListener(focusListener);
-        editorFrame.addFocusListener(focusListener);
-        timepointsFrame.addFocusListener(focusListener);
-        timeControlFrame.addFocusListener(focusListener);
-        paletteFrame.addFocusListener(focusListener);
     }
 
     private void bringToFront() {
@@ -328,6 +310,8 @@ class EditorGang {
         windowsMenu.add(timepointsMenuItem);
         windowsMenu.add(timeControlMenuItem);
         windowsMenu.add(paletteMenuItem);
+        windowsMenu.addSeparator();
+        var bringToFrontMenuItem = windowsMenu.add("Bring To Front");
 
         timepointsFrame.addComponentListener(new ComponentAdapter() {
             public void componentHidden(ComponentEvent evt) {
@@ -357,6 +341,14 @@ class EditorGang {
             public void componentShown(ComponentEvent evt) {
                 paletteMenuItem.setState(true);
             }
+        });
+
+        bringToFrontMenuItem.addActionListener(e -> {
+            if (bringingToFront) {
+                return;
+            }
+            bringingToFront = true;
+            bringToFront();
         });
 
         timepointsMenuItem.addActionListener(e -> {
