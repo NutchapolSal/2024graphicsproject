@@ -1,6 +1,7 @@
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
+import java.awt.Dialog.ModalityType;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusAdapter;
@@ -12,8 +13,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -33,12 +36,14 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
@@ -65,6 +70,7 @@ class EditorGang {
     private MutableInt currentLayer = new MutableInt(-1);
     private MutableString savePath = new MutableString(null);
     private MutableString saveFolder = new MutableString(null);
+    private long lastSaveTime = System.currentTimeMillis();
 
     private JScrollPane layerScrollPane = new JScrollPane();
     private JScrollPane editorScrollPane = new JScrollPane();
@@ -166,7 +172,7 @@ class EditorGang {
 
         JButton addLayerButton = new JButton("add layer");
         addLayerButton.addActionListener(e -> {
-            this.root.instructions.add(new GraphicLayer());
+            this.root.instructions.add(new GraphicLayer(root.getFirstTimeKeypoint()));
             updateLayerListPanel();
         });
         JButton layerUpButton = new JButton("^");
@@ -208,6 +214,7 @@ class EditorGang {
         var fileMenu = new JMenu("File");
         menuBar.add(fileMenu);
 
+        var newMenuItem = fileMenu.add("New");
         var saveMenuItem = fileMenu.add("Save");
         var saveAsMenuItem = fileMenu.add("Save as...");
         var loadMenuItem = fileMenu.add("Load");
@@ -215,6 +222,22 @@ class EditorGang {
         var exportCodeMenuItem = fileMenu.add("Export code...");
 
         JFileChooser fileChooser = new JFileChooser(prefs.get("lastSavePath", System.getProperty("user.home")));
+
+        newMenuItem.addActionListener(e -> {
+            if (this.savePath.value != null
+                    && Duration.ofSeconds(5).toMillis() < Math.abs(System.currentTimeMillis() - this.lastSaveTime)) {
+                int result = JOptionPane.showConfirmDialog(null, "This will discard the current file. Continue?",
+                        "New file", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (result != JOptionPane.OK_OPTION) {
+                    return;
+                }
+            }
+            this.root.newFile();
+            this.savePath.value = null;
+            this.lastSaveTime = System.currentTimeMillis();
+            editorFrame.setTitle("editor");
+            detailData();
+        });
 
         saveMenuItem.addActionListener(e -> {
             if (this.savePath.value == null) {
@@ -230,6 +253,7 @@ class EditorGang {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+            this.lastSaveTime = System.currentTimeMillis();
             editorFrame.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
                     + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
             prefs.put("lastSavePath", this.saveFolder.value);
@@ -248,6 +272,7 @@ class EditorGang {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+            this.lastSaveTime = System.currentTimeMillis();
             editorFrame.setTitle("editor - " + new File(this.savePath.value).getName() + " @ "
                     + new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()));
         });
@@ -269,6 +294,7 @@ class EditorGang {
                 root.palette = newRoot.palette;
                 scanner.close();
                 editorFrame.setTitle("editor - " + file.getName());
+                this.lastSaveTime = System.currentTimeMillis();
                 detailData();
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -290,6 +316,7 @@ class EditorGang {
             }
         });
 
+        newMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK));
         saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
         saveAsMenuItem.setAccelerator(
                 KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK));

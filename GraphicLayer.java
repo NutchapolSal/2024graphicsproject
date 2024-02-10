@@ -13,8 +13,12 @@ class GraphicLayer implements Exportable, Debuggable {
     public List<GraphicObject> objects;
     private int debugging = -1;
 
-    GraphicLayer() {
-        this("new layer", new AnimBoolean(), new AnimPoint(), new AnimPoint(), new AnimDouble(), new ArrayList<>());
+    /** editor default */
+    GraphicLayer(TimeKeypoint tkp) {
+        this("new layer", new AnimBoolean().add(tkp, true, EasingFunction.snap),
+                new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
+                new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
+                new AnimDouble().add(tkp, 0.0, EasingFunction.linear), new ArrayList<>());
     }
 
     GraphicLayer(String name, AnimBoolean shown, AnimPoint translate, AnimPoint rotateOrigin, AnimDouble rotate) {

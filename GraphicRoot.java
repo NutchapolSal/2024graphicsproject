@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -215,6 +216,15 @@ class GraphicRoot implements Exportable {
         } else {
             useFps = false;
         }
+    }
+
+    /** editor defaults */
+    public void newFile() {
+        List<TimeKeypoint> timeKeypoints = new ArrayList<>();
+        timeKeypoints.add(new TimeKeypoint(0.0, null, "origin"));
+        Palette palette = new Palette();
+        List<GraphicLayer> instructions = new ArrayList<>();
+        replaceRoot(timeKeypoints, palette, instructions);
     }
 
     public void replaceRoot(List<TimeKeypoint> timeKeypoints, Palette palette, List<GraphicLayer> instructions) {
