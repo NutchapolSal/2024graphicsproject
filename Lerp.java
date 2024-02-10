@@ -1,7 +1,19 @@
 import java.awt.Color;
 
 class Lerp {
+
     public static boolean run(boolean before, double frac, boolean after) {
+        if (frac <= 0) {
+            return before;
+        }
+        if (frac >= 1) {
+            return after;
+        }
+
+        return before;
+    }
+
+    public static String run(String before, double frac, String after) {
         if (frac <= 0) {
             return before;
         }

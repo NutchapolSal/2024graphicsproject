@@ -343,7 +343,7 @@ class ImEx {
         HashMap<String, PaletteValue> paletteValues = new HashMap<>();
         Palette palette = new Palette();
         List<GraphicLayer> layers = new ArrayList<>();
-        while (sc.hasNext()) {
+        outer: while (sc.hasNext()) {
             String type = sc.next();
             switch (type) {
             case "TIMEKEYPOINT":
@@ -359,6 +359,8 @@ class ImEx {
             case "LAYER":
                 layers.add(importLayer(sc, timeKeypoints, paletteValues));
                 break;
+            case "###":
+                break outer;
             }
         }
         return new GraphicRoot(new ArrayList<>(timeKeypoints.values()), palette, layers);

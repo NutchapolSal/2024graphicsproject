@@ -92,6 +92,13 @@ class PreloadedData {
                                         new AnimPoint().add(tkp_0qwe, new Point(-220, -260), EasingFunction.snap),
                                         new AnimInt().add(tkp_0qwe, 20, EasingFunction.snap),
                                         new AnimInt().add(tkp_0qwe, 40, EasingFunction.snap)))
+                                .add(new GraphicString(
+                                        new AnimString().add(tkp_0qwe, "Hello, World!", EasingFunction.linear),
+                                        new AnimString().add(tkp_0qwe, "Arial", EasingFunction.linear),
+                                        new AnimInt().add(tkp_0qwe, 15, EasingFunction.linear),
+                                        new AnimColor().add(tkp_0qwe, "#fff", EasingFunction.linear),
+                                        new AnimPoint().add(tkp_0qwe, new Point(0, 0), EasingFunction.linear),
+                                        new AnimInt().add(tkp_0qwe, 0, EasingFunction.linear)))
 
         );
         return new GraphicRoot(timeKeypoints, palette, instructions);
