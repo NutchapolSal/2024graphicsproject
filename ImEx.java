@@ -271,6 +271,12 @@ class ImEx {
         return anim;
     }
 
+    public static AnimString importAnimString(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
+        var anim = new AnimString();
+        importAnimValues(sc, timeKeypoints, ImEx::importUserString, anim::add);
+        return anim;
+    }
+
     private static class MaybePaletteData {
         public boolean isPaletteValue;
         public String str;
@@ -425,6 +431,9 @@ class ImEx {
             case "IMAGE":
                 objects.add(importImage(sc, timeKeypoints));
                 break;
+            case "STRING":
+                objects.add(importGString(sc, timeKeypoints));
+                break;
             }
         }
         return new GraphicLayer(layerName, visible, translate, rotateOrigin, rotate, objects);
@@ -523,6 +532,16 @@ class ImEx {
         AnimDimension size = importAnimDimension(sc, timeKeypoints);
         AnimDouble opacity = importAnimDouble(sc, timeKeypoints);
         return new GraphicImage(filePath, origin, size, opacity);
+    }
+
+    public static GraphicString importGString(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
+        AnimString text = importAnimString(sc, timeKeypoints);
+        AnimString fontFace = importAnimString(sc, timeKeypoints);
+        AnimInt fontSize = importAnimInt(sc, timeKeypoints);
+        AnimColor strokeColor = importAnimColor(sc, timeKeypoints, new HashMap<>());
+        AnimPoint position = importAnimPoint(sc, timeKeypoints);
+        AnimInt alignment = importAnimInt(sc, timeKeypoints);
+        return new GraphicString(text, fontFace, fontSize, strokeColor, position, alignment);
     }
 
 }

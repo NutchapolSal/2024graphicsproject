@@ -844,9 +844,24 @@ class EditingPanelFactory {
 
         ColorButton button = new ColorButton();
         JTextField textField = new JTextField();
+        JPopupMenu textEditConfirmPopup = new JPopupMenu();
+
+        var confirmItem = textEditConfirmPopup.add("Unlock");
 
         var state = new Object() {
             public MaybePaletteValue mpv;
+        };
+
+        Consumer<Boolean> lockTextfield = b -> {
+            if (b) {
+                textField.setEnabled(false);
+                textField.setComponentPopupMenu(textEditConfirmPopup);
+                textField.setToolTipText("right click to unlock");
+            } else {
+                textField.setEnabled(true);
+                textField.setComponentPopupMenu(null);
+                textField.setToolTipText(null);
+            }
         };
 
         Consumer<MaybePaletteValue> refreshUi = mpv -> {
@@ -856,10 +871,16 @@ class EditingPanelFactory {
                 var pv = state.mpv.paletteValue;
                 textField.setText(pv.label + " (" + ColorHexer.encode(pv.color) + ") - " + pv.id);
                 textField.setCaretPosition(0);
+                lockTextfield.accept(true);
             } else {
+                lockTextfield.accept(false);
                 textField.setText(ColorHexer.encode(state.mpv.get()));
             }
         };
+
+        confirmItem.addActionListener(e -> {
+            lockTextfield.accept(false);
+        });
 
         var animPanelData = createAnimPanel(animColor, root, () -> state.mpv, t -> {
             refreshUi.accept(animColor.get(t));
@@ -1088,7 +1109,9 @@ class EditingPanelFactory {
         JComboBox<String> comboBox = new JComboBox<String>();
         comboBox.addItem("GraphicPath2D");
         comboBox.addItem("GraphicCircle");
+        comboBox.addItem("GraphicEllipse");
         comboBox.addItem("GraphicImage");
+        comboBox.addItem("GraphicString");
 
         comboBox.setSelectedIndex(GlobalState.lastSelectedNewObjI);
 
@@ -1106,6 +1129,9 @@ class EditingPanelFactory {
                 break;
             case "GraphicImage":
                 layer.add(new GraphicImage(root.getFirstTimeKeypoint()));
+                break;
+            case "GraphicString":
+                layer.add(new GraphicString(root.getFirstTimeKeypoint()));
                 break;
             default:
                 return;
