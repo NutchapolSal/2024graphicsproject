@@ -5,6 +5,8 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.Optional;
@@ -693,6 +695,42 @@ class EditingPanelFactory {
         return panel;
     }
 
+    public static JPanel create(String labelText, AnimString animStr, GraphicRoot root, Debuggable obj,
+            int debugValue) {
+        JPanel panel = new JPanel();
+        JLabel label = new JLabel(labelText);
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        JTextField textField = new JTextField();
+
+        var animPanelData = createAnimPanel(animStr, root, () -> textField.getText(), t -> {
+            textField.setText(animStr.get(t));
+        }, c -> {
+            textField.setBackground(c.color(textField));
+        });
+
+        var animPanel = animPanelData.panel;
+        textField.addActionListener(e -> {
+            animPanelData.dataCallIn.accept(textField.getText());
+        });
+        textField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                animPanelData.dataCallIn.accept(textField.getText());
+            }
+        });
+
+        layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
+                .addPreferredGap(ComponentPlacement.RELATED).addComponent(textField).addComponent(animPanel));
+        layout.setVerticalGroup(layout.createParallelGroup(Alignment.BASELINE).addComponent(label)
+                .addComponent(textField).addComponent(animPanel));
+
+        textField.addMouseListener(new DebuggingHoverListener(obj, debugValue));
+
+        return panel;
+    }
+
     public static JPanel create(String labelText, AnimDouble animDouble, GraphicRoot root, double min, double max,
             double stepSize, Debuggable obj, int debugValue) {
         return create(labelText, animDouble, root, min, true, max, true, stepSize, obj, debugValue);
@@ -809,63 +847,61 @@ class EditingPanelFactory {
         JTextField textField = new JTextField();
 
         var state = new Object() {
-            public AnimColor.MaybePaletteValue mpv;
+            public MaybePaletteValue mpv;
+        };
+
+        Consumer<MaybePaletteValue> refreshUi = mpv -> {
+            state.mpv = mpv;
+            button.setColor(state.mpv.get());
+            if (state.mpv.isPaletteValue) {
+                var pv = state.mpv.paletteValue;
+                textField.setText(pv.label + " (" + ColorHexer.encode(pv.color) + ") - " + pv.id);
+                textField.setCaretPosition(0);
+            } else {
+                textField.setText(ColorHexer.encode(state.mpv.get()));
+            }
         };
 
         var animPanelData = createAnimPanel(animColor, root, () -> state.mpv, t -> {
-            state.mpv = animColor.get(t);
-            button.setColor(animColor.get(t).get());
-            textField.setText(ColorHexer.encode(animColor.get(t).get()));
+            refreshUi.accept(animColor.get(t));
         }, c -> {
-            button.setBackground(c.color(button));
             textField.setBackground(c.color(textField));
         });
 
-        // button.addActionListener(e -> {
-        //     Color newColor = JColorChooser.showDialog(null, "Choose a color", color.value);
-        //     if (newColor != null) {
-        //         color.value = newColor;
-        //         button.setColor(color.value);
-        //     }
-        // });
+        button.addActionListener(e -> {
+            Color newColor = JColorChooser.showDialog(null, "Choose a color", state.mpv.get());
+            if (newColor != null) {
+                var mpv = new MaybePaletteValue(newColor);
+                refreshUi.accept(mpv);
+                animPanelData.dataCallIn.accept(mpv);
+            }
+        });
 
-        button.setEnabled(false); // TODO
-        textField.setEnabled(false);
+        button.setOnDrop(v -> {
+            refreshUi.accept(v);
+            animPanelData.dataCallIn.accept(v);
+        });
+        button.setTransferHandler(new ColorButtonTransferHandler());
 
-        // Runnable newColorFunction = () -> {
-        //     var parsedColor = ColorHexer.decodeOptional(textField.getText());
-        //     if (parsedColor.isPresent()) {
-        //         color.value = parsedColor.get();
-        //         button.setColor(parsedColor.get());
-        //     } else {
-        //         button.setInvalid();
-        //     }
-        // };
-        // textField.getDocument().addDocumentListener(new DocumentListener() {
-        //     @Override
-        //     public void insertUpdate(DocumentEvent e) {
-        //         newColorFunction.run();
-        //     }
+        Runnable newColorFunction = () -> {
+            var parsedColor = ColorHexer.decodeOptional(textField.getText());
+            if (parsedColor.isPresent()) {
+                button.setColor(parsedColor.get());
+            } else {
+                button.setInvalid();
+            }
+            animPanelData.dataCallIn.accept(new MaybePaletteValue(parsedColor.orElse(Color.black)));
+        };
+        textField.addActionListener(e -> {
+            newColorFunction.run();
+        });
 
-        //     @Override
-        //     public void removeUpdate(DocumentEvent e) {
-        //         newColorFunction.run();
-        //     }
-
-        //     @Override
-        //     public void changedUpdate(DocumentEvent e) {
-        //         newColorFunction.run();
-        //     }
-        // });
-        // textField.addActionListener(e -> {
-        //     var parsedColor = ColorHexer.decodeOptional(textField.getText());
-        //     if (parsedColor.isPresent()) {
-        //         button.setColor(color.value);
-        //     } else {
-        //         button.setInvalid();
-        //     }
-        //     color.value = parsedColor.orElse(Color.black);
-        // });
+        textField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                newColorFunction.run();
+            }
+        });
 
         layout.setHorizontalGroup(layout.createSequentialGroup().addComponent(label)
                 .addPreferredGap(ComponentPlacement.RELATED).addComponent(button)
@@ -1009,6 +1045,8 @@ class EditingPanelFactory {
             return create((GraphicEllipse) object, root);
         } else if (object instanceof GraphicImage) {
             return create((GraphicImage) object, root);
+        } else if (object instanceof GraphicString) {
+            return create((GraphicString) object, root);
         } else {
             return createPlaceholder(object);
         }
@@ -1339,6 +1377,35 @@ class EditingPanelFactory {
         panel.addMouseListener(new DebuggingHoverListener(image, 0));
         originPanel.addMouseListener(new DebuggingHoverListener(image, 1));
         sizePanel.addMouseListener(new DebuggingHoverListener(image, 2));
+
+        return panel;
+    }
+
+    public static JPanel create(GraphicString string, GraphicRoot root) {
+        JPanel panel = new JPanel();
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        JLabel label = new JLabel("GraphicString");
+
+        var textPanel = create("text", string.text, root, string, 0);
+        var fontFacePanel = create("font face", string.fontFace, root, string, 1);
+        var fontSizePanel = create("font size", string.fontSize, root, 0, true, 100, false, 1, string, 2);
+        var strokeColorPanel = create("stroke color", string.strokeColor, root, string, 3);
+        var positionPanel = create("position", string.position, root, string, 4);
+        var alignmentPanel = create("alignment", string.alignment, root, -1, 1, 1, string, 5);
+
+        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING).addComponent(label)
+                .addComponent(textPanel).addComponent(fontFacePanel).addComponent(fontSizePanel)
+                .addComponent(strokeColorPanel).addComponent(positionPanel).addComponent(alignmentPanel));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(label).addComponent(textPanel).addGap(2)
+                .addComponent(fontFacePanel).addGap(2).addComponent(fontSizePanel).addGap(2)
+                .addComponent(strokeColorPanel).addGap(2).addComponent(positionPanel).addGap(2)
+                .addComponent(alignmentPanel));
+
+        panel.addMouseListener(new DebuggingHoverListener(string, 0));
+        positionPanel.addMouseListener(new DebuggingHoverListener(string, 1));
+        alignmentPanel.addMouseListener(new DebuggingHoverListener(string, 2));
 
         return panel;
     }

@@ -1,5 +1,7 @@
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Graphics;
+import java.util.function.Consumer;
 
 import javax.swing.JButton;
 
@@ -7,9 +9,15 @@ class ColorButton extends JButton {
     static int squareSize = 10;
     private Color color;
     private boolean invalid = false;
+    private Consumer<MaybePaletteValue> onDrop;
 
     public ColorButton() {
         this.setText(" ");
+        this.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    }
+
+    public void setOnDrop(Consumer<MaybePaletteValue> onDrop) {
+        this.onDrop = onDrop;
     }
 
     public void setColor(Color color) {
@@ -43,5 +51,17 @@ class ColorButton extends JButton {
         g.fillRect(0, 0, getWidth(), getHeight());
         g.setColor(new Color(color.getRGB(), false));
         g.fillRect(0, 0, getWidth() / 3, getHeight());
+    }
+
+    public void sendData(PaletteValue pv) {
+        if (onDrop != null) {
+            onDrop.accept(new MaybePaletteValue(pv));
+        }
+    }
+
+    public void sendData(Color color) {
+        if (onDrop != null) {
+            onDrop.accept(new MaybePaletteValue(color));
+        }
     }
 }

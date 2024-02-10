@@ -8,7 +8,7 @@ import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 
 final class PaletteSlotTransferHandler extends TransferHandler {
-    private static final DataFlavor pvFlavor = new DataFlavor(PaletteValue.class,
+    static final DataFlavor pvFlavor = new DataFlavor(PaletteValue.class,
             "application/x-2024graphicsproject.palettevalue");
 
     private static final class TransferablePaletteValue implements Transferable {

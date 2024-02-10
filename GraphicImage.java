@@ -75,8 +75,7 @@ class GraphicImage extends GraphicObject {
     public String exportString() {
         StringBuilder sb = new StringBuilder();
         sb.append("IMAGE ");
-        sb.append(this.filePath.value);
-        sb.append("\n");
+        sb.append(ImEx.exportStringUser(this.filePath.value));
         sb.append(ImEx.exportString(this.origin));
         sb.append(" ");
         sb.append(ImEx.exportString(this.size));
@@ -87,9 +86,9 @@ class GraphicImage extends GraphicObject {
 
     public String exportCode() {
         StringBuilder sb = new StringBuilder();
-        sb.append("new GraphicImage(\"");
-        sb.append(this.filePath.value);
-        sb.append("\", ");
+        sb.append("new GraphicImage(");
+        sb.append(ImEx.exportCode(this.filePath.value));
+        sb.append(", ");
         sb.append(ImEx.exportCode(this.origin));
         sb.append(", ");
         sb.append(ImEx.exportCode(this.size));
