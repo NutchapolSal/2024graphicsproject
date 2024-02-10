@@ -35,23 +35,6 @@ class EditorGang {
         createTimeControlFrame(frame);
 
         timeControlFrame.setVisible(true);
-
-        setupBringToFront();
-
-    }
-
-    private void setupBringToFront() {
-        var focusListener = new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (bringingToFront) {
-                    return;
-                }
-                bringToFront();
-            }
-        };
-        displayFrame.addFocusListener(focusListener);
-        timeControlFrame.addFocusListener(focusListener);
     }
 
     private void bringToFront() {
