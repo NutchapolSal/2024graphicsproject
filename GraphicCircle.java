@@ -1,35 +1,48 @@
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 
-class GraphicCircle extends GraphicPlotter {
-    public AnimInt thickness;
+class GraphicCircle extends GraphicDrawFiller {
     public AnimPoint center;
     public AnimInt radius;
 
     /** editor default */
     GraphicCircle(TimeKeypoint tkp) {
-        this(new AnimColor().add(tkp, "#000", EasingFunction.linear), new AnimInt().add(tkp, 1, EasingFunction.linear),
+        this(new AnimBoolean().add(tkp, true, EasingFunction.snap),
+                new AnimColor().add(tkp, "#000", EasingFunction.linear),
+                new AnimInt().add(tkp, 1, EasingFunction.linear),
+                new AnimBoolean().add(tkp, false, EasingFunction.snap),
+                new AnimColor().add(tkp, "#000", EasingFunction.linear),
                 new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
                 new AnimInt().add(tkp, 10, EasingFunction.linear));
     }
 
-    GraphicCircle(AnimColor color, AnimInt thickness, AnimPoint center, AnimInt radius) {
-        super(color);
-        this.thickness = thickness;
+    GraphicCircle(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill, AnimColor fillColor,
+            AnimPoint center, AnimInt radius) {
+        super(stroke, strokeColor, thickness, fill, fillColor);
         this.center = center;
         this.radius = radius;
     }
 
     @Override
     public void draw(Graphics gOuter, double time) {
-        Graphics g = gOuter.create();
-        g.setColor(color.get(time).get());
-
+        Graphics2D g = (Graphics2D) gOuter.create();
         Point center = this.center.get(time);
         int radius = this.radius.get(time);
 
-        int thickness = this.thickness.get(time);
-        midpointCircle(g, center.x, center.y, radius, thickness);
+        if (stroke.get(time)) {
+            int thickness = this.thickness.get(time);
+            g.setColor(strokeColor.get(time).get());
+            midpointCircle(g, center.x, center.y, radius, thickness);
+        }
+        if (setupFill(g, time)) {
+            g.setColor(fillColor.get(time).get());
+            g.fillOval(center.x - radius, center.y - radius, radius * 2, radius * 2);
+        }
+    }
+
+    protected void plot(Graphics g, int x, int y, int size) {
+        g.fillRect(x - size / 2, y - size / 2, size, size);
     }
 
     private void midpointCircle(Graphics g, int xc, int yc, int r, int thickness) {
@@ -74,8 +87,6 @@ class GraphicCircle extends GraphicPlotter {
         sb.append("CIRCLE ");
         sb.append(super.exportParamString());
         sb.append(" ");
-        sb.append(ImEx.exportString(this.thickness));
-        sb.append(" ");
         sb.append(ImEx.exportString(this.center));
         sb.append(" ");
         sb.append(ImEx.exportString(this.radius));
@@ -86,8 +97,6 @@ class GraphicCircle extends GraphicPlotter {
         StringBuilder sb = new StringBuilder();
         sb.append("new GraphicCircle(");
         sb.append(super.exportParamCode());
-        sb.append(", ");
-        sb.append(ImEx.exportCode(this.thickness));
         sb.append(", ");
         sb.append(ImEx.exportCode(this.center));
         sb.append(", ");

@@ -1,22 +1,25 @@
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 
-class GraphicEllipse extends GraphicPlotter {
-    public AnimInt thickness;
+class GraphicEllipse extends GraphicDrawFiller {
     public AnimPoint center;
     public AnimInt radiusA;
     public AnimInt radiusB;
 
     /** editor default */
     GraphicEllipse(TimeKeypoint tkp) {
-        this(new AnimColor().add(tkp, "#000", EasingFunction.linear), new AnimInt().add(tkp, 1, EasingFunction.linear),
+        this(new AnimBoolean().add(tkp, false, EasingFunction.snap),
+                new AnimColor().add(tkp, "#000", EasingFunction.linear),
+                new AnimInt().add(tkp, 1, EasingFunction.linear), new AnimBoolean().add(tkp, true, EasingFunction.snap),
+                new AnimColor().add(tkp, "#000", EasingFunction.linear),
                 new AnimPoint().add(tkp, new Point(0, 0), EasingFunction.linear),
                 new AnimInt().add(tkp, 10, EasingFunction.linear), new AnimInt().add(tkp, 20, EasingFunction.linear));
     }
 
-    GraphicEllipse(AnimColor color, AnimInt thickness, AnimPoint center, AnimInt radiusA, AnimInt radiusB) {
-        super(color);
-        this.thickness = thickness;
+    GraphicEllipse(AnimBoolean stroke, AnimColor strokeColor, AnimInt thickness, AnimBoolean fill, AnimColor fillColor,
+            AnimPoint center, AnimInt radiusA, AnimInt radiusB) {
+        super(stroke, strokeColor, thickness, fill, fillColor);
         this.center = center;
         this.radiusA = radiusA;
         this.radiusB = radiusB;
@@ -24,15 +27,24 @@ class GraphicEllipse extends GraphicPlotter {
 
     @Override
     public void draw(Graphics gOuter, double time) {
-        Graphics g = gOuter.create();
-        g.setColor(color.get(time).get());
-
+        Graphics2D g = (Graphics2D) gOuter.create();
         Point center = this.center.get(time);
         int radiusA = this.radiusA.get(time);
         int radiusB = this.radiusB.get(time);
 
-        int thickness = this.thickness.get(time);
-        midpointEllipse(g, center.x, center.y, radiusA, radiusB, thickness);
+        if (stroke.get(time)) {
+            int thickness = this.thickness.get(time);
+            g.setColor(strokeColor.get(time).get());
+            midpointEllipse(g, center.x, center.y, radiusA, radiusB, thickness);
+        }
+        if (setupFill(g, time)) {
+            g.setColor(fillColor.get(time).get());
+            g.fillOval(center.x - radiusA, center.y - radiusB, radiusA * 2, radiusB * 2);
+        }
+    }
+
+    private void plot(Graphics g, int x, int y, int size) {
+        g.fillRect(x - size / 2, y - size / 2, size, size);
     }
 
     private void midpointEllipse(Graphics g, int xc, int yc, int a, int b, int thickness) {
@@ -101,8 +113,6 @@ class GraphicEllipse extends GraphicPlotter {
         sb.append("ELLIPSE ");
         sb.append(super.exportParamString());
         sb.append(" ");
-        sb.append(ImEx.exportString(this.thickness));
-        sb.append(" ");
         sb.append(ImEx.exportString(this.center));
         sb.append(" ");
         sb.append(ImEx.exportString(this.radiusA));
@@ -115,8 +125,6 @@ class GraphicEllipse extends GraphicPlotter {
         StringBuilder sb = new StringBuilder();
         sb.append("new GraphicEllipse(");
         sb.append(super.exportParamCode());
-        sb.append(", ");
-        sb.append(ImEx.exportCode(this.thickness));
         sb.append(", ");
         sb.append(ImEx.exportCode(this.center));
         sb.append(", ");

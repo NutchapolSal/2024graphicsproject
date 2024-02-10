@@ -3,7 +3,6 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.util.List;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;

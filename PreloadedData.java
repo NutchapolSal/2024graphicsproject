@@ -83,12 +83,18 @@ class PreloadedData {
                                         new AnimPoint().add(tkp_0qwe, new Point(-290, -290), EasingFunction.snap),
                                         new AnimDimension().add(tkp_0qwe, new Dimension(20, 20), EasingFunction.snap),
                                         new AnimDouble().add(tkp_0qwe, 1.0, EasingFunction.snap)))
-                                .add(new GraphicCircle(new AnimColor().add(tkp_0qwe, pv_2uio, EasingFunction.snap),
+                                .add(new GraphicCircle(new AnimBoolean().add(tkp_0qwe, true, EasingFunction.snap),
+                                        new AnimColor().add(tkp_0qwe, pv_2uio, EasingFunction.snap),
                                         new AnimInt().add(tkp_0qwe, 1, EasingFunction.snap),
+                                        new AnimBoolean().add(tkp_0qwe, true, EasingFunction.snap),
+                                        new AnimColor().add(tkp_0qwe, pv_2uio, EasingFunction.snap),
                                         new AnimPoint().add(tkp_0qwe, new Point(-220, -260), EasingFunction.snap),
                                         new AnimInt().add(tkp_0qwe, 20, EasingFunction.snap)))
-                                .add(new GraphicEllipse(new AnimColor().add(tkp_0qwe, pv_2uio, EasingFunction.snap),
+                                .add(new GraphicEllipse(new AnimBoolean().add(tkp_0qwe, true, EasingFunction.snap),
+                                        new AnimColor().add(tkp_0qwe, pv_2uio, EasingFunction.snap),
                                         new AnimInt().add(tkp_0qwe, 1, EasingFunction.snap),
+                                        new AnimBoolean().add(tkp_0qwe, false, EasingFunction.snap),
+                                        new AnimColor().add(tkp_0qwe, pv_2uio, EasingFunction.snap),
                                         new AnimPoint().add(tkp_0qwe, new Point(-220, -260), EasingFunction.snap),
                                         new AnimInt().add(tkp_0qwe, 20, EasingFunction.snap),
                                         new AnimInt().add(tkp_0qwe, 40, EasingFunction.snap)))

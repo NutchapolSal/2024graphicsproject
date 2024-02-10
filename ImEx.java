@@ -494,21 +494,27 @@ class ImEx {
 
     public static GraphicCircle importCircle(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints,
             HashMap<String, PaletteValue> paletteValues) {
-        AnimColor color = importAnimColor(sc, timeKeypoints, paletteValues);
+        AnimBoolean stroke = importAnimBoolean(sc, timeKeypoints);
+        AnimColor strokeColor = importAnimColor(sc, timeKeypoints, paletteValues);
         AnimInt thickness = importAnimInt(sc, timeKeypoints);
+        AnimBoolean fill = importAnimBoolean(sc, timeKeypoints);
+        AnimColor fillColor = importAnimColor(sc, timeKeypoints, paletteValues);
         AnimPoint center = importAnimPoint(sc, timeKeypoints);
         AnimInt radius = importAnimInt(sc, timeKeypoints);
-        return new GraphicCircle(color, thickness, center, radius);
+        return new GraphicCircle(stroke, strokeColor, thickness, fill, fillColor, center, radius);
     }
 
     public static GraphicEllipse importEllipse(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints,
             HashMap<String, PaletteValue> paletteValues) {
-        AnimColor color = importAnimColor(sc, timeKeypoints, paletteValues);
+        AnimBoolean stroke = importAnimBoolean(sc, timeKeypoints);
+        AnimColor strokeColor = importAnimColor(sc, timeKeypoints, paletteValues);
         AnimInt thickness = importAnimInt(sc, timeKeypoints);
+        AnimBoolean fill = importAnimBoolean(sc, timeKeypoints);
+        AnimColor fillColor = importAnimColor(sc, timeKeypoints, paletteValues);
         AnimPoint center = importAnimPoint(sc, timeKeypoints);
         AnimInt radiusA = importAnimInt(sc, timeKeypoints);
         AnimInt radiusB = importAnimInt(sc, timeKeypoints);
-        return new GraphicEllipse(color, thickness, center, radiusA, radiusB);
+        return new GraphicEllipse(stroke, strokeColor, thickness, fill, fillColor, center, radiusA, radiusB);
     }
 
     public static GraphicImage importImage(Scanner sc, HashMap<String, TimeKeypoint> timeKeypoints) {
