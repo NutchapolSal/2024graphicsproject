@@ -39,7 +39,7 @@ class AnimDimension extends AnimatedValue<Dimension> {
 
     @Override
     public void setEasingFunction(TimeKeypoint tkp, EasingFunction easing) {
-        super.setEasingFunction(tkp, EasingFunction.snap);
+        super.setEasingFunction(tkp, easing);
     }
 
     @Override
