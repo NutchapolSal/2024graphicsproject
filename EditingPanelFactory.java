@@ -1309,16 +1309,24 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicCircle");
-        var colorPanel = create("color", circle.color, root, circle, 0);
+
+        var strokePanel = create("stroke", circle.stroke, root, circle, 0);
+        var strokeColorPanel = create("color", circle.strokeColor, root, circle, 0);
         var thicknessPanel = create("thickness", circle.thickness, root, 1, true, 15, false, 1, circle, 0);
+        var fillPanel = create("fill", circle.fill, root, circle, 0);
+        var fillColorPanel = create("color", circle.fillColor, root, circle, 0);
         var pointPanel = create("center", circle.center, root, circle, 1);
         var radiusPanel = create("radius", circle.radius, root, 0, true, 50, false, 1, circle, 2);
 
         layout.setHorizontalGroup(
-                layout.createParallelGroup(Alignment.LEADING).addComponent(label).addComponent(colorPanel)
-                        .addComponent(thicknessPanel).addComponent(pointPanel).addComponent(radiusPanel));
-        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(label).addComponent(colorPanel).addGap(2)
-                .addComponent(thicknessPanel).addGap(2).addComponent(pointPanel).addGap(2).addComponent(radiusPanel));
+                layout.createParallelGroup(Alignment.LEADING).addComponent(label).addComponent(strokePanel)
+                        .addComponent(strokeColorPanel).addComponent(thicknessPanel).addComponent(fillPanel)
+                        .addComponent(fillColorPanel).addComponent(pointPanel).addComponent(radiusPanel));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(label)
+
+                .addComponent(strokePanel).addGap(2).addComponent(strokeColorPanel).addGap(2)
+                .addComponent(thicknessPanel).addGap(2).addComponent(fillPanel).addGap(2).addComponent(fillColorPanel)
+                .addGap(2).addComponent(pointPanel).addGap(2).addComponent(radiusPanel));
 
         panel.addMouseListener(new DebuggingHoverListener(circle, 0));
         pointPanel.addMouseListener(new DebuggingHoverListener(circle, 1));
@@ -1333,18 +1341,23 @@ class EditingPanelFactory {
         panel.setLayout(layout);
 
         JLabel label = new JLabel("GraphicEllipse");
-        var colorPanel = create("color", circle.color, root, circle, 0);
+        var strokePanel = create("stroke", circle.stroke, root, circle, 0);
+        var strokeColorPanel = create("color", circle.strokeColor, root, circle, 0);
         var thicknessPanel = create("thickness", circle.thickness, root, 1, true, 15, false, 1, circle, 0);
+        var fillPanel = create("fill", circle.fill, root, circle, 0);
+        var fillColorPanel = create("color", circle.fillColor, root, circle, 0);
         var pointPanel = create("center", circle.center, root, circle, 1);
         var radiusAPanel = create("radiusA", circle.radiusA, root, 0, true, 50, false, 1, circle, 2);
         var radiusBPanel = create("radiusB", circle.radiusB, root, 0, true, 50, false, 1, circle, 2);
 
         layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING).addComponent(label)
-                .addComponent(colorPanel).addComponent(thicknessPanel).addComponent(pointPanel)
+                .addComponent(strokePanel).addComponent(strokeColorPanel).addComponent(thicknessPanel)
+                .addComponent(fillPanel).addComponent(fillColorPanel).addComponent(pointPanel)
                 .addComponent(radiusAPanel).addComponent(radiusBPanel));
-        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(label).addComponent(colorPanel).addGap(2)
-                .addComponent(thicknessPanel).addGap(2).addComponent(pointPanel).addGap(2).addComponent(radiusAPanel)
-                .addGap(2).addComponent(radiusBPanel));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(label).addComponent(strokePanel).addGap(2)
+                .addComponent(strokeColorPanel).addGap(2).addComponent(thicknessPanel).addGap(2).addComponent(fillPanel)
+                .addGap(2).addComponent(fillColorPanel).addGap(2).addComponent(pointPanel).addGap(2)
+                .addComponent(radiusAPanel).addGap(2).addComponent(radiusBPanel));
 
         panel.addMouseListener(new DebuggingHoverListener(circle, 0));
         pointPanel.addMouseListener(new DebuggingHoverListener(circle, 1));
