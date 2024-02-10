@@ -1005,6 +1005,8 @@ class EditingPanelFactory {
             return create((GraphicPath2D) object, root);
         } else if (object instanceof GraphicCircle) {
             return create((GraphicCircle) object, root);
+        } else if (object instanceof GraphicEllipse) {
+            return create((GraphicEllipse) object, root);
         } else if (object instanceof GraphicImage) {
             return create((GraphicImage) object, root);
         } else {
@@ -1283,6 +1285,33 @@ class EditingPanelFactory {
         panel.addMouseListener(new DebuggingHoverListener(circle, 0));
         pointPanel.addMouseListener(new DebuggingHoverListener(circle, 1));
         radiusPanel.addMouseListener(new DebuggingHoverListener(circle, 2));
+
+        return panel;
+    }
+
+    public static JPanel create(GraphicEllipse circle, GraphicRoot root) {
+        JPanel panel = new JPanel();
+        GroupLayout layout = new GroupLayout(panel);
+        panel.setLayout(layout);
+
+        JLabel label = new JLabel("GraphicEllipse");
+        var colorPanel = create("color", circle.color, root, circle, 0);
+        var thicknessPanel = create("thickness", circle.thickness, root, 1, true, 15, false, 1, circle, 0);
+        var pointPanel = create("center", circle.center, root, circle, 1);
+        var radiusAPanel = create("radiusA", circle.radiusA, root, 0, true, 50, false, 1, circle, 2);
+        var radiusBPanel = create("radiusB", circle.radiusB, root, 0, true, 50, false, 1, circle, 2);
+
+        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING).addComponent(label)
+                .addComponent(colorPanel).addComponent(thicknessPanel).addComponent(pointPanel)
+                .addComponent(radiusAPanel).addComponent(radiusBPanel));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(label).addComponent(colorPanel).addGap(2)
+                .addComponent(thicknessPanel).addGap(2).addComponent(pointPanel).addGap(2).addComponent(radiusAPanel)
+                .addGap(2).addComponent(radiusBPanel));
+
+        panel.addMouseListener(new DebuggingHoverListener(circle, 0));
+        pointPanel.addMouseListener(new DebuggingHoverListener(circle, 1));
+        radiusAPanel.addMouseListener(new DebuggingHoverListener(circle, 2));
+        radiusBPanel.addMouseListener(new DebuggingHoverListener(circle, 3));
 
         return panel;
     }
