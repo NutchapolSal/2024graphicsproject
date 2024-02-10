@@ -16,6 +16,7 @@ class PreloadedData {
         var pv_0fgh = new PaletteValue("0fgh", "#113", "bgDark");
         var pv_1vbn = new PaletteValue("1vbn", "#374A71", "bgSunrise");
         var pv_2uio = new PaletteValue("2uio", "#2266AA", "path thing");
+        var pv_3ngp = new PaletteValue("3ngp", "#4b0902", "abogos");
         List<TimeKeypoint> timeKeypoints = new ArrayList<>();
         timeKeypoints.add(tkp_0qwe);
         timeKeypoints.add(tkp_1asd);
@@ -24,7 +25,7 @@ class PreloadedData {
         timeKeypoints.add(tkp_4vwr);
         timeKeypoints.add(tkp_5rty);
         timeKeypoints.add(tkp_6uio);
-        Palette palette = new Palette().set(0, 0, pv_0fgh).set(1, 0, pv_1vbn).set(0, 1, pv_2uio);
+        Palette palette = new Palette().set(0, 0, pv_0fgh).set(1, 0, pv_1vbn).set(0, 1, pv_2uio).set(5, 9, pv_3ngp);
         List<GraphicLayer> instructions = new ArrayList<>();
         instructions.add(new GraphicLayer("bg", new AnimBoolean().add(tkp_0qwe, true, EasingFunction.snap),
                 new AnimPoint().add(tkp_0qwe, new Point(), EasingFunction.snap),

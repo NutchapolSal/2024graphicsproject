@@ -13,18 +13,21 @@ import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.WeakHashMap;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 
 import javax.swing.Box;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
+import javax.swing.GroupLayout.ParallelGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
@@ -886,6 +889,52 @@ class EditorGang {
         paletteFrame.setTitle("palette");
         paletteFrame.setSize(150, 600);
 
-        paletteFrame.setContentPane(EditingPanelFactory.createPlaceholder(null, "palette"));
+        JPanel palettePanel = new JPanel();
+        paletteFrame.setContentPane(palettePanel);
+
+        GroupLayout layout = new GroupLayout(palettePanel);
+        palettePanel.setLayout(layout);
+
+        JScrollPane listScrollPane = new JScrollPane();
+        listScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        listScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+
+        JPanel slotsPanel = new JPanel();
+        listScrollPane.setViewportView(slotsPanel);
+
+        GroupLayout slotsLayout = new GroupLayout(slotsPanel);
+        slotsPanel.setLayout(slotsLayout);
+
+        Map<Integer, ParallelGroup> slotsXGroups = new HashMap<>();
+        Map<Integer, ParallelGroup> slotsYGroups = new HashMap<>();
+
+        var transferHandler = new PaletteSlotTransferHandler();
+        for (var value : root.palette.iterator()) {
+            var slotPanel = new PaletteSlotPanel(root.palette, value.x, value.y, transferHandler);
+
+            slotsXGroups.computeIfAbsent(value.x, k -> slotsLayout.createParallelGroup()).addComponent(slotPanel);
+            slotsYGroups.computeIfAbsent(value.y, k -> slotsLayout.createParallelGroup()).addComponent(slotPanel);
+        }
+
+        var slotsXGroupsList = slotsXGroups.entrySet().stream().sorted(Comparator.comparingInt(e -> e.getKey()))
+                .collect(Collectors.toList());
+        var slotsYGroupsList = slotsYGroups.entrySet().stream().sorted(Comparator.comparingInt(e -> e.getKey()))
+                .collect(Collectors.toList());
+
+        var slotsHGroup = slotsLayout.createSequentialGroup();
+        var slotsVGroup = slotsLayout.createSequentialGroup();
+        for (var e : slotsXGroupsList) {
+            slotsHGroup.addGap(2).addGroup(e.getValue());
+        }
+        for (var e : slotsYGroupsList) {
+            slotsVGroup.addGap(2).addGroup(e.getValue());
+        }
+
+        slotsLayout.setHorizontalGroup(slotsHGroup);
+        slotsLayout.setVerticalGroup(slotsVGroup);
+
+        layout.setHorizontalGroup(layout.createParallelGroup().addComponent(listScrollPane));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(listScrollPane));
     }
+
 }

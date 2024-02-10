@@ -6,14 +6,26 @@ class PaletteValue implements Referenceable {
     public Color color;
     public String label = "a color";
 
-    public PaletteValue(String id, String hexColor, String label) {
+    public PaletteValue(String id, Color color, String label) {
         this.id = id;
-        this.color = ColorHexer.decode(hexColor);
+        this.color = color;
         this.label = label;
+    }
+
+    public PaletteValue(String id, String hexColor, String label) {
+        this(id, ColorHexer.decode(hexColor), label);
     }
 
     public PaletteValue(String hexColor, String label) {
         this(UUID.randomUUID().toString(), hexColor, label);
+    }
+
+    public PaletteValue(Color color, String label) {
+        this(UUID.randomUUID().toString(), color, label);
+    }
+
+    public PaletteValue editorCopy() {
+        return new PaletteValue(color, label + " copy");
     }
 
     public String exportInitString() {

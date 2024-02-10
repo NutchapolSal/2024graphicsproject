@@ -22,6 +22,35 @@ class Palette implements Exportable {
         return this;
     }
 
+    public Palette remove(int x, int y) {
+        if (values.containsKey(y)) {
+            var row = values.get(y);
+            row.remove(x);
+            if (row.isEmpty()) {
+                values.remove(y);
+            }
+        }
+        return this;
+    }
+
+    public int getMaxX() {
+        return values.values().stream().mapToInt(row -> row.keySet().stream().max(Integer::compareTo).orElse(0)).max()
+                .orElse(0);
+    }
+
+    public int getMaxY() {
+        return values.keySet().stream().max(Integer::compareTo).orElse(0);
+    }
+
+    public int getMinX() {
+        return values.values().stream().mapToInt(row -> row.keySet().stream().min(Integer::compareTo).orElse(0)).min()
+                .orElse(0);
+    }
+
+    public int getMinY() {
+        return values.keySet().stream().min(Integer::compareTo).orElse(0);
+    }
+
     static class SparsePaletteSlot {
         public final int x;
         public final int y;
@@ -81,12 +110,10 @@ class Palette implements Exportable {
 
     public Iterable<PaletteSlot> iterator() {
         return () -> new Iterator<PaletteSlot>() {
-            private int xMin = Math.min(values.keySet().stream().min(Integer::compareTo).orElse(0), 0);
-            private int xMax = values.keySet().stream().max(Integer::compareTo).orElse(0);
-            private int yMin = Math.min(values.values().stream()
-                    .mapToInt(row -> row.keySet().stream().min(Integer::compareTo).orElse(0)).min().orElse(0), 0);
-            private int yMax = values.values().stream()
-                    .mapToInt(row -> row.keySet().stream().max(Integer::compareTo).orElse(0)).max().orElse(0);
+            private int xMin = getMinX();
+            private int xMax = getMaxX();
+            private int yMin = getMinY();
+            private int yMax = getMaxY();
             private int x = xMin;
             private int y = yMin;
 
