@@ -1088,7 +1088,9 @@ class EditingPanelFactory {
         JComboBox<String> comboBox = new JComboBox<String>();
         comboBox.addItem("GraphicPath2D");
         comboBox.addItem("GraphicCircle");
+        comboBox.addItem("GraphicEllipse");
         comboBox.addItem("GraphicImage");
+        comboBox.addItem("GraphicString");
 
         comboBox.setSelectedIndex(GlobalState.lastSelectedNewObjI);
 
@@ -1106,6 +1108,9 @@ class EditingPanelFactory {
                 break;
             case "GraphicImage":
                 layer.add(new GraphicImage(root.getFirstTimeKeypoint()));
+                break;
+            case "GraphicString":
+                layer.add(new GraphicString(root.getFirstTimeKeypoint()));
                 break;
             default:
                 return;
