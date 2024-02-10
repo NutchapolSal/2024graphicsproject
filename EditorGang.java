@@ -87,6 +87,8 @@ class EditorGang {
         createTimepointsFrame(paletteFrame);
         createTimeControlFrame(editorFrame);
 
+        detailData();
+
         timeControlFrame.setVisible(true);
         timepointsFrame.setVisible(true);
         paletteFrame.setVisible(true);
@@ -161,8 +163,6 @@ class EditorGang {
 
         editorScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         editorScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-
-        updateLayerListPanel();
 
         JButton addLayerButton = new JButton("add layer");
         addLayerButton.addActionListener(e -> {
@@ -269,7 +269,7 @@ class EditorGang {
                 root.palette = newRoot.palette;
                 scanner.close();
                 editorFrame.setTitle("editor - " + file.getName());
-                updateLayerListPanel();
+                detailData();
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -387,6 +387,12 @@ class EditorGang {
         this.currentLayer.value = layerIndex;
     }
 
+    private void detailData() {
+        updateLayerListPanel();
+        detailTimepointsData();
+        detailPaletteData();
+    }
+
     private void updateLayerListPanel() {
         JPanel layerPane = new JPanel();
         GroupLayout layerLayout = new GroupLayout(layerPane);
@@ -451,10 +457,9 @@ class EditorGang {
 
     private TimepointSort currentSort = TimepointSort.TIME;
     private Optional<TimeKeypoint> changingReference = Optional.empty();
+    private Runnable sortTimepointsFunc;
 
     private void createTimepointsFrame(JFrame frame) {
-        root.timeKeypoints.sort(currentSort.comparator);
-
         timepointsFrame.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
         timepointsFrame.setTitle("timepoints");
         timepointsFrame.setSize(450, 600);
@@ -470,7 +475,6 @@ class EditorGang {
         listScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 
         var listModel = new DefaultListModel<TimeKeypoint>();
-        listModel.addAll(root.timeKeypoints);
 
         JList<TimeKeypoint> list = new JList<>(listModel);
         listScrollPane.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
@@ -495,7 +499,7 @@ class EditorGang {
         }
         sortComboBox.setSelectedItem(currentSort.name().toLowerCase());
 
-        Runnable sortTimepointsFunc = () -> {
+        sortTimepointsFunc = () -> {
             var selectedTimepoint = list.getSelectedValue();
             root.timeKeypoints.sort(currentSort.comparator);
             listModel.clear();
@@ -796,6 +800,11 @@ class EditorGang {
 
     }
 
+    private void detailTimepointsData() {
+        sortTimepointsFunc.run();
+        changingReference = Optional.empty();
+    }
+
     private void createTimeControlFrame(JFrame frame) {
         timeControlFrame.setLocation(frame.getLocation().x, frame.getLocation().y + frame.getHeight());
         timeControlFrame.setTitle("time control");
@@ -912,6 +921,9 @@ class EditorGang {
 
     }
 
+    private PaletteSlotTransferHandler transferHandler = new PaletteSlotTransferHandler();
+    private JScrollPane listScrollPane = new JScrollPane();
+
     private void createPaletteFrame(JFrame frame) {
         paletteFrame.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
         paletteFrame.setTitle("palette");
@@ -923,20 +935,22 @@ class EditorGang {
         GroupLayout layout = new GroupLayout(palettePanel);
         palettePanel.setLayout(layout);
 
-        JScrollPane listScrollPane = new JScrollPane();
         listScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         listScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 
+        layout.setHorizontalGroup(layout.createParallelGroup().addComponent(listScrollPane));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(listScrollPane));
+    }
+
+    private void detailPaletteData() {
         JPanel slotsPanel = new JPanel();
         listScrollPane.setViewportView(slotsPanel);
-
         GroupLayout slotsLayout = new GroupLayout(slotsPanel);
         slotsPanel.setLayout(slotsLayout);
 
         Map<Integer, ParallelGroup> slotsXGroups = new HashMap<>();
         Map<Integer, ParallelGroup> slotsYGroups = new HashMap<>();
 
-        var transferHandler = new PaletteSlotTransferHandler();
         int maxX = root.palette.getMaxX();
         int maxY = root.palette.getMaxY();
         for (int x = root.palette.getMinX(); x <= maxX + 2; x++) {
@@ -964,9 +978,6 @@ class EditorGang {
 
         slotsLayout.setHorizontalGroup(slotsHGroup);
         slotsLayout.setVerticalGroup(slotsVGroup);
-
-        layout.setHorizontalGroup(layout.createParallelGroup().addComponent(listScrollPane));
-        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(listScrollPane));
     }
 
 }

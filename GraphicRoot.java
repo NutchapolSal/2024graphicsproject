@@ -58,9 +58,7 @@ class GraphicRoot implements Exportable {
     private Store<TimeAndTKPFocus> timeAndTKPFocusStore = new Store<>(this::getTimeAndTKPFocus);
 
     public GraphicRoot(List<TimeKeypoint> timeKeypoints, Palette palette, List<GraphicLayer> instructions) {
-        this.timeKeypoints = timeKeypoints;
-        this.palette = palette;
-        this.instructions = instructions;
+        replaceRoot(timeKeypoints, palette, instructions);
 
         timeStore.subscribe(timeSubscriber);
     }
@@ -217,6 +215,16 @@ class GraphicRoot implements Exportable {
         } else {
             useFps = false;
         }
+    }
+
+    public void replaceRoot(List<TimeKeypoint> timeKeypoints, Palette palette, List<GraphicLayer> instructions) {
+        this.timeKeypoints = timeKeypoints;
+        this.palette = palette;
+        this.instructions = instructions;
+
+        setTimeKeypointFocus(Optional.empty(), this);
+        pauseTime(this);
+        setTime(0, this);
     }
 
     public String exportString() {
