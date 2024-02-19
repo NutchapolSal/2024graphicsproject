@@ -33,6 +33,8 @@ public class PaletteSlotPanel extends JPanel {
     private JMenuItem removeItem = new JMenuItem("Mark for Removal");
     private JMenuItem addItem = new JMenuItem("New...");
 
+    private Runnable changeCallback;
+
     private static JFrame pvEditor = new JFrame("Palette Value Editor");
 
     private static Consumer<Color> onColorChange = null;
@@ -124,11 +126,13 @@ public class PaletteSlotPanel extends JPanel {
         pvEditor.setVisible(true);
     }
 
-    PaletteSlotPanel(Palette palette, int x, int y, PaletteSlotTransferHandler transferHandler) {
+    PaletteSlotPanel(Palette palette, int x, int y, PaletteSlotTransferHandler transferHandler,
+            Runnable changeCallback) {
         super();
         this.palette = palette;
         this.x = x;
         this.y = y;
+        this.changeCallback = changeCallback;
 
         this.setPreferredSize(new Dimension(25, 25));
         this.setMaximumSize(new Dimension(25, 25));
@@ -170,8 +174,7 @@ public class PaletteSlotPanel extends JPanel {
         addItem.addActionListener(e -> {
             edit("a color", Color.black, c -> {
             }, (label, color) -> {
-                palette.set(x, y, new PaletteValue(color, label));
-                updatePanel();
+                setPaletteValue(new PaletteValue(color, label));
             }, () -> {
             });
         });
@@ -234,12 +237,14 @@ public class PaletteSlotPanel extends JPanel {
         }
         palette.set(x, y, value);
         updatePanel();
+        changeCallback.run();
     }
 
     public void removePaletteValue() {
         selfSetted = true;
         palette.remove(x, y);
         updatePanel();
+        changeCallback.run();
     }
 
     public void exportDone() {

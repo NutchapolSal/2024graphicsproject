@@ -1,5 +1,6 @@
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusAdapter;
@@ -12,9 +13,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
@@ -938,7 +941,7 @@ class EditorGang {
     }
 
     private PaletteSlotTransferHandler transferHandler = new PaletteSlotTransferHandler();
-    private JScrollPane listScrollPane = new JScrollPane();
+    private JScrollPane paletteScrollPane = new JScrollPane();
 
     private void createPaletteFrame(JFrame frame) {
         paletteFrame.setLocation(frame.getLocation().x + frame.getWidth(), frame.getLocation().y);
@@ -951,27 +954,70 @@ class EditorGang {
         GroupLayout layout = new GroupLayout(palettePanel);
         palettePanel.setLayout(layout);
 
-        listScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        listScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+        paletteScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        paletteScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 
-        layout.setHorizontalGroup(layout.createParallelGroup().addComponent(listScrollPane));
-        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(listScrollPane));
+        layout.setHorizontalGroup(layout.createParallelGroup().addComponent(paletteScrollPane));
+        layout.setVerticalGroup(layout.createSequentialGroup().addComponent(paletteScrollPane));
     }
 
+    private List<List<PaletteSlotPanel>> slotPanels = new ArrayList<>();
+
     private void detailPaletteData() {
+        slotPanels.clear();
+
+        enumerateSlots();
+        constructPaletteSlotPanel();
+    }
+
+    private boolean enumerateSlots() {
+        boolean changed = false;
+        int maxX = root.palette.getMaxX() + 2;
+        int maxY = root.palette.getMaxY() + 5;
+        while (slotPanels.size() <= maxY) {
+            slotPanels.add(new ArrayList<>());
+            changed = true;
+        }
+        if (maxY + 1 < slotPanels.size()) {
+            slotPanels.subList(maxY + 1, slotPanels.size()).clear();
+            changed = true;
+        }
+        for (int y = 0; y <= maxY; y++) {
+            var row = slotPanels.get(y);
+            while (row.size() <= maxX) {
+                row.add(new PaletteSlotPanel(root.palette, row.size(), y, transferHandler, () -> {
+                    if (enumerateSlots()) {
+                        constructPaletteSlotPanel();
+                    }
+                }));
+                changed = true;
+            }
+            if (maxX + 1 < row.size()) {
+                row.subList(maxX + 1, row.size()).clear();
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private void constructPaletteSlotPanel() {
+        Point viewPos = paletteScrollPane.getViewport().getViewPosition();
+
         JPanel slotsPanel = new JPanel();
-        listScrollPane.setViewportView(slotsPanel);
+        paletteScrollPane.setViewportView(slotsPanel);
+
         GroupLayout slotsLayout = new GroupLayout(slotsPanel);
         slotsPanel.setLayout(slotsLayout);
 
         Map<Integer, ParallelGroup> slotsXGroups = new HashMap<>();
         Map<Integer, ParallelGroup> slotsYGroups = new HashMap<>();
 
-        int maxX = root.palette.getMaxX();
-        int maxY = root.palette.getMaxY();
-        for (int x = root.palette.getMinX(); x <= maxX + 2; x++) {
-            for (int y = root.palette.getMinY(); y <= maxY + 5; y++) {
-                var slotPanel = new PaletteSlotPanel(root.palette, x, y, transferHandler);
+        int maxX = root.palette.getMaxX() + 2;
+        int maxY = root.palette.getMaxY() + 5;
+
+        for (int y = root.palette.getMinY(); y <= maxY; y++) {
+            for (int x = root.palette.getMinX(); x <= maxX; x++) {
+                var slotPanel = slotPanels.get(y).get(x);
 
                 slotsXGroups.computeIfAbsent(x, k -> slotsLayout.createParallelGroup()).addComponent(slotPanel);
                 slotsYGroups.computeIfAbsent(y, k -> slotsLayout.createParallelGroup()).addComponent(slotPanel);
@@ -994,6 +1040,7 @@ class EditorGang {
 
         slotsLayout.setHorizontalGroup(slotsHGroup);
         slotsLayout.setVerticalGroup(slotsVGroup);
+        paletteScrollPane.getViewport().setViewPosition(viewPos);
     }
 
 }

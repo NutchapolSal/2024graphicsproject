@@ -21,6 +21,9 @@ class Palette implements Exportable {
     }
 
     public Palette set(int x, int y, PaletteValue value) {
+        if (x < 0 || y < 0) {
+            throw new IllegalArgumentException("x and y must be non-negative");
+        }
         values.computeIfAbsent(y, k -> new HashMap<>()).put(x, value);
         return this;
     }
@@ -113,9 +116,9 @@ class Palette implements Exportable {
 
     public Iterable<PaletteSlot> iterator() {
         return () -> new Iterator<PaletteSlot>() {
-            private int xMin = getMinX();
+            private int xMin = 0;
             private int xMax = getMaxX();
-            private int yMin = getMinY();
+            private int yMin = 0;
             private int yMax = getMaxY();
             private int x = xMin;
             private int y = yMin;
